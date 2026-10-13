@@ -1445,7 +1445,7 @@ ui <- page_navbar(
         "Cell types and Batch tables list rows; their tier bars count genes by default, with a switch to count rows. A gene record is one target gene in one ",
         "context and one modality, counted once across loci at its best tier; the Home figure and the context by modality ",
         "counts use gene records. A gene is counted once however many rows or records it has; the tier table counts genes."),
-      p("Each row is one variant and target gene pair at one AD locus, so a gene appears once per ",
+      p("A gene appears once per ",
         "supporting variant. Locus is the AD locus that contains the variant, with a label numbered ",
         "within this release. Tier is the gene's best tier across the whole release, so a row can ",
         "show evidence at one tier while the gene's overall tier differs."),

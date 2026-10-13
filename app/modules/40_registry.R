@@ -564,7 +564,7 @@ ctx_unique_counts <- local({
 }
 .gene_opts <- list(searchField = c("label", "ensg"))
 
-## gene the Genes page opens with: best tier, then highest xQTL PIP
+## gene the Genes page opens with: best tier, then highest AD-side PIP (max_inclusion)
 .gp_default <- local({
   g <- dat[!is.na(dat$gene) & nzchar(as.character(dat$gene)), , drop = FALSE]
   k <- match(as.character(g$top_confidence), paste0("T", 1:6)); k[is.na(k)] <- 99L

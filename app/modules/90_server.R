@@ -726,7 +726,7 @@ observeEvent(input$locus_prev, {
             paste0(paste(bg, collapse = " and "),
                    if (length(bg) == 1L) " has " else " have ",
                    if (identical(best, "T6")) "T6 support, meaning TWAS or MR evidence without localized AD-xQTL support."
-                   else paste0("localized ", best, " support."))
+                   else paste0("tier ", best, ", its best tier in this release."))
     t6 <- g[ok & gt == "T6"]
     t6 <- setdiff(t6, bg)
     s3 <- if (!length(t6)) "" else
@@ -737,7 +737,9 @@ observeEvent(input$locus_prev, {
     led <- lapply(g[ok], function(x) {
       r <- d[!is.na(d$gene) & d$gene == x, , drop = FALSE][1, , drop = FALSE]
       tt <- .gene_tier(d, x)
-      loc_sup <- if (identical(tt, "T6")) "no" else "yes"
+      loc_sup <- if (identical(tt, "T6")) "no" else if (identical(tt, NO_TIER)) {
+        if (!is.null(r$cis_trans) && identical(as.character(r$cis_trans), "trans")) "no (trans only)" else "not scored"
+      } else "yes"
       tags$details(class = "led",
         tags$summary(if (identical(tt, NO_TIER)) paste0("Why does ", x, " have no tier?") else paste0("Why is ", x, " ", tt, "?")),
         tags$ul(

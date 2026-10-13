@@ -329,7 +329,7 @@ batch_body_ui <- function() {
     div(class = "panel", style = "margin-top:20px",
         div(class = "dc-sechead",
             div(class = "dc-figt", "Evidence tiers across the matched entries"),
-            div(class = "dc-figc", "Each matched gene record counted once, at its tier.")),
+            div(class = "dc-figc", "Matched genes, each counted once at its tier. Switch to Rows to count variant and target gene pairs instead.")),
         radioButtons("bt_unit", NULL, c("Genes" = "genes", "Rows" = "rows"), selected = "genes", inline = TRUE),
         plotOutput("bt_tier_plot", height = "210px"),
         div(class = "dc-exp", style = "margin-top:6px", downloadLink("dl_bt_tier_png", "PNG", class = "dc-btn"), downloadLink("dl_bt_tier_csv", "CSV", class = "dc-btn"))),
