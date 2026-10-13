@@ -37,7 +37,7 @@ server <- function(input, output, session) {
       parts[[k]] <- if (!length(v)) "none" else paste(if (k == "locus") loci_to_regions(v) else v, collapse = ",")
     }
     if (!is.null(input$q) && nzchar(input$q))            parts$q <- input$q
-    if (!is.null(input$gp_gene) && nzchar(input$gp_gene)) parts$gene <- input$gp_gene
+    if (!is.null(input$gp_gene) && nzchar(input$gp_gene) && !identical(input$gp_gene, .gp_default)) parts$gene <- input$gp_gene
     if (!is.null(input$minlp) && input$minlp > 0)        parts$minlp <- input$minlp
     if (isTRUE(input$transonly))                         parts$transonly <- "1"
     # locus is serialised separately below, as stable keys
@@ -50,6 +50,27 @@ server <- function(input, output, session) {
              sub("^\\?", "", locus_to_query(selected_locus())) else ""
     .all <- c(.lq, qs); .all <- paste(.all[nzchar(.all)], collapse = "&")
     updateQueryString(if (nzchar(.all)) paste0("?", .all) else "?", mode = "replace")
+  })
+
+  .other_loci_note <- function(term, kind, opened) {
+    if (!identical(as.character(kind), "gene")) return(invisible())
+    r <- dat[!is.na(dat$gene) & toupper(dat$gene) == toupper(term), c("ADlocus", "top_confidence"), drop = FALSE]
+    if (!nrow(r)) return(invisible())
+    k <- match(as.character(r$top_confidence), paste0("T", 1:6)); k[is.na(k)] <- 99L
+    bt <- tapply(k, as.character(r$ADlocus), min)
+    if (length(bt) < 2) return(invisible())
+    lab <- function(l) if (!l %in% names(bt)) l else paste0(l, if (bt[[l]] < 99) paste0(" (T", bt[[l]], ")") else " (no tier)")
+    oth <- setdiff(names(bt)[order(bt)], opened)
+    links <- vapply(oth, function(l) sprintf(
+      '<a href="#" onclick="Shiny.setInputValue(\'jump_locus\', \'%s\', {priority: \'event\'}); return false;">%s</a>', l, lab(l)), "")
+    showNotification(HTML(sprintf(
+      "<b>%s</b> is linked to %d AD loci. Showing %s, where it has its best tier (ties go to the stronger GWAS signal). Also: %s",
+      htmltools::htmlEscape(term), length(bt), lab(opened), paste(links, collapse = ", "))),
+      duration = 15, type = "message")
+  }
+  observeEvent(input$jump_locus, {
+    selected_locus(input$jump_locus)
+    nav_select("nav", "Locus detail", session = session)
   })
 
   # ---- Home search ----------------------------------------------------------
@@ -70,7 +91,7 @@ server <- function(input, output, session) {
     }
     i <- match(input$hero_search, search_index$value)
     if (!is.na(i)) {
-      selected_locus(search_index$ADlocus[i])
+      selected_locus(search_index$ADlocus[i]); .other_loci_note(search_index$term[i], search_index$kind[i], search_index$ADlocus[i])
       updateTextInput(session, "q", value = search_index$term[i])
       nav_select("nav", "Locus detail", session = session)
       return(invisible())
@@ -86,7 +107,7 @@ server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$gp_clear, {
-    updateSelectizeInput(session, "gp_gene", choices = genes, selected = "", server = TRUE)
+    updateSelectizeInput(session, "gp_gene", choices = .gene_choices(genes), options = .gene_opts, selected = "", server = TRUE)
   })
 
   observeEvent(input$go_explore, nav_select("nav", "Loci", session = session))
@@ -387,6 +408,8 @@ output$p_trans <- renderPlot({
     g <- gene_summary()
     req(!is.null(g), i <= nrow(g))
     updateTextInput(session, "q", value = g$Gene[i])
+    updateSelectizeInput(session, "gp_gene", choices = .gene_choices(genes), options = .gene_opts,
+                         selected = g$Gene[i], server = TRUE)
     updateRadioButtons(session, "view_mode", selected = "variant")
   })
 
@@ -980,7 +1003,7 @@ observeEvent(input$locus_prev, {
       showNotification(sprintf("%s is not in this release.", term), type = "message", duration = 4)
       return(invisible())
     }
-    selected_locus(search_index$ADlocus[i])
+    selected_locus(search_index$ADlocus[i]); .other_loci_note(search_index$term[i], search_index$kind[i], search_index$ADlocus[i])
     updateTextInput(session, "q", value = term)
     nav_select("nav", "Locus detail", session = session)
   }
@@ -1281,8 +1304,8 @@ observeEvent(input$locus_prev, {
     })
 
   observe({
-    updateSelectizeInput(session, "gp_gene", choices = genes,
-                         selected = isolate(input$gp_gene), server = TRUE)
+    updateSelectizeInput(session, "gp_gene", choices = .gene_choices(genes), options = .gene_opts,
+                         selected = { .s <- isolate(input$gp_gene); if (is.null(.s) || !nzchar(.s)) .gp_default else .s }, server = TRUE)
   })
 
   gp_rows <- reactive({
@@ -1745,8 +1768,17 @@ output$gp_matrix <- renderUI({
         .cnt(length(unique(na.omit(d$context))), "contexts"))
   })
 
-  .tier_bar <- function(d) {
+  .unit <- function(x) if (is.null(x)) "genes" else x
+  .by_unit <- function(d, unit) {
+    if (!identical(unit, "genes") || is.null(d) || !nrow(d)) return(d)
+    d <- d[!is.na(d$gene) & nzchar(as.character(d$gene)), , drop = FALSE]
+    k <- match(as.character(d$top_confidence), paste0("T", 1:6)); k[is.na(k)] <- 99L
+    d <- d[order(k), , drop = FALSE]
+    d[!duplicated(d$gene), , drop = FALSE]
+  }
+  .tier_bar <- function(d, unit = "genes") {
     if (is.null(d) || !nrow(d)) return(NULL)
+    d <- .by_unit(d, unit)
     tb <- as.data.frame(table(factor(as.character(d$top_confidence), levels = .lv)),
                         stringsAsFactors = FALSE)
     names(tb) <- c("tier", "n")
@@ -1766,13 +1798,13 @@ output$gp_matrix <- renderUI({
             panel.background = element_rect(fill = "#ffffff", colour = NA))
   }
 
-  output$cty_tier_plot <- renderPlot(.tier_bar(cty_d()), res = 96)
+  output$cty_tier_plot <- renderPlot(.tier_bar(cty_d(), .unit(input$cty_unit)), res = 96)
 
   .rec_tbl <- function(d) {
     cc <- ctx_cols(d$context)
     datatable(
     tibble(Gene = d$gene, Locus = d$ADlocus, rsID = d$rsid,
-           Tier = as.character(d$top_confidence),
+           `Best tier (any context)` = as.character(d$top_confidence),
            `Cell type or region` = cc$ctx, Dataset = cc$dset, Modality = cc$mod,
            `No. contexts` = d$n_contexts,
            `GWAS PIP` = round(d$max_inclusion, 3),
@@ -1849,7 +1881,7 @@ output$gp_matrix <- renderUI({
                 f, "batch list, one row per entry")
     })
 
-  output$bt_tier_plot <- renderPlot(.tier_bar(bt_r()), res = 96)
+  output$bt_tier_plot <- renderPlot(.tier_bar(bt_r(), .unit(input$bt_unit)), res = 96)
   output$bt_rows_tbl  <- renderDT(.rec_tbl(bt_r()), server = TRUE)
 
   output$dl_batch <- downloadHandler(
@@ -1933,9 +1965,9 @@ output$gp_matrix <- renderUI({
     names(d)[1] <- "AD_locus"; d
   }
   .tier_counts <- function(d) {
-    if (is.null(d) || !nrow(d)) return(data.frame(tier = character(0), gene_records = integer(0)))
+    if (is.null(d) || !nrow(d)) return(data.frame(tier = character(0), count = integer(0)))
     tb <- as.data.frame(table(factor(as.character(d$top_confidence), levels = .lv)), stringsAsFactors = FALSE)
-    names(tb) <- c("tier", "gene_records"); tb
+    names(tb) <- c("tier", "count"); tb
   }
   output$dl_ql_pip_png  <- .png_only("fine_mapping_confidence", .fig_ql_pip, 6, 3.2)
   output$dl_ql_pip_csv  <- downloadHandler(filename = function() "fine_mapping_confidence.csv",
@@ -1950,12 +1982,12 @@ output$gp_matrix <- renderUI({
       tb <- as.data.frame(table(v), stringsAsFactors = FALSE); names(tb) <- c("GWAS_significance", "gene_records")
       .prov_csv(tb, f, "gene records by GWAS significance")
     })
-  output$dl_cty_tier_png <- .png_only("cell_type_evidence_tiers", function() .tier_bar(cty_d()), 6, 3.4)
+  output$dl_cty_tier_png <- .png_only("cell_type_evidence_tiers", function() .tier_bar(cty_d(), .unit(input$cty_unit)), 6, 3.4)
   output$dl_cty_tier_csv <- downloadHandler(filename = function() "cell_type_evidence_tiers.csv",
-    content = function(f) .prov_csv(.tier_counts(cty_d()), f, paste("evidence tiers in", input$cty_ct)))
-  output$dl_bt_tier_png  <- .png_only("batch_evidence_tiers", function() .tier_bar(bt_r()), 6, 3.4)
+    content = function(f) .prov_csv(.tier_counts(.by_unit(cty_d(), .unit(input$cty_unit))), f, paste("evidence tiers in", input$cty_ct)))
+  output$dl_bt_tier_png  <- .png_only("batch_evidence_tiers", function() .tier_bar(bt_r(), .unit(input$bt_unit)), 6, 3.4)
   output$dl_bt_tier_csv  <- downloadHandler(filename = function() "batch_evidence_tiers.csv",
-    content = function(f) .prov_csv(.tier_counts(bt_r()), f, "evidence tiers across matched entries"))
+    content = function(f) .prov_csv(.tier_counts(.by_unit(bt_r(), .unit(input$bt_unit))), f, "evidence tiers across matched entries"))
   output$dl_sum_trans_csv <- downloadHandler(filename = function() "AD_loci_trans_target_genes.csv",
     content = function(f) {
       d <- if (!is.null(trans_all) && nrow(trans_all)) trans_all[, c("locus", "target", "modality")] else NULL
@@ -2311,7 +2343,7 @@ output$gp_matrix <- renderUI({
 
   .open_gene <- function(g) {
     if (is.null(g) || !nzchar(g)) return(invisible())
-    updateSelectizeInput(session, "gp_gene", choices = genes, selected = g, server = TRUE)
+    updateSelectizeInput(session, "gp_gene", choices = .gene_choices(genes), options = .gene_opts, selected = g, server = TRUE)
     nav_select("nav", "Genes", session = session)
   }
 

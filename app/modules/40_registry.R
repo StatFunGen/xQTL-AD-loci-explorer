@@ -553,3 +553,21 @@ ctx_unique_counts <- local({
   out <- as.integer(v); names(out) <- names(v)
   out[out > 0]
 })
+
+
+## Genes picker: each gene carries its Ensembl ID so either can be searched
+.gene_choices <- function(g) {
+  g <- as.character(g)
+  e <- if (exists("gid_map") && length(gid_map)) unname(gid_map[g]) else rep(NA_character_, length(g))
+  e <- sub("\\..*$", "", ifelse(is.na(e), "", e))
+  data.frame(value = g, label = g, ensg = e, stringsAsFactors = FALSE)
+}
+.gene_opts <- list(searchField = c("label", "ensg"))
+
+## gene the Genes page opens with: best tier, then highest xQTL PIP
+.gp_default <- local({
+  g <- dat[!is.na(dat$gene) & nzchar(as.character(dat$gene)), , drop = FALSE]
+  k <- match(as.character(g$top_confidence), paste0("T", 1:6)); k[is.na(k)] <- 99L
+  p <- ifelse(is.na(g$max_inclusion), -Inf, g$max_inclusion)
+  if (nrow(g)) as.character(g$gene[order(k, -p)][1]) else ""
+})
