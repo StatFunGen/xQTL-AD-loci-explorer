@@ -510,7 +510,7 @@ output$p_trans <- renderPlot({
       length(unique(ev$ctx)), ' cell types &#183; ',
       length(unique(ev$mod)), ' modalities',
       if (off > 0) paste0(' &#183; ', off,
-        ' further marks belong to genes outside this window and stay in the table below')
+        ' further marks belong to genes outside this window and are listed in the table below')
       else '', '</div>'))
   })
 
@@ -692,13 +692,14 @@ observeEvent(input$locus_prev, {
       "No target gene is recorded at this locus in this release."))
     gt <- vapply(g, function(x) .gene_tier(d, x), character(1))
     ok <- !is.na(gt)
-    best <- if (any(ok)) sort(gt[ok])[1] else NA_character_
+    has_t <- ok & gt != NO_TIER
+    best <- if (any(has_t)) sort(gt[has_t])[1] else NA_character_
     bg <- g[ok & gt == best]
     i <- match(loc, locus_registry$ADlocus)
     lead <- if (!is.na(i)) locus_registry$lead_rsid[i] else NA_character_
     subj <- if (!is.na(lead)) lead else loc
     s1 <- paste0(subj, " is linked to ", length(g), if (length(g) == 1L) " target gene at " else " target genes at ", loc, ".")
-    s2 <- if (is.na(best)) "No gene at this locus has an assigned tier." else
+    s2 <- if (is.na(best)) "No gene at this locus has a tier assignment in this release." else
             paste0(paste(bg, collapse = " and "),
                    if (length(bg) == 1L) " has " else " have ",
                    if (identical(best, "T6")) "T6 support, meaning TWAS or MR evidence without localized AD-xQTL support."
@@ -715,13 +716,14 @@ observeEvent(input$locus_prev, {
       tt <- .gene_tier(d, x)
       loc_sup <- if (identical(tt, "T6")) "no" else "yes"
       tags$details(class = "led",
-        tags$summary(paste0("Why is ", x, " ", tt, "?")),
+        tags$summary(if (identical(tt, NO_TIER)) paste0("Why does ", x, " have no tier?") else paste0("Why is ", x, " ", tt, "?")),
         tags$ul(
           tags$li(paste0("Localized AD-xQTL support: ", loc_sup)),
           tags$li(paste0("TWAS: ", .ev_state(r$twas_sig))),
           tags$li(paste0("MR: ", .ev_state(r$mr_sig))),
           tags$li(paste0("cTWAS: ", .ev_state(r$ctwas_sig))),
-          tags$li(paste0("Tier definition: ", if (tt %in% names(TIER_DEFS)) TIER_DEFS[[tt]] else "not defined"))))
+          tags$li(if (tt %in% names(TIER_DEFS)) paste0("Tier definition: ", TIER_DEFS[[tt]]) else
+            "Tier: none. The prioritization lists this gene at the locus but did not assign it a tier.")))
     })
     div(class = "interp",
         div(class = "dc-kicker", "What this locus shows"),
