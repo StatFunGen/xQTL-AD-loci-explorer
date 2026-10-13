@@ -526,14 +526,13 @@ output$p_trans <- renderPlot({
     e   <- locus_ev()
     ev  <- if (is.null(e) || !nrow(e)) a[0, , drop = FALSE] else e[e$inwin, , drop = FALSE]
     tot <- sum(a$inwin); off <- sum(!a$inwin)
-    if (tot == 0) return(HTML(paste0('<div class="rv-stat">No evidence marks fall inside the plotted window', if (off > 0) paste0(' &#183; all ', format(off, big.mark = ","), ' marks for genes at this locus sit outside it and are listed in the table below') else '', '</div>')))
+    if (tot == 0) return(HTML(paste0('<div class="rv-stat">No evidence marks fall inside the plotted window', if (off > 0) if (off == 1) ' &#183; the one mark for this locus sits outside it and is listed in the table below' else paste0(' &#183; all ', format(off, big.mark = ","), ' marks for genes at this locus sit outside it and are listed in the table below') else '', '</div>')))
     HTML(paste0('<div class="rv-stat"><b>', format(nrow(ev), big.mark = ","), '</b> of ',
       format(tot, big.mark = ","), ' evidence marks shown &#183; ',
-      length(unique(ev$gene)), ' genes &#183; ',
-      length(unique(ev$ctx)), ' cell types &#183; ',
-      length(unique(ev$mod)), ' modalities',
-      if (off > 0) paste0(' &#183; ', off,
-        ' further marks belong to genes outside this window and are listed in the table below')
+      length(unique(ev$gene)), if (length(unique(ev$gene)) == 1) ' gene &#183; ' else ' genes &#183; ',
+      length(unique(ev$ctx)), if (length(unique(ev$ctx)) == 1) ' cell type &#183; ' else ' cell types &#183; ',
+      length(unique(ev$mod)), if (length(unique(ev$mod)) == 1) ' modality' else ' modalities',
+      if (off > 0) paste0(' &#183; ', off, if (off == 1) ' further mark belongs to a gene outside this window and is listed in the table below' else ' further marks belong to genes outside this window and are listed in the table below')
       else '', '</div>'))
   })
 
