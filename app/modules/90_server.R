@@ -119,7 +119,7 @@ server <- function(input, output, session) {
   output$kpi_pct <- renderText({
     n <- nrow(locus_registry)
     k <- length(unique(dat$ADlocus[!is.na(dat$gene) & nzchar(as.character(dat$gene))]))
-    sprintf("%.0f%%", 100 * k / n)
+    sprintf("%.1f%%", 100 * k / n)
   })
   output$kpi_rows  <- renderText(fmt(nrow(dat)))
   output$kpi_loci  <- renderText(fmt(length(loci)))

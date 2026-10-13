@@ -837,7 +837,7 @@ ui <- page_navbar(
             div(div(class = "dc-count-n dc-mono", format(n_t1_t6, big.mark = ",")),
                 div(class = "dc-count-l", info("genes assigned T1-T6", "Genes with an evidence tier from T1 to T6 at one or more AD loci, as in the gene tier file in the Download tab. T6 genes have TWAS or MR evidence only."))),
             div(div(class = "dc-count-n dc-mono", textOutput("kpi_pct", inline = TRUE)),
-                div(class = "dc-count-l", info("loci with evidence", "Share of AD loci with at least one target gene supported by xQTL evidence."))),
+                div(class = "dc-count-l", info("loci with evidence", "Share of AD loci with at least one target gene supported by cis or trans xQTL evidence, including quantile QTL."))),
             div(div(class = "dc-count-n dc-mono", textOutput("kpi_trans", inline = TRUE)),
                 div(class = "dc-count-l", info("distinct trans pairs", "An AD locus and a target gene on another chromosome, linked by trans-xQTL evidence. Each pair counts once here; the Trans tab lists one row per supporting modality, so it shows more rows."))),
             div(div(class = "dc-count-n dc-mono", "263,893"),
