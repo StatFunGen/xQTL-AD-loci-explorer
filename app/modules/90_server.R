@@ -723,7 +723,9 @@ observeEvent(input$locus_prev, {
           tags$li(paste0("MR: ", .ev_state(r$mr_sig))),
           tags$li(paste0("cTWAS: ", .ev_state(r$ctwas_sig))),
           tags$li(if (tt %in% names(TIER_DEFS)) paste0("Tier definition: ", TIER_DEFS[[tt]]) else
-            "Tier: none. The prioritization lists this gene at the locus but did not assign it a tier.")))
+            if (!is.null(r$cis_trans) && identical(as.character(r$cis_trans), "trans"))
+              "Tier: none. This gene is linked to the locus through trans evidence, which the tiers do not score." else
+              "Tier: none. This gene has no record at this locus that the tier rules score.")))
     })
     div(class = "interp",
         div(class = "dc-kicker", "What this locus shows"),
@@ -741,7 +743,7 @@ observeEvent(input$locus_prev, {
     lead <- if (!is.na(i)) locus_registry$lead_rsid[i] else NA_character_
     ng   <- length(unique(stats::na.omit(d$gene[nzchar(d$gene)])))
     nv   <- length(unique(stats::na.omit(d$variant_ID)))
-    bt   <- as.character(sort(d$top_confidence)[1])
+    bt   <- as.character(sort(d$top_confidence[grepl("^T[1-6]$", d$top_confidence)])[1])
     bg   <- if (is.na(bt)) character(0) else sort(unique(stats::na.omit(
               d$gene[!is.na(d$top_confidence) & as.character(d$top_confidence) == bt &
                      !is.na(d$gene) & nzchar(d$gene)])))
@@ -1196,24 +1198,25 @@ observeEvent(input$locus_prev, {
       "Lead variant" = ifelse(is.na(t$lead) | t$lead == "", "<span class=\"lt-na\">&mdash;</span>",
                               paste0('<span class="dc-mono">', t$lead, '</span>')),
       "Best tier" = vapply(t$best, chip, character(1)),
-      "Top gene" = ifelse(is.na(t$top_gene), "<span class=\"lt-na\">&mdash;</span>",
+      "Highest-priority gene" = ifelse(is.na(t$top_gene), "<span class=\"lt-na\">&mdash;</span>",
                           paste0('<span class="dc-mono" style="font-weight:600">',
-                                 t$top_gene, '</span>')),
+                                 t$top_gene, '</span>',
+                                    ifelse(!is.na(t$n_tied) & t$n_tied > 0, paste0(' <span class="lt-co">+ ', t$n_tied, ' tied</span>'), ''))),
       "Cell types" = vapply(t$cells, lt_cells, character(1)),
       Modalities = ifelse(t$mods == "", "<span class=\"lt-na\">&mdash;</span>",
                           paste0('<span class="dc-mono" style="font-size:11.5px">',
                                  t$mods, '</span>')),
       Genes = t$n_genes,
-      Records = t$n_rows,
+      Rows = t$n_rows,
       "Evidence by tier" = vapply(seq_len(nrow(t)), function(i) lt_bar(t[i, ]), character(1)),
       check.names = FALSE, stringsAsFactors = FALSE)
       ## flag a top gene that is linked to the locus in trans, not cis
       if (!is.null(t$top_evidence)) {
         .tz <- !is.na(t$top_evidence) & t$top_evidence == "trans"
-        d[["Top gene"]][.tz] <- paste0(d[["Top gene"]][.tz], " <span class=\"tchip\" style=\"background:#6b7280;color:#fff\" title=\"This gene sits elsewhere in the genome; its link to the locus is trans\">trans</span>")
+        d[["Highest-priority gene"]][.tz] <- paste0(d[["Highest-priority gene"]][.tz], " <span class=\"tchip\" style=\"background:#6b7280;color:#fff\" title=\"This gene sits elsewhere in the genome; its link to the locus is trans\">trans</span>")
       }
     datatable(d, escape = FALSE, rownames = FALSE, selection = "single",
-      options = list(pageLength = 15, dom = "tip", autoWidth = FALSE,
+      options = list(pageLength = 15, dom = "tip", autoWidth = FALSE, headerCallback = hdr_js,
         columnDefs = list(list(className = "dt-right", targets = c(6, 7)),
                           list(orderable = FALSE, targets = c(4, 8)))))
   })

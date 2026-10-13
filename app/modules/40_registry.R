@@ -20,7 +20,7 @@ locus_registry <- dat %>%
     n_genes   = dplyr::n_distinct(gene[!is.na(gene) & gene != ""]),
     lead_rsid = {
       i <- which.max(ifelse(is.na(log10pval), -Inf, log10pval))
-      if (length(i)) as.character(rsid[i]) else NA_character_
+      if (length(i)) { r <- as.character(rsid[i]); if (is.na(r) || !nzchar(r)) as.character(variant_ID[i]) else r } else NA_character_
     },
     .groups = "drop") %>%
   dplyr::mutate(region = sprintf("%s:%.0f-%.0f", chr, start, end))
@@ -422,18 +422,21 @@ locus_table <- local({
     tv <- as.character(gu$top_confidence)
     k  <- match(tv, TIER_SEQ)
     best <- if (any(!is.na(k))) TIER_SEQ[min(k, na.rm = TRUE)] else NA_character_
-    top <- NA_character_
+    top <- NA_character_; n_tied <- 0L
     if (nrow(gu)) {
-      ord <- order(ifelse(is.na(k), 99L, k),
-                   -ifelse(is.na(gu$log10pval), -Inf, gu$log10pval))
-      top <- as.character(gu$gene[ord[1]])
+      gk <- tapply(match(as.character(g$top_confidence), TIER_SEQ), as.character(g$gene),
+                   function(v) if (all(is.na(v))) 99L else min(v, na.rm = TRUE))
+      gp <- tapply(ifelse(is.na(g$log10pval), -Inf, g$log10pval), as.character(g$gene), max)
+      ord <- order(gk, -gp)
+      top <- names(gk)[ord[1]]
+      n_tied <- sum(gk == gk[ord[1]] & gp == gp[ord[1]]) - 1L
     }
       ## Evidence behind the genes named at this locus. Judged on the genes,
       ## not the rows, so a locus whose only named genes come from trans
       ## reads "trans only".
       .gv <- if (!nrow(gu) || is.null(gu$cis_trans)) character(0) else unique(as.character(gu$cis_trans))
       ev  <- if (!length(.gv)) "no gene" else if (all(.gv == "trans")) "trans only" else if (all(.gv == "cis")) "cis only" else "cis + trans"
-      tev <- if (!nrow(gu) || is.null(gu$cis_trans)) NA_character_ else as.character(gu$cis_trans[ord[1]])
+      tev <- if (!nrow(gu) || is.null(gu$cis_trans)) NA_character_ else as.character(gu$cis_trans[match(top, gu$gene)])
     cts <- if (is.null(e)) character(0) else intersect(CTX_ORD, unique(e$ctx))
     mds <- if (is.null(e)) character(0) else intersect(MOD_ORD, unique(e$mod))
     tc  <- vapply(TIER_SEQ, function(tt) sum(tv == tt, na.rm = TRUE), integer(1))
@@ -444,6 +447,7 @@ locus_table <- local({
       lead    = as.character(locus_registry$lead_rsid[i]),
       best    = best,
       top_gene = top,
+      n_tied   = n_tied,
       cells   = paste(cts, collapse = ","),
       mods    = paste(mds, collapse = ", "),
       n_genes = nrow(gu),
