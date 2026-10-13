@@ -750,7 +750,7 @@ observeEvent(input$locus_prev, {
           tags$li(if (tt %in% names(TIER_DEFS)) paste0("Tier definition: ", TIER_DEFS[[tt]]) else
             if (!is.null(r$cis_trans) && identical(as.character(r$cis_trans), "trans"))
               "Tier: none. This gene is linked to the locus through trans evidence, which the tiers do not score." else
-              "Tier: none. This gene has no record at this locus that the tier rules score.")))
+              "Tier: none. Its only evidence comes from analyses the tier rules do not score: quantile QTL, APOE or sex interaction QTL, or multi-gene fine-mapping.")))
     })
     div(class = "interp",
         div(class = "dc-kicker", "What this locus shows"),
@@ -795,7 +795,7 @@ observeEvent(input$locus_prev, {
   output$locus_tbl <- renderDT({
     d <- dat[dat$ADlocus == selected_locus(), ]
     datatable(tibble(Gene = d$gene, rsID = d$rsid, Sig = sig_badge(d$significance),
-        Tier = conf_badge(d$top_confidence), `xQTL PIP` = round(d$xqtl_max_inclusion,3),
+        `Gene tier` = conf_badge(d$top_confidence), `xQTL PIP` = round(d$xqtl_max_inclusion,3),
         `TWAS z` = round(d$max_twas_z,2), `TWAS context` = d$max_twas_ctx, `Cell types` = d$ct_dots,
         `Ordered contexts` = ds_relabel(d$ordered_contexts)),
       escape = FALSE, rownames = FALSE, options = list(dom = "lrtip", pageLength = 15, scrollX = TRUE, headerCallback = hdr_js, columnDefs = link_defs(0, 1)),

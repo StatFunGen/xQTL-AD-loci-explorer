@@ -194,7 +194,6 @@ carry <- setdiff(carry, names(.trans_have))
               max_twas_z         = "twas_z_gene_max",
               max_twas_ctx       = "twas_z_gene_max_context",
               variant_rank       = "variant_rank_xqtl",
-              xqtl_max_inclusion = "max_variant_inclusion_probability",
               n_contexts         = "n_contexts")
 .rel_names <- names(fread(tier_file, nrows = 0))
 .rel_have  <- .rel_map[.rel_map %in% .rel_names]
@@ -257,6 +256,22 @@ if (length(.rel_have)) {
                                        function(k) sum(.nonblank(out[[k]])), integer(1))),
                         collapse = " ")))
 }
+
+## (C3b) xQTL PIP per variant and gene: the largest xQTL inclusion probability
+## across contexts (ColocBoost vcp where present, otherwise the fine-mapping PIP),
+## as gene_prio_utils.R computes it. The release's max_variant_inclusion_probability
+## is the AD-side value and must not fill this column.
+if ("variant_inclusion_probability_xqtl" %in% .rel_names) {
+  .xp <- fread(tier_file, select = c("variant_ID", "gene_name", "variant_inclusion_probability_xqtl"))
+  setnames(.xp, "gene_name", "gene")
+  .xp <- .xp[, .(xqtl_max_inclusion = suppressWarnings(max(variant_inclusion_probability_xqtl, na.rm = TRUE))),
+               by = .(variant_ID, gene)]
+  .xp[!is.finite(xqtl_max_inclusion), xqtl_max_inclusion := NA_real_]
+  if ("xqtl_max_inclusion" %in% names(out)) out[, xqtl_max_inclusion := NULL]
+  out <- merge(out, .xp, by = c("variant_ID", "gene"), all.x = TRUE)
+  message(sprintf("  (C3b) xQTL PIP from release: %d of %d pairs", sum(!is.na(out$xqtl_max_inclusion)), nrow(out)))
+} else warning("[release] no variant_inclusion_probability_xqtl; xqtl_max_inclusion left as carried",
+               call. = FALSE, immediate. = TRUE)
 
 out[, evidence_locus := "release"]
 ## (C6) ordered_contexts, read from the release rather than carried.

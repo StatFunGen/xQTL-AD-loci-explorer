@@ -19,7 +19,7 @@ AD locus evidence table,context,"One xQTL context for this variant and gene, as 
 AD locus evidence table,gene_id,Ensembl gene ID of the target gene.
 AD locus evidence table,trans_n_contexts_gene,Trans rows only: number of contexts in which this trans target gene was fine-mapped at this locus.
 AD locus evidence table,trans_source_contexts,"Trans rows only: those contexts, separated by |."
-AD locus evidence table,top_confidence,"Evidence tier of the target gene, T1 to T6; blank when the gene has no tier. Tiers are assigned per gene across the whole release: a gene linked to several loci carries the same tier at each."
+AD locus evidence table,top_confidence,"Evidence tier of the target gene, T1 to T6; blank when the gene has no tier, because it is linked only through trans evidence or its only evidence is quantile QTL, APOE or sex interaction QTL, or multi-gene fine-mapping. Tiers are assigned per gene across the whole release: a gene linked to several loci carries the same tier at each."
 AD locus evidence table,trans_genes,"Genes with a trans fine-mapping effect from this variant, highest PIP first, separated by |. Describes the variant, so it repeats on every gene row of that variant."
 AD locus evidence table,trans_contexts,"Contexts of those trans fine-mapping effects, separated by |."
 AD locus evidence table,trans_coverage,"Widest credible-set coverage (cs50, cs70 or cs95) for each gene in trans_genes, in the same order."
@@ -48,7 +48,7 @@ AD locus evidence table,ctwas_sig,TRUE when the gene is in the cTWAS results at 
 AD locus evidence table,max_twas_z,TWAS z-score of the gene from the context with its smallest TWAS p-value.
 AD locus evidence table,max_twas_ctx,The context that gave max_twas_z.
 AD locus evidence table,variant_rank,"Rank of this variant among the gene's xQTL variants at the locus, by xQTL inclusion probability; 1 is the highest."
-AD locus evidence table,xqtl_max_inclusion,"Same value as max_inclusion in this release, kept for compatibility."
+AD locus evidence table,xqtl_max_inclusion,"Largest xQTL inclusion probability for this variant and gene across contexts: the ColocBoost colocalization probability where present, otherwise the fine-mapping PIP. Blank when the pair's evidence carries neither (for example TWAS, quantile QTL or interaction results only)."
 AD locus evidence table,n_contexts,Number of distinct xQTL contexts supporting this variant and gene.
 AD locus evidence table,evidence_locus,Build bookkeeping: source of the locus and variant columns. Not shown in the explorer.
 AD locus evidence table,ordered_contexts,"Every supporting context group for this variant and gene, best tier first, separated by ;. Each entry is the group label, the sign of the conditional effect (. when absent) and of the colocalization coefficient where present, then (tier, n = number of contexts)."
