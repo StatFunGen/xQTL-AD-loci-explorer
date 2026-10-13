@@ -59,12 +59,12 @@ server <- function(input, output, session) {
     k <- match(as.character(r$top_confidence), paste0("T", 1:6)); k[is.na(k)] <- 99L
     bt <- tapply(k, as.character(r$ADlocus), min)
     if (length(bt) < 2) return(invisible())
-    lab <- function(l) if (!l %in% names(bt)) l else paste0(l, if (bt[[l]] < 99) paste0(" (T", bt[[l]], ")") else " (no tier)")
+    lab <- function(l) l
     oth <- setdiff(names(bt)[order(bt)], opened)
     links <- vapply(oth, function(l) sprintf(
       '<a href="#" onclick="Shiny.setInputValue(\'jump_locus\', \'%s\', {priority: \'event\'}); return false;">%s</a>', l, lab(l)), "")
     showNotification(HTML(sprintf(
-      "<b>%s</b> is linked to %d AD loci. Showing %s, where it has its best tier (ties go to the stronger GWAS signal). Also: %s",
+      "<b>%s</b> is linked to %d AD loci. Showing %s, the locus with its strongest GWAS signal. Also: %s",
       htmltools::htmlEscape(term), length(bt), lab(opened), paste(links, collapse = ", "))),
       duration = 15, type = "message")
   }
@@ -1112,6 +1112,7 @@ observeEvent(input$locus_prev, {
     content  = function(f) file.copy(path, f, overwrite = TRUE))
   output$dlf_browser <- .dl_file("data.csv", "AD_locus_evidence_20261002.csv")
   output$dlf_genepos <- .dl_file("gene_positions.csv", "gene_coordinates_GRCh38_20261002.csv")
+  output$dlf_dict    <- .dl_file("data_dictionary.csv", "AD_loci_data_dictionary_20261002.csv")
   ## locus summary is written from the loaded locus table so it always matches this release
   .locsum_df <- function() { t <- locus_table
     data.frame(AD_locus = t$ADlocus, region = t$region, chr = t$chr, lead_variant = t$lead, best_tier = t$best,
@@ -1804,7 +1805,7 @@ output$gp_matrix <- renderUI({
     cc <- ctx_cols(d$context)
     datatable(
     tibble(Gene = d$gene, Locus = d$ADlocus, rsID = d$rsid,
-           `Best tier (any context)` = as.character(d$top_confidence),
+           `Gene tier` = as.character(d$top_confidence),
            `Cell type or region` = cc$ctx, Dataset = cc$dset, Modality = cc$mod,
            `No. contexts` = d$n_contexts,
            `GWAS PIP` = round(d$max_inclusion, 3),

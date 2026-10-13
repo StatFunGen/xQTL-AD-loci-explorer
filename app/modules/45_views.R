@@ -279,7 +279,7 @@ panel_cell_types <- function() {
     div(class = "panel", style = "margin-top:18px",
         div(class = "dc-sechead",
             div(class = "dc-figt", "Evidence tiers in this cell type"),
-            div(class = "dc-figc", "Genes at each tier in this cell type, each counted once at its best tier here. Switch to Rows to count variant and target gene pairs instead.")),
+            div(class = "dc-figc", "Genes with evidence in this cell type, each counted once at its tier. Switch to Rows to count variant and target gene pairs instead.")),
         radioButtons("cty_unit", NULL, c("Genes" = "genes", "Rows" = "rows"), selected = "genes", inline = TRUE),
         withSpinner(plotOutput("cty_tier_plot", height = "210px"),
                     type = 8, color = "#2a78d6", size = 0.6),
@@ -287,7 +287,7 @@ panel_cell_types <- function() {
     div(class = "panel", style = "margin-top:20px",
         div(class = "dc-sechead",
             div(class = "dc-figt", "Gene records"),
-            div(class = "dc-figc", "One row per variant and target gene pair at an AD locus, with evidence in this cell type. The tier is the pair's best tier across all contexts; the Genes page shows the tier reached in each context.")),
+            div(class = "dc-figc", "One row per variant and target gene pair at an AD locus, with evidence in this cell type. The tier is the gene's tier across the whole release; the Genes page shows the tier reached in each context.")),
         withSpinner(DTOutput("cty_tbl"), type = 8, color = "#2a78d6", size = 0.6),
         div(class = "dc-exp", style = "margin-top:10px",
             downloadLink("dl_cty", "CSV", class = "dc-btn"))))
