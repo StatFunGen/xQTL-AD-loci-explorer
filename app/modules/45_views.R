@@ -79,6 +79,7 @@ CTX_MAP <- list(
   "ROSMAP_PCC_p_sQTL" = c("PCC", "ROSMAP", "sQTL", "ct_Brain_xQTL"),
   "ROSMAP_PCC_sQTL" = c("PCC", "ROSMAP", "sQTL", "ct_Brain_xQTL"),
   "ROSMAP_PCC_u_sQTL" = c("PCC", "ROSMAP", "sQTL", "ct_Brain_xQTL"),
+  "ROSMAP_snATAC_Kelis_Ast" = c("Astrocyte", "MIT", "caQTL", "ct_Ast_xQTL"),
   "STARNET_eQTL_Mac" = c("Macrophage", "STARNET", "eQTL", "ct_Bulk_Immune_xQTL"),
   "monocyte_ROSMAP_eQTL" = c("Monocyte", "ROSMAP", "eQTL", "ct_Bulk_Immune_xQTL"),
   ## transcriptomic pattern QTL (tpQTL), ROSMAP Torino factorisation. The
