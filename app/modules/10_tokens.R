@@ -27,7 +27,7 @@ trans_types <- c(
   "cis-eGene"   = "trans_n_genes",      # (kept generic label; counts below)
   "snRNA"       = "trans_snRNA_n_genes",
   "pQTL"        = "trans_pQTL_n_genes",
-  "glycoQTL"       = "trans_gpQTL_n_genes",
+  "glycoQTL"       = "trans_glycoQTL_n_genes",
   "Hotspot"     = "trans_hotspot_n_genes")
 
 # ---- citation identifiers for this release ---------------------------------

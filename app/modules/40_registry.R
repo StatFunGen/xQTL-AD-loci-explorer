@@ -208,7 +208,7 @@ trans_pairs <- local({
   ## never do. Hotspot stays out: its entries are program names rather than
   ## genes, so they have no position on the genome to draw an arc to.
   .tc  <- intersect(c("trans_genes", "trans_snRNA_genes", "trans_pQTL_genes",
-                      "trans_gpQTL_genes"), names(dat))
+                      "trans_glycoQTL_genes"), names(dat))
   .has <- Reduce(`|`, lapply(.tc, function(k)
             !is.na(dat[[k]]) & nzchar(trimws(as.character(dat[[k]])))))
   ## An arc starts at the variant position, so a cis gene was only ever the
@@ -216,9 +216,9 @@ trans_pairs <- local({
   d <- dat[.has & !is.na(dat$pos), , drop = FALSE]
   if (!nrow(d)) return(NULL)
   mods <- c(snRNA = "trans_snRNA_n_genes", pQTL = "trans_pQTL_n_genes",
-            glycoQTL = "trans_gpQTL_n_genes", Hotspot = "trans_hotspot_n_genes")
+            glycoQTL = "trans_glycoQTL_n_genes", Hotspot = "trans_hotspot_n_genes")
   gsets <- c(`Trans genes` = "trans_genes", snRNA = "trans_snRNA_genes",
-             pQTL = "trans_pQTL_genes", glycoQTL = "trans_gpQTL_genes")
+             pQTL = "trans_pQTL_genes", glycoQTL = "trans_glycoQTL_genes")
   gsets <- gsets[gsets %in% names(d)]
   parts <- lapply(seq_along(gsets), function(j) {
     vv <- as.character(d[[gsets[[j]]]]); vv[is.na(vv)] <- ""

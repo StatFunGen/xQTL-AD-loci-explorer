@@ -34,8 +34,8 @@ CTX_MAP <- list(
   "BM_44_MSBB_eQTL" = c("BM 44", "MSBB", "eQTL", "ct_Brain_xQTL"),
   "DLPFC_Bennett_pQTL" = c("DLPFC", "Bennett", "pQTL", "ct_Brain_xQTL"),
   "DLPFC_DeJager_eQTL" = c("DLPFC", "CUIMC1", "eQTL", "ct_Brain_xQTL"),
-  "DLPFC_Klein_gpQTL_adjusted" = c("DLPFC", "Klein", "glycoQTL", "ct_Brain_xQTL"),
-  "DLPFC_Klein_gpQTL_unadjusted" = c("DLPFC", "Klein", "glycoQTL", "ct_Brain_xQTL"),
+  "DLPFC_Klein_glycoQTL_adjusted" = c("DLPFC", "Klein", "glycoQTL", "ct_Brain_xQTL"),
+  "DLPFC_Klein_glycoQTL_unadjusted" = c("DLPFC", "Klein", "glycoQTL", "ct_Brain_xQTL"),
   ## transMap colocalization contexts; tissue is not recorded in the release metadata
   "protein_transmap" = c("transMap", "", "pQTL", "ct_Brain_xQTL"),
   "adjusted_glyco_transmap" = c("transMap", "", "glycoQTL", "ct_Brain_xQTL"),
@@ -120,7 +120,7 @@ ct_rows <- function(col) {
 ## below are cs95 throughout, so each row carries its credible-set coverage.
   mods <- c(eQTL  = "trans",
             snRNA = "trans_snRNA", pQTL = "trans_pQTL",
-            glycoQTL = "trans_gpQTL", Hotspot = "trans_hotspot")
+            glycoQTL = "trans_glycoQTL", Hotspot = "trans_hotspot")
   res <- list()
   for (m in names(mods)) {
     p  <- unname(mods[[m]])

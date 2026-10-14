@@ -449,7 +449,7 @@ output$p_trans <- renderPlot({
             tr("Trans genes", r$trans_genes, r$trans_contexts),
             tr("snRNA",  r$trans_snRNA_genes,  r$trans_snRNA_contexts),
             tr("pQTL",   r$trans_pQTL_genes,   r$trans_pQTL_contexts),
-            tr("glycoQTL",  r$trans_gpQTL_genes,  r$trans_gpQTL_contexts),
+            tr("glycoQTL",  r$trans_glycoQTL_genes,  r$trans_glycoQTL_contexts),
             tr("Hotspot",r$trans_hotspot_programs, r$trans_hotspot_contexts)
           )
         )))
@@ -811,7 +811,7 @@ observeEvent(input$locus_prev, {
     d <- dat[na_fill(dat$has_trans, FALSE), ]
     if (length(input$tmod)) {
       colmap <- c("Trans genes"="trans_n_genes","snRNA"="trans_snRNA_n_genes","pQTL"="trans_pQTL_n_genes",
-                  "glycoQTL"="trans_gpQTL_n_genes",
+                  "glycoQTL"="trans_glycoQTL_n_genes",
                   "Hotspot"="trans_hotspot_n_genes")
       keep <- rep(FALSE, nrow(d))
       for (m in input$tmod) {

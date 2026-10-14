@@ -25,9 +25,9 @@ AD locus evidence table,trans_contexts,"Contexts of those trans fine-mapping eff
 AD locus evidence table,trans_coverage,"Widest credible-set coverage (cs50, cs70 or cs95) for each gene in trans_genes, in the same order."
 AD locus evidence table,trans_n_genes,Number of genes in trans_genes.
 AD locus evidence table,trans_n_contexts,Number of contexts in trans_contexts.
-AD locus evidence table,trans_gpQTL_genes,"Glycoprotein (glycoQTL) trans targets of this variant, separated by |."
-AD locus evidence table,trans_gpQTL_contexts,Contexts of those glycoQTL trans effects.
-AD locus evidence table,trans_gpQTL_n_genes,Number of glycoQTL trans targets.
+AD locus evidence table,trans_glycoQTL_genes,"Glycoprotein (glycoQTL) trans targets of this variant, separated by |."
+AD locus evidence table,trans_glycoQTL_contexts,Contexts of those glycoQTL trans effects.
+AD locus evidence table,trans_glycoQTL_n_genes,Number of glycoQTL trans targets.
 AD locus evidence table,trans_pQTL_genes,"Protein (pQTL) trans targets of this variant, separated by |."
 AD locus evidence table,trans_pQTL_contexts,Contexts of those pQTL trans effects.
 AD locus evidence table,trans_pQTL_n_genes,Number of pQTL trans targets.

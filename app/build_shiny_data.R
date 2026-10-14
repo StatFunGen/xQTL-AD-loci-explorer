@@ -151,9 +151,9 @@ prev <- if (.have_prev) fread(prev_data) else data.table(variant_ID = character(
   trans_coverage         = "trans_coverage",
   trans_n_genes          = "n_trans_genes",
   trans_n_contexts       = "n_trans_contexts",
-  trans_gpQTL_genes      = "trans_genes_gpQTL",
-  trans_gpQTL_contexts   = "trans_contexts_gpQTL",
-  trans_gpQTL_n_genes    = "n_trans_genes_gpQTL",
+  trans_glycoQTL_genes      = "trans_genes_gpQTL",
+  trans_glycoQTL_contexts   = "trans_contexts_gpQTL",
+  trans_glycoQTL_n_genes    = "n_trans_genes_gpQTL",
   trans_pQTL_genes       = "trans_genes_pQTL",
   trans_pQTL_contexts    = "trans_contexts_pQTL",
   trans_pQTL_n_genes     = "n_trans_genes_pQTL",
@@ -391,7 +391,7 @@ if (file.exists(.cmeta)) {
 ## disagreements run the same way -- carried TRUE where every count is zero --
 ## which is the carry-forward staleness, not a second definition. Rows that
 ## were previously blank resolve to FALSE, which is what the definition gives.
-.tcc <- intersect(c("trans_n_genes", "trans_pQTL_n_genes", "trans_gpQTL_n_genes",
+.tcc <- intersect(c("trans_n_genes", "trans_pQTL_n_genes", "trans_glycoQTL_n_genes",
                     "trans_snRNA_n_genes", "trans_hotspot_n_genes"), names(out))
 .tot <- rowSums(sapply(.tcc, function(k) suppressWarnings(as.numeric(out[[k]]))),
                 na.rm = TRUE)
@@ -464,6 +464,12 @@ message("downstream prioritization script is re-run on this release.")
 ## Tier column and the contexts string agree.
 for (.c in intersect(c("ordered_contexts","xQTL_effects"), names(out)))
   out[, (.c) := gsub("\\(CL([0-9])", "(T\\1", get(.c))]
+
+## Glycoprotein QTL: the pipeline spells the modality gpQTL (column names and
+## context keys in the release); the app and the resource site call it glycoQTL.
+## Rename it in every text value here, so data.csv uses one spelling.
+for (.c in names(out)[vapply(out, is.character, logical(1))])
+  out[, (.c) := gsub("gpQTL", "glycoQTL", get(.c), fixed = TRUE)]
 
 fwrite(out, outfile)
 
