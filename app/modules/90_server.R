@@ -449,7 +449,7 @@ output$p_trans <- renderPlot({
             tr("Trans genes", r$trans_genes, r$trans_contexts),
             tr("snRNA",  r$trans_snRNA_genes,  r$trans_snRNA_contexts),
             tr("pQTL",   r$trans_pQTL_genes,   r$trans_pQTL_contexts),
-            tr("gpQTL",  r$trans_gpQTL_genes,  r$trans_gpQTL_contexts),
+            tr("glycoQTL",  r$trans_gpQTL_genes,  r$trans_gpQTL_contexts),
             tr("Hotspot",r$trans_hotspot_programs, r$trans_hotspot_contexts)
           )
         )))
@@ -811,7 +811,7 @@ observeEvent(input$locus_prev, {
     d <- dat[na_fill(dat$has_trans, FALSE), ]
     if (length(input$tmod)) {
       colmap <- c("Trans genes"="trans_n_genes","snRNA"="trans_snRNA_n_genes","pQTL"="trans_pQTL_n_genes",
-                  "gpQTL"="trans_gpQTL_n_genes",
+                  "glycoQTL"="trans_gpQTL_n_genes",
                   "Hotspot"="trans_hotspot_n_genes")
       keep <- rep(FALSE, nrow(d))
       for (m in input$tmod) {
@@ -1703,9 +1703,9 @@ output$gp_matrix <- renderUI({
     if (!is.null(d)) d <- d[!is.na(d$target) & nzchar(d$target), , drop = FALSE]
     if (is.null(d) || !nrow(d))
       return(div(class = "dc-note", "No trans pairs recorded in this release."))
-    mods <- intersect(c("Trans genes", "Transmap", "snRNA", "pQTL", "gpQTL", "Hotspot"), unique(d$modality))
+    mods <- intersect(c("Trans genes", "Transmap", "snRNA", "pQTL", "glycoQTL", "Hotspot"), unique(d$modality))
     cols <- c(`Trans genes` = "#c9b8e4", Transmap = "#eab3c3", snRNA = "#b3cff2", pQTL = "#f4bba6",
-              gpQTL = "#a9d8da", Hotspot = "#e8d09e")
+              glycoQTL = "#a9d8da", Hotspot = "#e8d09e")
     tot <- sort(vapply(split(d$target, d$locus), function(z) length(unique(z)), integer(1)), decreasing = TRUE)
     top <- names(tot)[seq_len(min(12, length(tot)))]
     mx  <- max(as.numeric(tot[top]))

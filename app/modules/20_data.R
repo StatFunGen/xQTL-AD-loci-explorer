@@ -1,5 +1,10 @@
 # ---- load & coerce ---------------------------------------------------------
 dat <- read_csv("data.csv", show_col_types = FALSE)
+# The release labels glycoprotein QTL as gpQTL inside ordered_contexts; the
+# app and the resource site call the modality glycoQTL. Only the display
+# token is renamed; column names and context keys keep the release spelling.
+dat$ordered_contexts <- gsub("(?<![A-Za-z_])gpQTL(?![A-Za-z_])", "glycoQTL",
+                             as.character(dat$ordered_contexts), perl = TRUE)
 dat <- dat %>% mutate(
   chr            = suppressWarnings(as.integer(chr)),
   # 214 rows carry no GWAS p-value. Without an explicit level they become NA

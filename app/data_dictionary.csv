@@ -25,9 +25,9 @@ AD locus evidence table,trans_contexts,"Contexts of those trans fine-mapping eff
 AD locus evidence table,trans_coverage,"Widest credible-set coverage (cs50, cs70 or cs95) for each gene in trans_genes, in the same order."
 AD locus evidence table,trans_n_genes,Number of genes in trans_genes.
 AD locus evidence table,trans_n_contexts,Number of contexts in trans_contexts.
-AD locus evidence table,trans_gpQTL_genes,"Glycoprotein (gpQTL) trans targets of this variant, separated by |."
-AD locus evidence table,trans_gpQTL_contexts,Contexts of those gpQTL trans effects.
-AD locus evidence table,trans_gpQTL_n_genes,Number of gpQTL trans targets.
+AD locus evidence table,trans_gpQTL_genes,"Glycoprotein (glycoQTL) trans targets of this variant, separated by |."
+AD locus evidence table,trans_gpQTL_contexts,Contexts of those glycoQTL trans effects.
+AD locus evidence table,trans_gpQTL_n_genes,Number of glycoQTL trans targets.
 AD locus evidence table,trans_pQTL_genes,"Protein (pQTL) trans targets of this variant, separated by |."
 AD locus evidence table,trans_pQTL_contexts,Contexts of those pQTL trans effects.
 AD locus evidence table,trans_pQTL_n_genes,Number of pQTL trans targets.
@@ -60,7 +60,7 @@ AD locus evidence table,ct_Inh_xQTL,TRUE when a supporting context of this varia
 AD locus evidence table,ct_Microglia_xQTL,TRUE when a supporting context of this variant and gene is microglia; blank when the pair has no context list.
 AD locus evidence table,ct_Oli_xQTL,TRUE when a supporting context of this variant and gene is oligodendrocyte; blank when the pair has no context list.
 AD locus evidence table,ct_OPC_xQTL,TRUE when a supporting context of this variant and gene is oligodendrocyte precursor cell; blank when the pair has no context list.
-AD locus evidence table,has_trans,"TRUE when the variant has any trans evidence (trans fine-mapping, pQTL, gpQTL, snRNA, hotspot or program results)."
+AD locus evidence table,has_trans,"TRUE when the variant has any trans evidence (trans fine-mapping, pQTL, glycoQTL, snRNA, hotspot or program results)."
 AD locus evidence table,evidence_gene,Build bookkeeping: source of the gene-level columns. Not shown in the explorer.
 AD locus evidence table,evidence_tier,"Build bookkeeping: source of top_confidence, or untiered. Not shown in the explorer."
 AD locus evidence table,cis_trans,cis for rows from cis xQTL evidence; trans for rows added for trans target genes.

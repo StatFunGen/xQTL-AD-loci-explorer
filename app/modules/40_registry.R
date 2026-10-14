@@ -216,9 +216,9 @@ trans_pairs <- local({
   d <- dat[.has & !is.na(dat$pos), , drop = FALSE]
   if (!nrow(d)) return(NULL)
   mods <- c(snRNA = "trans_snRNA_n_genes", pQTL = "trans_pQTL_n_genes",
-            gpQTL = "trans_gpQTL_n_genes", Hotspot = "trans_hotspot_n_genes")
+            glycoQTL = "trans_gpQTL_n_genes", Hotspot = "trans_hotspot_n_genes")
   gsets <- c(`Trans genes` = "trans_genes", snRNA = "trans_snRNA_genes",
-             pQTL = "trans_pQTL_genes", gpQTL = "trans_gpQTL_genes")
+             pQTL = "trans_pQTL_genes", glycoQTL = "trans_gpQTL_genes")
   gsets <- gsets[gsets %in% names(d)]
   parts <- lapply(seq_along(gsets), function(j) {
     vv <- as.character(d[[gsets[[j]]]]); vv[is.na(vv)] <- ""
@@ -269,7 +269,7 @@ trans_pairs <- local({
   out$x <- out$src_pos + chr_offsets$off[match(out$src_chr, chr_offsets$chr)]
   out$y <- out$tgt_pos + chr_offsets$off[match(out$tgt_chr, chr_offsets$chr)]
   out$modality <- factor(out$modality,
-                         levels = intersect(c("Trans genes", "snRNA", "pQTL", "gpQTL", "Hotspot", "Transmap"),
+                         levels = intersect(c("Trans genes", "snRNA", "pQTL", "glycoQTL", "Hotspot", "Transmap"),
                                             unique(out$modality)))
   out
 })
@@ -281,7 +281,7 @@ transmap_loci <- local({
   if (file.exists(f)) unique(as.character(read.csv(f, stringsAsFactors = FALSE)$ADlocus)) else character(0)
 })
 
-MOD_COL <- c(snRNA = "#2a78d6", pQTL = "#1baf7a", gpQTL = "#eda100", tpQTL = "#9c9a9c",
+MOD_COL <- c(snRNA = "#2a78d6", pQTL = "#1baf7a", glycoQTL = "#eda100", tpQTL = "#9c9a9c",
              Hotspot = "#da532c", unspecified = "#898781")
 
 trans_map_plot <- function(d, note_empty = "No trans pairs with mapped coordinates.") {
