@@ -151,9 +151,9 @@ prev <- if (.have_prev) fread(prev_data) else data.table(variant_ID = character(
   trans_coverage         = "trans_coverage",
   trans_n_genes          = "n_trans_genes",
   trans_n_contexts       = "n_trans_contexts",
-  trans_glycoQTL_genes      = "trans_genes_gpQTL",
-  trans_glycoQTL_contexts   = "trans_contexts_gpQTL",
-  trans_glycoQTL_n_genes    = "n_trans_genes_gpQTL",
+  trans_glycoQTL_genes      = "trans_genes_glycoQTL",
+  trans_glycoQTL_contexts   = "trans_contexts_glycoQTL",
+  trans_glycoQTL_n_genes    = "n_trans_genes_glycoQTL",
   trans_pQTL_genes       = "trans_genes_pQTL",
   trans_pQTL_contexts    = "trans_contexts_pQTL",
   trans_pQTL_n_genes     = "n_trans_genes_pQTL",
@@ -167,6 +167,10 @@ prev <- if (.have_prev) fread(prev_data) else data.table(variant_ID = character(
   trans_transmap_n_contexts = "n_transmap_contexts",
   trans_transmap_contexts   = "transmap_contexts")
 .rel_names  <- names(fread(tier_file, nrows = 1))
+## Releases built before the glycoQTL rename spell these columns gpQTL.
+.old_gp <- sub("glycoQTL", "gpQTL", .trans_map, fixed = TRUE)
+.use_old <- !(.trans_map %in% .rel_names) & .old_gp %in% .rel_names
+.trans_map[.use_old] <- .old_gp[.use_old]
 .trans_have <- .trans_map[.trans_map %in% .rel_names]
 if (length(.trans_have) < length(.trans_map))
   warning("[trans] release is missing: ",

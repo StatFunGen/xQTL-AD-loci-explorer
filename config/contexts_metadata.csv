@@ -52,8 +52,8 @@ bMic eQTL,bulk_microglia_eQTL,MiGA_GTS_eQTL,,MIGA_GTS,,bulk_microglia_eQTL,,#fae
 bMic eQTL,bulk_microglia_eQTL,MiGA_SVZ_eQTL,,MIGA_SVZ,,bulk_microglia_eQTL,,#fae1f9,black
 bMic eQTL,bulk_microglia_eQTL,MiGA_THA_eQTL,,MIGA_THA,,bulk_microglia_eQTL,,#fae1f9,black
 bMono eQTL,bulk_monocyte_eQTL,monocyte_ROSMAP_eQTL,ROSMAP_DeJager_eQTL_Monocyte,ROSMAP_Monocyte,ROSMAP_monocyte_eQTL,bulk_monocyte_eQTL,,#751c9c,white
-bulk gpQTL,bulk_brain_gpQTL,DLPFC_Klein_gpQTL_adjusted,ROSMAP_adjusted_gpQTL,DLPFC_Klein_gpQTL,,bulk_brain_gpQTL,,#4f4d4f,white
-bulk gpQTL,bulk_brain_gpQTL,DLPFC_Klein_gpQTL_unadjusted,ROSMAP_gpQTL,DLPFC_Klein_gpQTL_un,,bulk_brain_gpQTL,,#4f4d4f,white
+bulk glycoQTL,bulk_brain_glycoQTL,DLPFC_Klein_gpQTL_adjusted,ROSMAP_adjusted_gpQTL,DLPFC_Klein_gpQTL,,bulk_brain_glycoQTL,,#4f4d4f,white
+bulk glycoQTL,bulk_brain_glycoQTL,DLPFC_Klein_gpQTL_unadjusted,ROSMAP_gpQTL,DLPFC_Klein_gpQTL_un,,bulk_brain_glycoQTL,,#4f4d4f,white
 bulk haQTL,bulk_brain_haQTL,ROSMAP_DLPFC_haQTL,,haQTL,,bulk_brain_haQTL,,#6bfa6e,black
 bulk mQTL,bulk_brain_mQTL,KnightADRC_mQTL,,,,bulk_brain_mQTL,,#0d5218,white
 bulk mQTL,bulk_brain_mQTL,MSBB_mQTL,,,,bulk_brain_mQTL,,#0d5218,white

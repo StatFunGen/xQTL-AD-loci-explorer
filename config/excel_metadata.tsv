@@ -9,7 +9,7 @@ context_broad2	Mic	Microglia xQTL	#F7D7CD
 context_broad2	Immune (bulk)	Bulk Immune xQTL	#F2D4CE
 qtl_type	eQTL	eQTL	
 qtl_type	pQTL	pQTL	
-qtl_type	gpQTL	gpQTL	
+qtl_type	glycoQTL	glycoQTL	
 qtl_type	sQTL	sQTL	
 qtl_type	p_sQTL	p_sQTL	
 qtl_type	u_sQTL	u_sQTL	
