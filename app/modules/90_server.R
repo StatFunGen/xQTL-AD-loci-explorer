@@ -2149,11 +2149,11 @@ output$gp_matrix <- renderUI({
       suppressWarnings(readr::write_csv(d, f, append = TRUE, col_names = TRUE))
   }
   .cite_url <- function() {
-    ## Links point to the lab-site page, which passes the query on to the app.
+    ## Links point to the explorer's public address (EXPLORER_URL).
     v <- tryCatch(session$clientData$url_search, error = function(e) "")
     if (is.null(v)) v <- ""
     v <- sub("^[?]", "", v)
-    paste0("https://wanggroup.org/xQTL-AD-loci-explorer/", if (nzchar(v)) paste0("?", v) else "")
+    paste0(EXPLORER_URL, if (nzchar(v)) paste0("?", v) else "")
   }
 
   .man_txt <- paste0(
