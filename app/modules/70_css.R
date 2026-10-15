@@ -148,6 +148,8 @@ layout_css <- tags$style(HTML(paste0(
   ".gp-ext{margin-top:12px;padding-top:0;border-top:0}",
   ".tc-wrap > .bt-wrap{margin-top:0}",
   ".tc-wrap .dc-counts{margin-top:4px}",
+  ".tc-bar{align-items:flex-start}",
+  ".tc-wrap > :first-child{margin-top:0 !important;padding-top:0 !important;border-top:0 !important}",
   ".dl-body > .ql-sec{margin-top:0;padding-top:0;border-top:0}",
   ".dl-body > .dl-wrap{margin-top:28px}",
   "@media (min-width:821px){",
