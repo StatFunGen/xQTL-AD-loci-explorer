@@ -1439,6 +1439,28 @@ ui <- page_navbar(
       p("Locus labels such as chr17_57 are numbered within this release and can change between ",
         "releases. The Locus detail tab therefore leads with genomic coordinates and shows the ",
         "label only as a footnote.")),
+    div(class = "doc-sec", id = "doc-assignment-to-loci", h2(class = "doc-h", "How genes and variants are assigned to AD loci"),
+      local({
+        gl <- unique(dat[!is.na(dat$gene) & nzchar(dat$gene), c("gene", "ADlocus")])
+        gt <- table(gl$gene)
+        n_single <- sum(locus_registry$start == locus_registry$end, na.rm = TRUE)
+        tagList(
+          p("Each variant belongs to one locus. The 7,618 variants of this release appear once each across the ",
+            nrow(locus_registry), " loci. A variant enters a locus when it is in a 95% credible set or a ",
+            "colocalization event and reaches p-value 1e-5 or smaller."),
+          p("A locus spans the GRCh38 positions (1-based) from the smallest to the largest variant it holds in the ",
+            "evidence table, so neighboring loci can overlap in coordinates. ", n_single, " loci hold a single ",
+            "variant position, and their start equals their end."),
+          p("A gene is linked to a locus when xQTL evidence for the gene includes a variant inside the locus, ",
+            "cis or trans. TWAS, MR and cTWAS results are gene-level, so a gene with those results is linked to the ",
+            "loci it already has from xQTL evidence. A gene can be linked to several loci (",
+            sum(gt > 1), " of ", length(gt), " genes in this release); a variant cannot. Distance to the gene is ",
+            "not used to assign a gene to a locus."))
+      }),
+      p(class = "note",
+        "Data release ", DATA_RELEASE, ", genome build ", GENOME_BUILD, ". The reference files on the Download ",
+        "page list every locus, gene and variant with these assignments, and each new release comes with ",
+        "updated files.")),
     div(class = "doc-sec", id = "doc-evidence-tiers", h2(class = "doc-h", "Evidence tiers"),
       p("Tiers are set for each variant, target gene and context, and a gene takes its best one across the whole release, ",
         "so a gene linked to several loci shows the same tier at each. ",
