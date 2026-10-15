@@ -140,7 +140,7 @@ fig_js <- tags$script(HTML("(function(){function AON(ev,fn){if(window.jQuery){wi
 # Layout fixes: headings focused on tab change show no outline; page bodies share
 # the padded tc-wrap band; the Loci filter bar and the gene header fit their width.
 layout_css <- tags$style(HTML(paste0(
-  "h1[tabindex='-1']:focus,h2[tabindex='-1']:focus,h1[tabindex='-1']:focus-visible,h2[tabindex='-1']:focus-visible{outline:none !important;box-shadow:none !important}",
+  "[tabindex='-1']:focus,[tabindex='-1']:focus-visible{outline:none !important;box-shadow:none !important}",
   ".navbar .nav-link{white-space:nowrap}",
   "#gp_head{flex:1 1 560px;min-width:0;display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px 28px}",
   "#gp_head .gp-h{flex:1 1 420px}",
