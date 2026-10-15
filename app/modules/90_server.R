@@ -77,13 +77,14 @@ server <- function(input, output, session) {
     lnk <- function(l) if (identical(l, loc)) tags$b(l) else
       tags$a(href = "#", l, onclick = sprintf(
         "Shiny.setInputValue('jump_locus', '%s', {priority: 'event'}); return false;", l))
-    items <- lapply(gn$loci, lnk)
-    sep <- rep(list(" \u00b7 "), length(items))
+    items <- list()
+    for (j in seq_along(gn$loci))
+      items <- c(items, if (j > 1) list(" \u00b7 "), list(lnk(gn$loci[j])))
     div(class = "gene-note",
       tags$b(gn$gene), sprintf(" is linked to %d AD loci. ", length(gn$loci)),
       if (identical(loc, gn$opened))
         "This page shows the one with the most evidence for it. " else NULL,
-      "Loci: ", do.call(tagList, head(as.vector(rbind(items, sep)), -1)))
+      "Loci: ", do.call(tagList, items))
   })
   observeEvent(input$jump_locus, {
     selected_locus(input$jump_locus)
