@@ -87,11 +87,11 @@ pretty_region <- function(r) {
 # Compact keys shown next to the tables, so the tier scale and the evidence
 # states can be read without opening the methods page.
 TIER_DEFS <- c(
-  T1 = "Localized xQTL support plus MR, causal TWAS or multi-context causal TWAS",
-  T2 = "Multi-trait colocalization plus MR or causal TWAS",
-  T3 = "Localized support plus TWAS",
-  T4 = "Localized support alone",
-  T5 = "Additional localized evidence, including credible sets at 50% or 70% coverage",
+  T1 = "MR or cTWAS support, plus fine-mapping overlap: an AD variant inside a 95% xQTL credible set",
+  T2 = "MR or cTWAS support, plus AD-xQTL colocalization (no fine-mapping overlap needed)",
+  T3 = "TWAS support, plus fine-mapping overlap or AD-xQTL colocalization",
+  T4 = "Fine-mapping overlap alone, without TWAS, MR or cTWAS support",
+  T5 = "Suggestive localized evidence: other colocalization, multi-context fine-mapping, or credible sets at 50% or 70% coverage",
   T6 = "TWAS or MR evidence only, without localized AD-xQTL support")
 
 tier_key <- function() {

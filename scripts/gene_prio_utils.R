@@ -297,9 +297,9 @@ SummarizeTable<-function(res_adx,
   res_adx[order(-have_trans_effect,-PIP),trans_contexts_pQTL:=paste(unique(context[Method=='trans_pQTL'&context!='']),collapse = '|'),by=.(variant_ID)]
   
   #gpqtl
-  res_adx[order(-have_trans_effect,-PIP),n_trans_genes_gpQTL:=length(unique(gene_name[Method=='trans_gpQTL'&gene_name!=''])),by=.(variant_ID)]
-  res_adx[order(-have_trans_effect,-PIP),trans_genes_gpQTL:=paste(unique(gene_name[Method=='trans_gpQTL'&gene_name!='']),collapse = '|'),by=.(variant_ID)]
-  res_adx[order(-have_trans_effect,-PIP),trans_contexts_gpQTL:=paste(unique(context[Method=='trans_gpQTL'&context!='']),collapse = '|'),by=.(variant_ID)]
+  res_adx[order(-have_trans_effect,-PIP),n_trans_genes_glycoQTL:=length(unique(gene_name[Method=='trans_glycoQTL'&gene_name!=''])),by=.(variant_ID)]
+  res_adx[order(-have_trans_effect,-PIP),trans_genes_glycoQTL:=paste(unique(gene_name[Method=='trans_glycoQTL'&gene_name!='']),collapse = '|'),by=.(variant_ID)]
+  res_adx[order(-have_trans_effect,-PIP),trans_contexts_glycoQTL:=paste(unique(context[Method=='trans_glycoQTL'&context!='']),collapse = '|'),by=.(variant_ID)]
   
   #programs based
   res_adx[Method=='trans_cca']$event_ID
@@ -429,7 +429,7 @@ WideTable<-function(res_adx,split.by=c('context_broad2','qtl_type')){
     }
     
     
-    if(unique(res$qtl_type)=='gpQTL'){
+    if(unique(res$qtl_type)=='glycoQTL'){
       res[order(-ifelse(is.na(vcp),PIP,vcp)),glyco_changes:=paste(unique(str_extract(event_ID[context==max_dataset[1]][1],'(un)adjusted_gp_[0-9]+')),collapse = '|'),by=c('variant_ID','gene_ID')]
       
     }

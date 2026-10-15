@@ -37,7 +37,7 @@ server <- function(input, output, session) {
       parts[[k]] <- if (!length(v)) "none" else paste(if (k == "locus") loci_to_regions(v) else v, collapse = ",")
     }
     if (!is.null(input$q) && nzchar(input$q))            parts$q <- input$q
-    if (!is.null(input$gp_gene) && nzchar(input$gp_gene)) parts$gene <- input$gp_gene
+    if (!is.null(input$gp_gene) && nzchar(input$gp_gene) && !identical(input$gp_gene, .gp_default)) parts$gene <- input$gp_gene
     if (!is.null(input$minlp) && input$minlp > 0)        parts$minlp <- input$minlp
     if (isTRUE(input$transonly))                         parts$transonly <- "1"
     # locus is serialised separately below, as stable keys
@@ -50,6 +50,27 @@ server <- function(input, output, session) {
              sub("^\\?", "", locus_to_query(selected_locus())) else ""
     .all <- c(.lq, qs); .all <- paste(.all[nzchar(.all)], collapse = "&")
     updateQueryString(if (nzchar(.all)) paste0("?", .all) else "?", mode = "replace")
+  })
+
+  .other_loci_note <- function(term, kind, opened) {
+    if (!identical(as.character(kind), "gene")) return(invisible())
+    r <- dat[!is.na(dat$gene) & toupper(dat$gene) == toupper(term), c("ADlocus", "top_confidence"), drop = FALSE]
+    if (!nrow(r)) return(invisible())
+    k <- match(as.character(r$top_confidence), paste0("T", 1:6)); k[is.na(k)] <- 99L
+    bt <- tapply(k, as.character(r$ADlocus), min)
+    if (length(bt) < 2) return(invisible())
+    lab <- function(l) l
+    oth <- setdiff(names(bt)[order(bt)], opened)
+    links <- vapply(oth, function(l) sprintf(
+      '<a href="#" onclick="Shiny.setInputValue(\'jump_locus\', \'%s\', {priority: \'event\'}); return false;">%s</a>', l, lab(l)), "")
+    showNotification(HTML(sprintf(
+      "<b>%s</b> is linked to %d AD loci. Showing %s, the locus with its strongest GWAS signal. Also: %s",
+      htmltools::htmlEscape(term), length(bt), lab(opened), paste(links, collapse = ", "))),
+      duration = 15, type = "message")
+  }
+  observeEvent(input$jump_locus, {
+    selected_locus(input$jump_locus)
+    nav_select("nav", "Locus detail", session = session)
   })
 
   # ---- Home search ----------------------------------------------------------
@@ -70,7 +91,7 @@ server <- function(input, output, session) {
     }
     i <- match(input$hero_search, search_index$value)
     if (!is.na(i)) {
-      selected_locus(search_index$ADlocus[i])
+      selected_locus(search_index$ADlocus[i]); .other_loci_note(search_index$term[i], search_index$kind[i], search_index$ADlocus[i])
       updateTextInput(session, "q", value = search_index$term[i])
       nav_select("nav", "Locus detail", session = session)
       return(invisible())
@@ -86,7 +107,7 @@ server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$gp_clear, {
-    updateSelectizeInput(session, "gp_gene", choices = genes, selected = "", server = TRUE)
+    updateSelectizeInput(session, "gp_gene", choices = .gene_choices(genes), options = .gene_opts, selected = "", server = TRUE)
   })
 
   observeEvent(input$go_explore, nav_select("nav", "Loci", session = session))
@@ -98,7 +119,7 @@ server <- function(input, output, session) {
   output$kpi_pct <- renderText({
     n <- nrow(locus_registry)
     k <- length(unique(dat$ADlocus[!is.na(dat$gene) & nzchar(as.character(dat$gene))]))
-    sprintf("%.0f%%", 100 * k / n)
+    sprintf("%.1f%%", 100 * k / n)
   })
   output$kpi_rows  <- renderText(fmt(nrow(dat)))
   output$kpi_loci  <- renderText(fmt(length(loci)))
@@ -387,6 +408,8 @@ output$p_trans <- renderPlot({
     g <- gene_summary()
     req(!is.null(g), i <= nrow(g))
     updateTextInput(session, "q", value = g$Gene[i])
+    updateSelectizeInput(session, "gp_gene", choices = .gene_choices(genes), options = .gene_opts,
+                         selected = g$Gene[i], server = TRUE)
     updateRadioButtons(session, "view_mode", selected = "variant")
   })
 
@@ -426,7 +449,7 @@ output$p_trans <- renderPlot({
             tr("Trans genes", r$trans_genes, r$trans_contexts),
             tr("snRNA",  r$trans_snRNA_genes,  r$trans_snRNA_contexts),
             tr("pQTL",   r$trans_pQTL_genes,   r$trans_pQTL_contexts),
-            tr("gpQTL",  r$trans_gpQTL_genes,  r$trans_gpQTL_contexts),
+            tr("glycoQTL",  r$trans_glycoQTL_genes,  r$trans_glycoQTL_contexts),
             tr("Hotspot",r$trans_hotspot_programs, r$trans_hotspot_contexts)
           )
         )))
@@ -503,14 +526,13 @@ output$p_trans <- renderPlot({
     e   <- locus_ev()
     ev  <- if (is.null(e) || !nrow(e)) a[0, , drop = FALSE] else e[e$inwin, , drop = FALSE]
     tot <- sum(a$inwin); off <- sum(!a$inwin)
-    if (tot == 0) return(HTML(paste0('<div class="rv-stat">No evidence marks fall inside the plotted window', if (off > 0) paste0(' &#183; all ', format(off, big.mark = ","), ' marks for genes at this locus sit outside it and are listed in the table below') else '', '</div>')))
+    if (tot == 0) return(HTML(paste0('<div class="rv-stat">No evidence marks fall inside the plotted window', if (off > 0) if (off == 1) ' &#183; the one mark for this locus sits outside it and is listed in the table below' else paste0(' &#183; all ', format(off, big.mark = ","), ' marks for genes at this locus sit outside it and are listed in the table below') else '', '</div>')))
     HTML(paste0('<div class="rv-stat"><b>', format(nrow(ev), big.mark = ","), '</b> of ',
       format(tot, big.mark = ","), ' evidence marks shown &#183; ',
-      length(unique(ev$gene)), ' genes &#183; ',
-      length(unique(ev$ctx)), ' cell types &#183; ',
-      length(unique(ev$mod)), ' modalities',
-      if (off > 0) paste0(' &#183; ', off,
-        ' further marks belong to genes outside this window and stay in the table below')
+      length(unique(ev$gene)), if (length(unique(ev$gene)) == 1) ' gene &#183; ' else ' genes &#183; ',
+      length(unique(ev$ctx)), if (length(unique(ev$ctx)) == 1) ' cell type &#183; ' else ' cell types &#183; ',
+      length(unique(ev$mod)), if (length(unique(ev$mod)) == 1) ' modality' else ' modalities',
+      if (off > 0) paste0(' &#183; ', off, if (off == 1) ' further mark belongs to a gene outside this window and is listed in the table below' else ' further marks belong to genes outside this window and are listed in the table below')
       else '', '</div>'))
   })
 
@@ -692,17 +714,18 @@ observeEvent(input$locus_prev, {
       "No target gene is recorded at this locus in this release."))
     gt <- vapply(g, function(x) .gene_tier(d, x), character(1))
     ok <- !is.na(gt)
-    best <- if (any(ok)) sort(gt[ok])[1] else NA_character_
+    has_t <- ok & gt != NO_TIER
+    best <- if (any(has_t)) sort(gt[has_t])[1] else NA_character_
     bg <- g[ok & gt == best]
     i <- match(loc, locus_registry$ADlocus)
     lead <- if (!is.na(i)) locus_registry$lead_rsid[i] else NA_character_
     subj <- if (!is.na(lead)) lead else loc
     s1 <- paste0(subj, " is linked to ", length(g), if (length(g) == 1L) " target gene at " else " target genes at ", loc, ".")
-    s2 <- if (is.na(best)) "No gene at this locus has an assigned tier." else
+    s2 <- if (is.na(best)) "No gene at this locus has a tier assignment in this release." else
             paste0(paste(bg, collapse = " and "),
                    if (length(bg) == 1L) " has " else " have ",
                    if (identical(best, "T6")) "T6 support, meaning TWAS or MR evidence without localized AD-xQTL support."
-                   else paste0("localized ", best, " support."))
+                   else paste0("tier ", best, ", its best tier in this release."))
     t6 <- g[ok & gt == "T6"]
     t6 <- setdiff(t6, bg)
     s3 <- if (!length(t6)) "" else
@@ -713,15 +736,20 @@ observeEvent(input$locus_prev, {
     led <- lapply(g[ok], function(x) {
       r <- d[!is.na(d$gene) & d$gene == x, , drop = FALSE][1, , drop = FALSE]
       tt <- .gene_tier(d, x)
-      loc_sup <- if (identical(tt, "T6")) "no" else "yes"
+      loc_sup <- if (identical(tt, "T6")) "no" else if (identical(tt, NO_TIER)) {
+        if (!is.null(r$cis_trans) && identical(as.character(r$cis_trans), "trans")) "no (trans only)" else "not scored"
+      } else "yes"
       tags$details(class = "led",
-        tags$summary(paste0("Why is ", x, " ", tt, "?")),
+        tags$summary(if (identical(tt, NO_TIER)) paste0("Why does ", x, " have no tier?") else paste0("Why is ", x, " ", tt, "?")),
         tags$ul(
           tags$li(paste0("Localized AD-xQTL support: ", loc_sup)),
           tags$li(paste0("TWAS: ", .ev_state(r$twas_sig))),
           tags$li(paste0("MR: ", .ev_state(r$mr_sig))),
           tags$li(paste0("cTWAS: ", .ev_state(r$ctwas_sig))),
-          tags$li(paste0("Tier definition: ", if (tt %in% names(TIER_DEFS)) TIER_DEFS[[tt]] else "not defined"))))
+          tags$li(if (tt %in% names(TIER_DEFS)) paste0("Tier definition: ", TIER_DEFS[[tt]]) else
+            if (!is.null(r$cis_trans) && identical(as.character(r$cis_trans), "trans"))
+              "Tier: none. This gene is linked to the locus through trans evidence, which the tiers do not score." else
+              "Tier: none. Its only evidence comes from analyses the tier rules do not score: quantile QTL, APOE or sex interaction QTL, or multi-gene fine-mapping.")))
     })
     div(class = "interp",
         div(class = "dc-kicker", "What this locus shows"),
@@ -739,7 +767,7 @@ observeEvent(input$locus_prev, {
     lead <- if (!is.na(i)) locus_registry$lead_rsid[i] else NA_character_
     ng   <- length(unique(stats::na.omit(d$gene[nzchar(d$gene)])))
     nv   <- length(unique(stats::na.omit(d$variant_ID)))
-    bt   <- as.character(sort(d$top_confidence)[1])
+    bt   <- as.character(sort(d$top_confidence[grepl("^T[1-6]$", d$top_confidence)])[1])
     bg   <- if (is.na(bt)) character(0) else sort(unique(stats::na.omit(
               d$gene[!is.na(d$top_confidence) & as.character(d$top_confidence) == bt &
                      !is.na(d$gene) & nzchar(d$gene)])))
@@ -766,7 +794,7 @@ observeEvent(input$locus_prev, {
   output$locus_tbl <- renderDT({
     d <- dat[dat$ADlocus == selected_locus(), ]
     datatable(tibble(Gene = d$gene, rsID = d$rsid, Sig = sig_badge(d$significance),
-        Tier = conf_badge(d$top_confidence), `xQTL PIP` = round(d$xqtl_max_inclusion,3),
+        `Gene tier` = conf_badge(d$top_confidence), `xQTL PIP` = round(d$xqtl_max_inclusion,3),
         `TWAS z` = round(d$max_twas_z,2), `TWAS context` = d$max_twas_ctx, `Cell types` = d$ct_dots,
         `Ordered contexts` = ds_relabel(d$ordered_contexts)),
       escape = FALSE, rownames = FALSE, options = list(dom = "lrtip", pageLength = 15, scrollX = TRUE, headerCallback = hdr_js, columnDefs = link_defs(0, 1)),
@@ -783,7 +811,7 @@ observeEvent(input$locus_prev, {
     d <- dat[na_fill(dat$has_trans, FALSE), ]
     if (length(input$tmod)) {
       colmap <- c("Trans genes"="trans_n_genes","snRNA"="trans_snRNA_n_genes","pQTL"="trans_pQTL_n_genes",
-                  "gpQTL"="trans_gpQTL_n_genes",
+                  "glycoQTL"="trans_glycoQTL_n_genes",
                   "Hotspot"="trans_hotspot_n_genes")
       keep <- rep(FALSE, nrow(d))
       for (m in input$tmod) {
@@ -976,7 +1004,7 @@ observeEvent(input$locus_prev, {
       showNotification(sprintf("%s is not in this release.", term), type = "message", duration = 4)
       return(invisible())
     }
-    selected_locus(search_index$ADlocus[i])
+    selected_locus(search_index$ADlocus[i]); .other_loci_note(search_index$term[i], search_index$kind[i], search_index$ADlocus[i])
     updateTextInput(session, "q", value = term)
     nav_select("nav", "Locus detail", session = session)
   }
@@ -1085,6 +1113,7 @@ observeEvent(input$locus_prev, {
     content  = function(f) file.copy(path, f, overwrite = TRUE))
   output$dlf_browser <- .dl_file("data.csv", "AD_locus_evidence_20261002.csv")
   output$dlf_genepos <- .dl_file("gene_positions.csv", "gene_coordinates_GRCh38_20261002.csv")
+  output$dlf_dict    <- .dl_file("data_dictionary.csv", "AD_loci_data_dictionary_20261002.csv")
   ## locus summary is written from the loaded locus table so it always matches this release
   .locsum_df <- function() { t <- locus_table
     data.frame(AD_locus = t$ADlocus, region = t$region, chr = t$chr, lead_variant = t$lead, best_tier = t$best,
@@ -1194,24 +1223,25 @@ observeEvent(input$locus_prev, {
       "Lead variant" = ifelse(is.na(t$lead) | t$lead == "", "<span class=\"lt-na\">&mdash;</span>",
                               paste0('<span class="dc-mono">', t$lead, '</span>')),
       "Best tier" = vapply(t$best, chip, character(1)),
-      "Top gene" = ifelse(is.na(t$top_gene), "<span class=\"lt-na\">&mdash;</span>",
+      "Highest-priority gene" = ifelse(is.na(t$top_gene), "<span class=\"lt-na\">&mdash;</span>",
                           paste0('<span class="dc-mono" style="font-weight:600">',
-                                 t$top_gene, '</span>')),
+                                 t$top_gene, '</span>',
+                                    ifelse(!is.na(t$n_tied) & t$n_tied > 0, paste0(' <span class="lt-co">+ ', t$n_tied, ' tied</span>'), ''))),
       "Cell types" = vapply(t$cells, lt_cells, character(1)),
       Modalities = ifelse(t$mods == "", "<span class=\"lt-na\">&mdash;</span>",
                           paste0('<span class="dc-mono" style="font-size:11.5px">',
                                  t$mods, '</span>')),
       Genes = t$n_genes,
-      Records = t$n_rows,
+      Rows = t$n_rows,
       "Evidence by tier" = vapply(seq_len(nrow(t)), function(i) lt_bar(t[i, ]), character(1)),
       check.names = FALSE, stringsAsFactors = FALSE)
       ## flag a top gene that is linked to the locus in trans, not cis
       if (!is.null(t$top_evidence)) {
         .tz <- !is.na(t$top_evidence) & t$top_evidence == "trans"
-        d[["Top gene"]][.tz] <- paste0(d[["Top gene"]][.tz], " <span class=\"tchip\" style=\"background:#6b7280;color:#fff\" title=\"This gene sits elsewhere in the genome; its link to the locus is trans\">trans</span>")
+        d[["Highest-priority gene"]][.tz] <- paste0(d[["Highest-priority gene"]][.tz], " <span class=\"tchip\" style=\"background:#6b7280;color:#fff\" title=\"This gene sits elsewhere in the genome; its link to the locus is trans\">trans</span>")
       }
     datatable(d, escape = FALSE, rownames = FALSE, selection = "single",
-      options = list(pageLength = 15, dom = "tip", autoWidth = FALSE,
+      options = list(pageLength = 15, dom = "tip", autoWidth = FALSE, headerCallback = hdr_js,
         columnDefs = list(list(className = "dt-right", targets = c(6, 7)),
                           list(orderable = FALSE, targets = c(4, 8)))))
   })
@@ -1276,8 +1306,8 @@ observeEvent(input$locus_prev, {
     })
 
   observe({
-    updateSelectizeInput(session, "gp_gene", choices = genes,
-                         selected = isolate(input$gp_gene), server = TRUE)
+    updateSelectizeInput(session, "gp_gene", choices = .gene_choices(genes), options = .gene_opts,
+                         selected = { .s <- isolate(input$gp_gene); if (is.null(.s) || !nzchar(.s)) .gp_default else .s }, server = TRUE)
   })
 
   gp_rows <- reactive({
@@ -1673,9 +1703,9 @@ output$gp_matrix <- renderUI({
     if (!is.null(d)) d <- d[!is.na(d$target) & nzchar(d$target), , drop = FALSE]
     if (is.null(d) || !nrow(d))
       return(div(class = "dc-note", "No trans pairs recorded in this release."))
-    mods <- intersect(c("Trans genes", "Transmap", "snRNA", "pQTL", "gpQTL", "Hotspot"), unique(d$modality))
+    mods <- intersect(c("Trans genes", "Transmap", "snRNA", "pQTL", "glycoQTL", "Hotspot"), unique(d$modality))
     cols <- c(`Trans genes` = "#c9b8e4", Transmap = "#eab3c3", snRNA = "#b3cff2", pQTL = "#f4bba6",
-              gpQTL = "#a9d8da", Hotspot = "#e8d09e")
+              glycoQTL = "#a9d8da", Hotspot = "#e8d09e")
     tot <- sort(vapply(split(d$target, d$locus), function(z) length(unique(z)), integer(1)), decreasing = TRUE)
     top <- names(tot)[seq_len(min(12, length(tot)))]
     mx  <- max(as.numeric(tot[top]))
@@ -1740,8 +1770,17 @@ output$gp_matrix <- renderUI({
         .cnt(length(unique(na.omit(d$context))), "contexts"))
   })
 
-  .tier_bar <- function(d) {
+  .unit <- function(x) if (is.null(x)) "genes" else x
+  .by_unit <- function(d, unit) {
+    if (!identical(unit, "genes") || is.null(d) || !nrow(d)) return(d)
+    d <- d[!is.na(d$gene) & nzchar(as.character(d$gene)), , drop = FALSE]
+    k <- match(as.character(d$top_confidence), paste0("T", 1:6)); k[is.na(k)] <- 99L
+    d <- d[order(k), , drop = FALSE]
+    d[!duplicated(d$gene), , drop = FALSE]
+  }
+  .tier_bar <- function(d, unit = "genes") {
     if (is.null(d) || !nrow(d)) return(NULL)
+    d <- .by_unit(d, unit)
     tb <- as.data.frame(table(factor(as.character(d$top_confidence), levels = .lv)),
                         stringsAsFactors = FALSE)
     names(tb) <- c("tier", "n")
@@ -1761,13 +1800,13 @@ output$gp_matrix <- renderUI({
             panel.background = element_rect(fill = "#ffffff", colour = NA))
   }
 
-  output$cty_tier_plot <- renderPlot(.tier_bar(cty_d()), res = 96)
+  output$cty_tier_plot <- renderPlot(.tier_bar(cty_d(), .unit(input$cty_unit)), res = 96)
 
   .rec_tbl <- function(d) {
     cc <- ctx_cols(d$context)
     datatable(
     tibble(Gene = d$gene, Locus = d$ADlocus, rsID = d$rsid,
-           Tier = as.character(d$top_confidence),
+           `Gene tier` = as.character(d$top_confidence),
            `Cell type or region` = cc$ctx, Dataset = cc$dset, Modality = cc$mod,
            `No. contexts` = d$n_contexts,
            `GWAS PIP` = round(d$max_inclusion, 3),
@@ -1844,7 +1883,7 @@ output$gp_matrix <- renderUI({
                 f, "batch list, one row per entry")
     })
 
-  output$bt_tier_plot <- renderPlot(.tier_bar(bt_r()), res = 96)
+  output$bt_tier_plot <- renderPlot(.tier_bar(bt_r(), .unit(input$bt_unit)), res = 96)
   output$bt_rows_tbl  <- renderDT(.rec_tbl(bt_r()), server = TRUE)
 
   output$dl_batch <- downloadHandler(
@@ -1928,9 +1967,9 @@ output$gp_matrix <- renderUI({
     names(d)[1] <- "AD_locus"; d
   }
   .tier_counts <- function(d) {
-    if (is.null(d) || !nrow(d)) return(data.frame(tier = character(0), gene_records = integer(0)))
+    if (is.null(d) || !nrow(d)) return(data.frame(tier = character(0), count = integer(0)))
     tb <- as.data.frame(table(factor(as.character(d$top_confidence), levels = .lv)), stringsAsFactors = FALSE)
-    names(tb) <- c("tier", "gene_records"); tb
+    names(tb) <- c("tier", "count"); tb
   }
   output$dl_ql_pip_png  <- .png_only("fine_mapping_confidence", .fig_ql_pip, 6, 3.2)
   output$dl_ql_pip_csv  <- downloadHandler(filename = function() "fine_mapping_confidence.csv",
@@ -1945,12 +1984,12 @@ output$gp_matrix <- renderUI({
       tb <- as.data.frame(table(v), stringsAsFactors = FALSE); names(tb) <- c("GWAS_significance", "gene_records")
       .prov_csv(tb, f, "gene records by GWAS significance")
     })
-  output$dl_cty_tier_png <- .png_only("cell_type_evidence_tiers", function() .tier_bar(cty_d()), 6, 3.4)
+  output$dl_cty_tier_png <- .png_only("cell_type_evidence_tiers", function() .tier_bar(cty_d(), .unit(input$cty_unit)), 6, 3.4)
   output$dl_cty_tier_csv <- downloadHandler(filename = function() "cell_type_evidence_tiers.csv",
-    content = function(f) .prov_csv(.tier_counts(cty_d()), f, paste("evidence tiers in", input$cty_ct)))
-  output$dl_bt_tier_png  <- .png_only("batch_evidence_tiers", function() .tier_bar(bt_r()), 6, 3.4)
+    content = function(f) .prov_csv(.tier_counts(.by_unit(cty_d(), .unit(input$cty_unit))), f, paste("evidence tiers in", input$cty_ct)))
+  output$dl_bt_tier_png  <- .png_only("batch_evidence_tiers", function() .tier_bar(bt_r(), .unit(input$bt_unit)), 6, 3.4)
   output$dl_bt_tier_csv  <- downloadHandler(filename = function() "batch_evidence_tiers.csv",
-    content = function(f) .prov_csv(.tier_counts(bt_r()), f, "evidence tiers across matched entries"))
+    content = function(f) .prov_csv(.tier_counts(.by_unit(bt_r(), .unit(input$bt_unit))), f, "evidence tiers across matched entries"))
   output$dl_sum_trans_csv <- downloadHandler(filename = function() "AD_loci_trans_target_genes.csv",
     content = function(f) {
       d <- if (!is.null(trans_all) && nrow(trans_all)) trans_all[, c("locus", "target", "modality")] else NULL
@@ -2306,7 +2345,7 @@ output$gp_matrix <- renderUI({
 
   .open_gene <- function(g) {
     if (is.null(g) || !nzchar(g)) return(invisible())
-    updateSelectizeInput(session, "gp_gene", choices = genes, selected = g, server = TRUE)
+    updateSelectizeInput(session, "gp_gene", choices = .gene_choices(genes), options = .gene_opts, selected = g, server = TRUE)
     nav_select("nav", "Genes", session = session)
   }
 

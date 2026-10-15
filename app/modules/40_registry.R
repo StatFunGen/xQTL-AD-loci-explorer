@@ -20,7 +20,7 @@ locus_registry <- dat %>%
     n_genes   = dplyr::n_distinct(gene[!is.na(gene) & gene != ""]),
     lead_rsid = {
       i <- which.max(ifelse(is.na(log10pval), -Inf, log10pval))
-      if (length(i)) as.character(rsid[i]) else NA_character_
+      if (length(i)) { r <- as.character(rsid[i]); if (is.na(r) || !nzchar(r)) as.character(variant_ID[i]) else r } else NA_character_
     },
     .groups = "drop") %>%
   dplyr::mutate(region = sprintf("%s:%.0f-%.0f", chr, start, end))
@@ -208,7 +208,7 @@ trans_pairs <- local({
   ## never do. Hotspot stays out: its entries are program names rather than
   ## genes, so they have no position on the genome to draw an arc to.
   .tc  <- intersect(c("trans_genes", "trans_snRNA_genes", "trans_pQTL_genes",
-                      "trans_gpQTL_genes"), names(dat))
+                      "trans_glycoQTL_genes"), names(dat))
   .has <- Reduce(`|`, lapply(.tc, function(k)
             !is.na(dat[[k]]) & nzchar(trimws(as.character(dat[[k]])))))
   ## An arc starts at the variant position, so a cis gene was only ever the
@@ -216,9 +216,9 @@ trans_pairs <- local({
   d <- dat[.has & !is.na(dat$pos), , drop = FALSE]
   if (!nrow(d)) return(NULL)
   mods <- c(snRNA = "trans_snRNA_n_genes", pQTL = "trans_pQTL_n_genes",
-            gpQTL = "trans_gpQTL_n_genes", Hotspot = "trans_hotspot_n_genes")
+            glycoQTL = "trans_glycoQTL_n_genes", Hotspot = "trans_hotspot_n_genes")
   gsets <- c(`Trans genes` = "trans_genes", snRNA = "trans_snRNA_genes",
-             pQTL = "trans_pQTL_genes", gpQTL = "trans_gpQTL_genes")
+             pQTL = "trans_pQTL_genes", glycoQTL = "trans_glycoQTL_genes")
   gsets <- gsets[gsets %in% names(d)]
   parts <- lapply(seq_along(gsets), function(j) {
     vv <- as.character(d[[gsets[[j]]]]); vv[is.na(vv)] <- ""
@@ -269,7 +269,7 @@ trans_pairs <- local({
   out$x <- out$src_pos + chr_offsets$off[match(out$src_chr, chr_offsets$chr)]
   out$y <- out$tgt_pos + chr_offsets$off[match(out$tgt_chr, chr_offsets$chr)]
   out$modality <- factor(out$modality,
-                         levels = intersect(c("Trans genes", "snRNA", "pQTL", "gpQTL", "Hotspot", "Transmap"),
+                         levels = intersect(c("Trans genes", "snRNA", "pQTL", "glycoQTL", "Hotspot", "Transmap"),
                                             unique(out$modality)))
   out
 })
@@ -281,7 +281,7 @@ transmap_loci <- local({
   if (file.exists(f)) unique(as.character(read.csv(f, stringsAsFactors = FALSE)$ADlocus)) else character(0)
 })
 
-MOD_COL <- c(snRNA = "#2a78d6", pQTL = "#1baf7a", gpQTL = "#eda100", tpQTL = "#9c9a9c",
+MOD_COL <- c(snRNA = "#2a78d6", pQTL = "#1baf7a", glycoQTL = "#eda100", tpQTL = "#9c9a9c",
              Hotspot = "#da532c", unspecified = "#898781")
 
 trans_map_plot <- function(d, note_empty = "No trans pairs with mapped coordinates.") {
@@ -422,18 +422,21 @@ locus_table <- local({
     tv <- as.character(gu$top_confidence)
     k  <- match(tv, TIER_SEQ)
     best <- if (any(!is.na(k))) TIER_SEQ[min(k, na.rm = TRUE)] else NA_character_
-    top <- NA_character_
+    top <- NA_character_; n_tied <- 0L
     if (nrow(gu)) {
-      ord <- order(ifelse(is.na(k), 99L, k),
-                   -ifelse(is.na(gu$log10pval), -Inf, gu$log10pval))
-      top <- as.character(gu$gene[ord[1]])
+      gk <- tapply(match(as.character(g$top_confidence), TIER_SEQ), as.character(g$gene),
+                   function(v) if (all(is.na(v))) 99L else min(v, na.rm = TRUE))
+      gp <- tapply(ifelse(is.na(g$log10pval), -Inf, g$log10pval), as.character(g$gene), max)
+      ord <- order(gk, -gp)
+      top <- names(gk)[ord[1]]
+      n_tied <- sum(gk == gk[ord[1]] & gp == gp[ord[1]]) - 1L
     }
       ## Evidence behind the genes named at this locus. Judged on the genes,
       ## not the rows, so a locus whose only named genes come from trans
       ## reads "trans only".
       .gv <- if (!nrow(gu) || is.null(gu$cis_trans)) character(0) else unique(as.character(gu$cis_trans))
       ev  <- if (!length(.gv)) "no gene" else if (all(.gv == "trans")) "trans only" else if (all(.gv == "cis")) "cis only" else "cis + trans"
-      tev <- if (!nrow(gu) || is.null(gu$cis_trans)) NA_character_ else as.character(gu$cis_trans[ord[1]])
+      tev <- if (!nrow(gu) || is.null(gu$cis_trans)) NA_character_ else as.character(gu$cis_trans[match(top, gu$gene)])
     cts <- if (is.null(e)) character(0) else intersect(CTX_ORD, unique(e$ctx))
     mds <- if (is.null(e)) character(0) else intersect(MOD_ORD, unique(e$mod))
     tc  <- vapply(TIER_SEQ, function(tt) sum(tv == tt, na.rm = TRUE), integer(1))
@@ -444,6 +447,7 @@ locus_table <- local({
       lead    = as.character(locus_registry$lead_rsid[i]),
       best    = best,
       top_gene = top,
+      n_tied   = n_tied,
       cells   = paste(cts, collapse = ","),
       mods    = paste(mds, collapse = ", "),
       n_genes = nrow(gu),
@@ -548,4 +552,22 @@ ctx_unique_counts <- local({
   v <- table(factor(u$ctx, levels = CTX_ORD))
   out <- as.integer(v); names(out) <- names(v)
   out[out > 0]
+})
+
+
+## Genes picker: each gene carries its Ensembl ID so either can be searched
+.gene_choices <- function(g) {
+  g <- as.character(g)
+  e <- if (exists("gid_map") && length(gid_map)) unname(gid_map[g]) else rep(NA_character_, length(g))
+  e <- sub("\\..*$", "", ifelse(is.na(e), "", e))
+  data.frame(value = g, label = g, ensg = e, stringsAsFactors = FALSE)
+}
+.gene_opts <- list(searchField = c("label", "ensg"))
+
+## gene the Genes page opens with: best tier, then highest AD-side PIP (max_inclusion)
+.gp_default <- local({
+  g <- dat[!is.na(dat$gene) & nzchar(as.character(dat$gene)), , drop = FALSE]
+  k <- match(as.character(g$top_confidence), paste0("T", 1:6)); k[is.na(k)] <- 99L
+  p <- ifelse(is.na(g$max_inclusion), -Inf, g$max_inclusion)
+  if (nrow(g)) as.character(g$gene[order(k, -p)][1]) else ""
 })

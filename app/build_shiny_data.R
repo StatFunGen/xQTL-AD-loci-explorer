@@ -151,9 +151,9 @@ prev <- if (.have_prev) fread(prev_data) else data.table(variant_ID = character(
   trans_coverage         = "trans_coverage",
   trans_n_genes          = "n_trans_genes",
   trans_n_contexts       = "n_trans_contexts",
-  trans_gpQTL_genes      = "trans_genes_gpQTL",
-  trans_gpQTL_contexts   = "trans_contexts_gpQTL",
-  trans_gpQTL_n_genes    = "n_trans_genes_gpQTL",
+  trans_glycoQTL_genes      = "trans_genes_glycoQTL",
+  trans_glycoQTL_contexts   = "trans_contexts_glycoQTL",
+  trans_glycoQTL_n_genes    = "n_trans_genes_glycoQTL",
   trans_pQTL_genes       = "trans_genes_pQTL",
   trans_pQTL_contexts    = "trans_contexts_pQTL",
   trans_pQTL_n_genes     = "n_trans_genes_pQTL",
@@ -167,6 +167,10 @@ prev <- if (.have_prev) fread(prev_data) else data.table(variant_ID = character(
   trans_transmap_n_contexts = "n_transmap_contexts",
   trans_transmap_contexts   = "transmap_contexts")
 .rel_names  <- names(fread(tier_file, nrows = 1))
+## Releases built before the glycoQTL rename spell these columns gpQTL.
+.old_gp <- sub("glycoQTL", "gpQTL", .trans_map, fixed = TRUE)
+.use_old <- !(.trans_map %in% .rel_names) & .old_gp %in% .rel_names
+.trans_map[.use_old] <- .old_gp[.use_old]
 .trans_have <- .trans_map[.trans_map %in% .rel_names]
 if (length(.trans_have) < length(.trans_map))
   warning("[trans] release is missing: ",
@@ -194,7 +198,6 @@ carry <- setdiff(carry, names(.trans_have))
               max_twas_z         = "twas_z_gene_max",
               max_twas_ctx       = "twas_z_gene_max_context",
               variant_rank       = "variant_rank_xqtl",
-              xqtl_max_inclusion = "max_variant_inclusion_probability",
               n_contexts         = "n_contexts")
 .rel_names <- names(fread(tier_file, nrows = 0))
 .rel_have  <- .rel_map[.rel_map %in% .rel_names]
@@ -257,6 +260,22 @@ if (length(.rel_have)) {
                                        function(k) sum(.nonblank(out[[k]])), integer(1))),
                         collapse = " ")))
 }
+
+## (C3b) xQTL PIP per variant and gene: the largest xQTL inclusion probability
+## across contexts (ColocBoost vcp where present, otherwise the fine-mapping PIP),
+## as gene_prio_utils.R computes it. The release's max_variant_inclusion_probability
+## is the AD-side value and must not fill this column.
+if ("variant_inclusion_probability_xqtl" %in% .rel_names) {
+  .xp <- fread(tier_file, select = c("variant_ID", "gene_name", "variant_inclusion_probability_xqtl"))
+  setnames(.xp, "gene_name", "gene")
+  .xp <- .xp[, .(xqtl_max_inclusion = suppressWarnings(max(variant_inclusion_probability_xqtl, na.rm = TRUE))),
+               by = .(variant_ID, gene)]
+  .xp[!is.finite(xqtl_max_inclusion), xqtl_max_inclusion := NA_real_]
+  if ("xqtl_max_inclusion" %in% names(out)) out[, xqtl_max_inclusion := NULL]
+  out <- merge(out, .xp, by = c("variant_ID", "gene"), all.x = TRUE)
+  message(sprintf("  (C3b) xQTL PIP from release: %d of %d pairs", sum(!is.na(out$xqtl_max_inclusion)), nrow(out)))
+} else warning("[release] no variant_inclusion_probability_xqtl; xqtl_max_inclusion left as carried",
+               call. = FALSE, immediate. = TRUE)
 
 out[, evidence_locus := "release"]
 ## (C6) ordered_contexts, read from the release rather than carried.
@@ -376,7 +395,7 @@ if (file.exists(.cmeta)) {
 ## disagreements run the same way -- carried TRUE where every count is zero --
 ## which is the carry-forward staleness, not a second definition. Rows that
 ## were previously blank resolve to FALSE, which is what the definition gives.
-.tcc <- intersect(c("trans_n_genes", "trans_pQTL_n_genes", "trans_gpQTL_n_genes",
+.tcc <- intersect(c("trans_n_genes", "trans_pQTL_n_genes", "trans_glycoQTL_n_genes",
                     "trans_snRNA_n_genes", "trans_hotspot_n_genes"), names(out))
 .tot <- rowSums(sapply(.tcc, function(k) suppressWarnings(as.numeric(out[[k]]))),
                 na.rm = TRUE)
@@ -449,6 +468,12 @@ message("downstream prioritization script is re-run on this release.")
 ## Tier column and the contexts string agree.
 for (.c in intersect(c("ordered_contexts","xQTL_effects"), names(out)))
   out[, (.c) := gsub("\\(CL([0-9])", "(T\\1", get(.c))]
+
+## Glycoprotein QTL: the pipeline spells the modality gpQTL (column names and
+## context keys in the release); the app and the resource site call it glycoQTL.
+## Rename it in every text value here, so data.csv uses one spelling.
+for (.c in names(out)[vapply(out, is.character, logical(1))])
+  out[, (.c) := gsub("gpQTL", "glycoQTL", get(.c), fixed = TRUE)]
 
 fwrite(out, outfile)
 

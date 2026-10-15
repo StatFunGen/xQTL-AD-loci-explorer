@@ -326,9 +326,9 @@ res_tspqtlf<-fread(fp(out,'res_transpQTL_NoHF_single_context_finemapping_cs95.cs
 mtd[Method=='trans_pQTL',summary_file:=fp(out,'res_transpQTL_NoHF_single_context_finemapping_cs95.csv.gz')]
 } else cat('[skip] trans_pQTL - no rows registered in metadata_analysis.csv\n')
 
-#trans gpQTL
-if (nrow(mtd[Method=='trans_gpQTL'])) {
-res_tsgpqtl<-mtd[Method=='trans_gpQTL',fread(file.path(PROJECT_ROOT,Path)),by='context']
+#trans glycoQTL
+if (nrow(mtd[Method=='trans_glycoQTL'])) {
+res_tsgpqtl<-mtd[Method=='trans_glycoQTL',fread(file.path(PROJECT_ROOT,Path)),by='context']
 setdiff(res_tsgpqtl$context,contexts$context)#OK
 table(res_tsgpqtl$context)
 #add gene
@@ -347,11 +347,11 @@ res_tsgpqtlf<-res_tsgpqtl[(hit)]
 res_tsgpqtlf[,
             credibleset:=paste0('cs95_',cs_coverage_0.95)]
 res_tsgpqtlf[,locuscontext_id:=paste(region_ID,event_ID,credibleset,sep='_')]
-fwrite(res_tsgpqtlf,fp(out,'res_transgpQTL_NoHF_single_context_finemapping_cs95.csv.gz'))
-res_tspqtlf<-fread(fp(out,'res_transgpQTL_NoHF_single_context_finemapping_cs95.csv.gz'))
+fwrite(res_tsgpqtlf,fp(out,'res_transglycoQTL_NoHF_single_context_finemapping_cs95.csv.gz'))
+res_tspqtlf<-fread(fp(out,'res_transglycoQTL_NoHF_single_context_finemapping_cs95.csv.gz'))
 
-mtd[Method=='trans_gpQTL',summary_file:=fp(out,'res_transgpQTL_NoHF_single_context_finemapping_cs95.csv.gz')]
-} else cat('[skip] trans_gpQTL - no rows registered in metadata_analysis.csv\n')
+mtd[Method=='trans_glycoQTL',summary_file:=fp(out,'res_transglycoQTL_NoHF_single_context_finemapping_cs95.csv.gz')]
+} else cat('[skip] trans_glycoQTL - no rows registered in metadata_analysis.csv\n')
 
 #trans cca
 if (nrow(mtd[Method=='trans_cca'])) {
@@ -378,7 +378,7 @@ mtd[Method=='trans_cca',summary_file:=fp(out,'res_all_transCCA_single_context_fi
 ## rows in metadata_analysis.csv is the ONLY step needed to add a new source.
 TOPLOCI_HANDLED <- c('single_context_finemapping','multi_context_finemapping',
   'multi_gene_finemapping','fSuSiE_finemapping','AD_GWAS_finemapping','trans_finemapping',
-  'trans_pQTL','trans_cca','trans_single_gene_snRNA','trans_gpQTL','ColocBoost','Coloc','twas','ctwas',
+  'trans_pQTL','trans_cca','trans_single_gene_snRNA','trans_glycoQTL','ColocBoost','Coloc','twas','ctwas',
   'cTWAS','LR','msex interaction','APOE interaction','QR','AD_xQTL_colocalization','KNIGHT')
 TOPLOCI_SOURCES <- setdiff(
   unique(mtd[grepl('top_?loci\\.bed(\\.gz)?$', Path) & Path != '']$Method),

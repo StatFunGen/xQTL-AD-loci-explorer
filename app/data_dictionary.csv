@@ -1,0 +1,106 @@
+file,column,description
+AD locus evidence table,variant_ID,"Variant as chromosome:position:reference allele:alternative allele, GRCh38."
+AD locus evidence table,gene,Target gene symbol. On trans rows (cis_trans = trans) it is the trans target gene.
+AD locus evidence table,ADlocus,"AD locus name, numbered within this release (for example chr1_2)."
+AD locus evidence table,rsid,dbSNP rsID of the variant; blank when the variant has none.
+AD locus evidence table,chr,Chromosome number.
+AD locus evidence table,pos,"Position in base pairs, GRCh38."
+AD locus evidence table,effect_allele,Alternative allele of variant_ID.
+AD locus evidence table,cv2f_score,"cV2F variant-to-function score for the variant, from the score set built with xQTL features."
+AD locus evidence table,max_inclusion,"Highest AD-side inclusion probability for the variant across AD methods: the ColocBoost variant colocalization probability where present, otherwise the fine-mapping PIP, otherwise the coloc SNP PP.H4. On trans rows it is the trans fine-mapping PIP of the representative variant."
+AD locus evidence table,max_inclusion_method,AD method that gave max_inclusion (for example single_gwas_finemapping or ADxQTL_coloc); trans_finemapping on trans rows.
+AD locus evidence table,cv2f_rank,Rank of cv2f_score among the variants of the AD locus; 1 is the highest score.
+AD locus evidence table,max_zscore,AD GWAS z-score with the largest absolute value across the GWAS studies that include the variant.
+AD locus evidence table,min_pval,Two-sided p-value of max_zscore.
+AD locus evidence table,significance,"GWAS significance of min_pval: genome wide (below 5e-8), suggestive (below 1e-6) or ns."
+AD locus evidence table,log10pval,-log10(min_pval).
+AD locus evidence table,gwas_assoc,"AD GWAS studies whose results include the variant, separated by |."
+AD locus evidence table,context,"One xQTL context for this variant and gene, as listed in the release workbook; all supporting contexts are in ordered_contexts. On trans rows, the context of the highest-PIP trans result."
+AD locus evidence table,gene_id,Ensembl gene ID of the target gene.
+AD locus evidence table,trans_n_contexts_gene,Trans rows only: number of contexts in which this trans target gene was fine-mapped at this locus.
+AD locus evidence table,trans_source_contexts,"Trans rows only: those contexts, separated by |."
+AD locus evidence table,top_confidence,"Evidence tier of the target gene, T1 to T6; blank when the gene has no tier, because it is linked only through trans evidence or its only evidence is quantile QTL, APOE or sex interaction QTL, or multi-gene fine-mapping. Tiers are assigned per gene across the whole release: a gene linked to several loci carries the same tier at each."
+AD locus evidence table,trans_genes,"Genes with a trans fine-mapping effect from this variant, highest PIP first, separated by |. Describes the variant, so it repeats on every gene row of that variant."
+AD locus evidence table,trans_contexts,"Contexts of those trans fine-mapping effects, separated by |."
+AD locus evidence table,trans_coverage,"Widest credible-set coverage (cs50, cs70 or cs95) for each gene in trans_genes, in the same order."
+AD locus evidence table,trans_n_genes,Number of genes in trans_genes.
+AD locus evidence table,trans_n_contexts,Number of contexts in trans_contexts.
+AD locus evidence table,trans_glycoQTL_genes,"Glycoprotein (glycoQTL) trans targets of this variant, separated by |."
+AD locus evidence table,trans_glycoQTL_contexts,Contexts of those glycoQTL trans effects.
+AD locus evidence table,trans_glycoQTL_n_genes,Number of glycoQTL trans targets.
+AD locus evidence table,trans_pQTL_genes,"Protein (pQTL) trans targets of this variant, separated by |."
+AD locus evidence table,trans_pQTL_contexts,Contexts of those pQTL trans effects.
+AD locus evidence table,trans_pQTL_n_genes,Number of pQTL trans targets.
+AD locus evidence table,trans_snRNA_genes,"Single-nucleus RNA trans targets of this variant (single-gene trans analysis), separated by |."
+AD locus evidence table,trans_snRNA_contexts,Contexts of those snRNA trans effects.
+AD locus evidence table,trans_snRNA_n_genes,Number of snRNA trans targets.
+AD locus evidence table,trans_hotspot_programs,"Trans hotspot gene modules linked to this variant, separated by |."
+AD locus evidence table,trans_hotspot_contexts,Contexts of those hotspot modules.
+AD locus evidence table,trans_hotspot_n_genes,Number of hotspot modules in trans_hotspot_programs.
+AD locus evidence table,trans_transmap_n_targets,Number of transmap targets (distinct molecular events) for this variant.
+AD locus evidence table,trans_transmap_n_contexts,Number of contexts with a transmap result for this variant.
+AD locus evidence table,trans_transmap_contexts,"Those transmap contexts, separated by |."
+AD locus evidence table,dist_tss,"Variant position minus the target gene's transcription start site, in base pairs."
+AD locus evidence table,dist_tes,"Variant position minus the target gene's transcription end site, in base pairs."
+AD locus evidence table,twas_sig,"TRUE when the gene is TWAS significant: p below 2.5e-6 in the selected method, or in at least half of the methods. Blank means no significant TWAS record; it does not say whether TWAS was run."
+AD locus evidence table,mr_sig,"TRUE when the gene passes MR: TWAS significant, cPIP above 0.5, at least 2 credible sets and I2 below 0.5."
+AD locus evidence table,ctwas_sig,TRUE when the gene is in the cTWAS results at PIP 0.75 or above.
+AD locus evidence table,max_twas_z,TWAS z-score of the gene from the context with its smallest TWAS p-value.
+AD locus evidence table,max_twas_ctx,The context that gave max_twas_z.
+AD locus evidence table,variant_rank,"Rank of this variant among the gene's xQTL variants at the locus, by xQTL inclusion probability; 1 is the highest."
+AD locus evidence table,xqtl_max_inclusion,"Largest xQTL inclusion probability for this variant and gene across contexts: the ColocBoost colocalization probability where present, otherwise the fine-mapping PIP. Blank when the pair's evidence carries neither (for example TWAS, quantile QTL or interaction results only)."
+AD locus evidence table,n_contexts,Number of distinct xQTL contexts supporting this variant and gene.
+AD locus evidence table,evidence_locus,Build bookkeeping: source of the locus and variant columns. Not shown in the explorer.
+AD locus evidence table,ordered_contexts,"Every supporting context group for this variant and gene, best tier first, separated by ;. Each entry is the group label, the sign of the conditional effect (. when absent) and of the colocalization coefficient where present, then (tier, n = number of contexts)."
+AD locus evidence table,ct_Ast_xQTL,TRUE when a supporting context of this variant and gene is astrocyte; blank when the pair has no context list.
+AD locus evidence table,ct_Brain_xQTL,TRUE when a supporting context of this variant and gene is bulk brain; blank when the pair has no context list.
+AD locus evidence table,ct_Bulk_Immune_xQTL,"TRUE when a supporting context of this variant and gene is bulk immune (monocyte, macrophage or microglia bulk); blank when the pair has no context list."
+AD locus evidence table,ct_Exc_xQTL,TRUE when a supporting context of this variant and gene is excitatory neuron; blank when the pair has no context list.
+AD locus evidence table,ct_Inh_xQTL,TRUE when a supporting context of this variant and gene is inhibitory neuron; blank when the pair has no context list.
+AD locus evidence table,ct_Microglia_xQTL,TRUE when a supporting context of this variant and gene is microglia; blank when the pair has no context list.
+AD locus evidence table,ct_Oli_xQTL,TRUE when a supporting context of this variant and gene is oligodendrocyte; blank when the pair has no context list.
+AD locus evidence table,ct_OPC_xQTL,TRUE when a supporting context of this variant and gene is oligodendrocyte precursor cell; blank when the pair has no context list.
+AD locus evidence table,has_trans,"TRUE when the variant has any trans evidence (trans fine-mapping, pQTL, glycoQTL, snRNA, hotspot or program results)."
+AD locus evidence table,evidence_gene,Build bookkeeping: source of the gene-level columns. Not shown in the explorer.
+AD locus evidence table,evidence_tier,"Build bookkeeping: source of top_confidence, or untiered. Not shown in the explorer."
+AD locus evidence table,cis_trans,cis for rows from cis xQTL evidence; trans for rows added for trans target genes.
+AD locus evidence table,ADlocusID,Locus coordinates as chromosome_first position_last position of its variants.
+Gene coordinates,gene,Gene symbol.
+Gene coordinates,chr,"Chromosome number, without the chr prefix."
+Gene coordinates,start,"Gene start, GRCh38 base pairs."
+Gene coordinates,end,"Gene end, GRCh38 base pairs."
+AD locus summary,AD_locus,AD locus name.
+AD locus summary,region,Locus span as chromosome:start-end of its variants.
+AD locus summary,chr,Chromosome.
+AD locus summary,lead_variant,"Variant with the smallest AD GWAS p-value at the locus: its rsID, or chromosome:position:alleles when it has none."
+AD locus summary,best_tier,Best tier among the locus's target genes. Tiers are assigned per gene across the whole release: a gene linked to several loci carries the same tier at each.
+AD locus summary,top_gene,"Highest-priority gene: best tier, ties broken by the smaller GWAS p-value of the gene's strongest variant."
+AD locus summary,cell_types,Cell types or regions with evidence at the locus.
+AD locus summary,modalities,Molecular modalities with evidence at the locus.
+AD locus summary,n_genes,"Number of target genes at the locus, cis and trans."
+AD locus summary,n_records,Number of rows (variant and target gene pairs) at the locus.
+Gene tier assignment,gene_ID,Ensembl gene ID.
+Gene tier assignment,gene_name,Gene symbol.
+Gene tier assignment,tier,"Evidence tier, T1 to T6. Tiers are assigned per gene across the whole release: a gene linked to several loci carries the same tier at each."
+AD locus variants,chr,Chromosome number.
+AD locus variants,pos,"Position, GRCh38 base pairs."
+AD locus variants,locus_index,Numeric index of the AD locus in the release.
+AD locus variants,ADlocus,AD locus name.
+AD locus variants,ADlocusID,Locus coordinates as chromosome_first position_last position.
+AD locus variants,n.variants,Number of variants in the locus.
+AD locus variants,variant_ID,Variant as chromosome:position:reference allele:alternative allele.
+AD locus variants,GWAS_methods,"AD methods that place the variant in the locus, strongest first, separated by |."
+AD locus variants,max_variant_inclusion_probability,Highest AD-side inclusion probability for the variant (same definition as max_inclusion in the evidence table).
+AD locus variants,max_variant_inclusion_probability_method,AD method that gave it.
+AD locus variants,gwas_sources,"AD GWAS studies that include the variant, separated by |."
+AD locus variants,gwas_sources_effects,"For each study, a one-letter study code (B, W, J or K) followed by the sign of its z-score, separated by |."
+AD locus variants,is.cs95,TRUE when the locus has a 95% credible set.
+AD locus variants,max_zscore,AD GWAS z-score with the largest absolute value across studies.
+AD locus variants,min_pval,Two-sided p-value of max_zscore.
+AD locus variants,susie_coverage,Widest credible-set coverage at the locus (for example cs95).
+AD locus variants,max_variant_inclusion_probability_rank,Rank of the variant within its locus by max_variant_inclusion_probability; 1 is the highest.
+AD locus variants,n.variants_0.1,Number of variants in the locus with max_variant_inclusion_probability above 0.1.
+AD locus variants,median_pos,Median position of the locus's variants.
+AD locus variants,cV2F,cV2F variant-to-function score (same source as cv2f_score).
+AD locus variants,SNP,rsID that the cV2F score file gives for this position.
+AD locus variants,cV2F_rank,Rank of cV2F within the locus; 1 is the highest.
