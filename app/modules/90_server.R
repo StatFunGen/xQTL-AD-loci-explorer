@@ -789,6 +789,10 @@ observeEvent(input$locus_prev, {
         if (!is.na(bgl)) kvt("strongest gene here", tags$b(bgl), "Target gene with the strongest evidence at this locus. Localized support means a variant here was fine-mapped to the gene. Gene-level support (TWAS, MR) links the gene to AD without identifying a variant. Trans support means the variant acts on a gene outside this locus."),
         if (!is.na(bt)) kvt("its tier", bt, "Best tier among the target genes at this locus. Tiers belong to genes, and each gene carries its best tier from anywhere in the release. A locus can therefore read T4 while APOE within it reads T6, because APOE has TWAS or MR evidence without localized AD-xQTL support."),
         if (!is.na(sg)) kv("GWAS", sg)),
+      if (!is.na(i) && !is.na(locus_registry$start[i]))
+        div(class = "ext-links gp-ext",
+          ext_a(atlas_region_url(locus_registry$chr[i], locus_registry$start[i], locus_registry$end[i]),
+                "View this region in NIAGADS xQTL Atlas \u2197")),
       div(class = "locus-id", "pipeline ID ", tags$code(loc)))
   })
   output$locus_tbl <- renderDT({

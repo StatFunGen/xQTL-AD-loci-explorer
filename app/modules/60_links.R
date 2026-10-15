@@ -8,6 +8,9 @@ NIAGADS_GDB   <- "https://www.niagads.org/genomics/app/record"
 
 atlas_gene_url <- function(sym) paste0(NIAGADS_ATLAS, "/gene/", utils::URLencode(as.character(sym), reserved = TRUE))
 gdb_gene_url   <- function(ensg) paste0(NIAGADS_GDB, "/gene/", ensg)
+# Atlas region pages read chrN:start-end; a single-position locus uses start = end.
+atlas_region_url <- function(chr, start, end)
+  paste0(NIAGADS_ATLAS, "/region/", chr, ":", format(start, scientific = FALSE, trim = TRUE), "-", format(end, scientific = FALSE, trim = TRUE))
 # GenomicsDB variant records read chromosome:position:ref:alt[:rsID], no "chr".
 gdb_variant_url <- function(vid, rsid = NA) {
   v <- variant_parts(vid)
