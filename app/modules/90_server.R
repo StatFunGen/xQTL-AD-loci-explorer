@@ -62,17 +62,29 @@ server <- function(input, output, session) {
     r <- dat[!is.na(dat$gene) & toupper(dat$gene) == toupper(term), c("ADlocus", "top_confidence"), drop = FALSE]
     if (!nrow(r)) return(invisible())
     k <- match(as.character(r$top_confidence), paste0("T", 1:6)); k[is.na(k)] <- 99L
+    nr <- table(as.character(r$ADlocus))
     bt <- tapply(k, as.character(r$ADlocus), min)
-    if (length(bt) < 2) return(invisible())
-    lab <- function(l) l
-    oth <- setdiff(names(bt)[order(bt)], opened)
-    links <- vapply(oth, function(l) sprintf(
-      '<a href="#" onclick="Shiny.setInputValue(\'jump_locus\', \'%s\', {priority: \'event\'}); return false;">%s</a>', l, lab(l)), "")
-    showNotification(HTML(sprintf(
-      "<b>%s</b> is linked to %d AD loci. Showing %s, the locus with its strongest GWAS signal. Also: %s",
-      htmltools::htmlEscape(term), length(bt), lab(opened), paste(links, collapse = ", "))),
-      duration = 15, type = "message")
+    gene_note(if (length(bt) < 2) NULL else
+      list(gene = if (length(.g)) .g[1] else term, opened = opened,
+           loci = names(bt)[order(bt, -nr[names(bt)])]))
   }
+  # Persistent note on Locus detail while the user stays on one of the
+  # searched gene's loci; replaces a pop-up that was easy to miss.
+  gene_note <- reactiveVal(NULL)
+  output$gene_note <- renderUI({
+    gn <- gene_note(); loc <- selected_locus()
+    if (is.null(gn) || !(loc %in% gn$loci)) return(NULL)
+    lnk <- function(l) if (identical(l, loc)) tags$b(l) else
+      tags$a(href = "#", l, onclick = sprintf(
+        "Shiny.setInputValue('jump_locus', '%s', {priority: 'event'}); return false;", l))
+    items <- lapply(gn$loci, lnk)
+    sep <- rep(list(" \u00b7 "), length(items))
+    div(class = "gene-note",
+      tags$b(gn$gene), sprintf(" is linked to %d AD loci. ", length(gn$loci)),
+      if (identical(loc, gn$opened))
+        "This page shows the one with the most evidence for it. " else NULL,
+      "Loci: ", do.call(tagList, head(as.vector(rbind(items, sep)), -1)))
+  })
   observeEvent(input$jump_locus, {
     selected_locus(input$jump_locus)
     nav_select("nav", "Locus detail", session = session)
@@ -798,7 +810,8 @@ observeEvent(input$locus_prev, {
         div(class = "ext-links gp-ext",
           ext_a(atlas_region_url(locus_registry$chr[i], locus_registry$start[i], locus_registry$end[i]),
                 "View this region in NIAGADS xQTL Atlas \u2197")),
-      div(class = "locus-id", "pipeline ID ", tags$code(loc)))
+      div(class = "locus-id", "pipeline ID ", tags$code(loc)),
+      uiOutput("gene_note"))
   })
   output$locus_tbl <- renderDT({
     d <- dat[dat$ADlocus == selected_locus(), ]
@@ -2435,6 +2448,7 @@ output$gp_matrix <- renderUI({
           value = match(gv("transonly"), c("1", "true", "TRUE"), nomatch = 0L) > 0L)
     r <- tryCatch(resolve_locus(q), error = function(e) NULL)
     if (!is.null(r) && !is.null(r$locus)) selected_locus(r$locus)
+    if (!is.null(r) && identical(r$via, "gene")) .other_loci_note(gv("gene"), "gene", r$locus)
     g <- gv("gene")
     if (!is.null(g)) {
       gu  <- toupper(g)
