@@ -1136,7 +1136,7 @@ observeEvent(input$locus_prev, {
   .ref_loci <- function() { r <- locus_registry
     data.frame(ad_locus_id = r$ADlocus, chr = r$chr, start = r$start, end = r$end,
                genome_build = GENOME_BUILD, release = DATA_RELEASE,
-               explorer_url = paste0(EXPLORER_URL, "?region=", vapply(r$region, utils::URLencode, "", reserved = TRUE)),
+               explorer_url = paste0(EXPLORER_URL, "?region=", r$region),
                stringsAsFactors = FALSE) }
   .ref_genes <- function() {
     g <- unique(dat[!is.na(dat$gene) & nzchar(dat$gene), c("gene", "gene_id", "ADlocus")])
@@ -1146,7 +1146,7 @@ observeEvent(input$locus_prev, {
     i <- match(g$ADlocus, locus_registry$ADlocus)
     data.frame(gene_symbol = g$gene, ensembl_gene_id = g$gene_id, ad_locus_id = g$ADlocus,
                explorer_gene_url = paste0(EXPLORER_URL, "?gene=", vapply(g$gene, utils::URLencode, "", reserved = TRUE)),
-               explorer_locus_url = paste0(EXPLORER_URL, "?region=", vapply(locus_registry$region[i], utils::URLencode, "", reserved = TRUE)),
+               explorer_locus_url = paste0(EXPLORER_URL, "?region=", locus_registry$region[i]),
                stringsAsFactors = FALSE) }
   .ref_variants <- function() {
     f <- "downloads/AD_locus_variants_release.csv.gz"
@@ -1161,7 +1161,7 @@ observeEvent(input$locus_prev, {
     v <- data.frame(rsid = v$rsid, chr = paste0("chr", vapply(p, `[`, "", 1)),
                     pos = as.integer(vapply(p, `[`, "", 2)), ref_allele = vapply(p, `[`, "", 3),
                     alt_allele = vapply(p, `[`, "", 4), ad_locus_id = v$ADlocus,
-                    explorer_locus_url = paste0(EXPLORER_URL, "?region=", vapply(locus_registry$region[i], utils::URLencode, "", reserved = TRUE)),
+                    explorer_locus_url = paste0(EXPLORER_URL, "?region=", locus_registry$region[i]),
                     stringsAsFactors = FALSE)
     v[order(v$chr, v$pos, v$ad_locus_id), ] }
   output$dlf_ref_loci     <- downloadHandler(filename = function() "AD_loci_list_20261002.csv",
