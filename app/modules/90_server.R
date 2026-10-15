@@ -810,7 +810,7 @@ observeEvent(input$locus_prev, {
       if (!is.na(i) && !is.na(locus_registry$start[i]))
         div(class = "ext-links gp-ext",
           ext_a(atlas_region_url(locus_registry$chr[i], locus_registry$start[i], locus_registry$end[i]),
-                "View this region in NIAGADS xQTL Atlas \u2197")),
+                "Explore molecular associations in this region in NIAGADS \u2197")),
       div(class = "locus-id", "pipeline ID ", tags$code(loc)),
       uiOutput("gene_note"))
   })
@@ -2450,6 +2450,11 @@ output$gp_matrix <- renderUI({
     r <- tryCatch(resolve_locus(q), error = function(e) NULL)
     if (!is.null(r) && !is.null(r$locus)) selected_locus(r$locus)
     if (!is.null(r) && identical(r$via, "gene")) .other_loci_note(gv("gene"), "gene", r$locus)
+    # a direct link to something outside this release says so instead of silently showing Home
+    .asked <- c(gv("gene"), gv("variant"), gv("region"))
+    if (length(.asked) && (is.null(r) || is.null(r$locus)))
+      showNotification(sprintf("%s is not in this release, so no AD locus is shown.", .asked[1]),
+                       type = "warning", duration = 12)
     g <- gv("gene")
     if (!is.null(g)) {
       gu  <- toupper(g)
