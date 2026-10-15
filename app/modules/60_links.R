@@ -39,7 +39,7 @@ ext_links <- function(vid, rsid = NA) {
       tags$a(href = sprintf("https://gnomad.broadinstitute.org/variant/%s-%s-%s-%s?dataset=gnomad_r4",
                             v$chr, v$pos, v$ref, v$alt),
              target = "_blank", rel = "noopener", class = "ext-link", "gnomAD"),
-      tags$a(href = sprintf("https://genetics.opentargets.org/variant/%s_%s_%s_%s",
+      tags$a(href = sprintf("https://platform.opentargets.org/variant/%s_%s_%s_%s",
                             v$chr, v$pos, v$ref, v$alt),
              target = "_blank", rel = "noopener", class = "ext-link", "Open Targets"),
       tags$a(href = sprintf("https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&position=chr%s:%s-%s",

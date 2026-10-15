@@ -57,7 +57,7 @@ COLTIPS <- c(
 js_gene_render <- DT::JS(paste0(
   "function(data, type, row){ if (type !== 'display' || !data) return data; ",
   "return '<a class=ext-link target=_blank rel=noopener href=https://platform.opentargets.org/search?q=' ",
-  "+ encodeURIComponent(data) + '>' + data + '</a>' + ' <a class=ext-link target=_blank rel=noopener title=\"View molecular evidence for this gene in the NIAGADS xQTL Atlas\" href=https://xqtl.niagads.org/gene/' + encodeURIComponent(data) + '>Atlas&#8599;</a>'; }"))
+  "+ encodeURIComponent(data) + '&page=1&entities=target>' + data + '</a>' + ' <a class=ext-link target=_blank rel=noopener title=\"View molecular evidence for this gene in the NIAGADS xQTL Atlas\" href=https://xqtl.niagads.org/gene/' + encodeURIComponent(data) + '>Atlas&#8599;</a>'; }"))
 
 js_rsid_render <- DT::JS(paste0(
   "function(data, type, row){ if (type !== 'display' || !data) return data; ",
