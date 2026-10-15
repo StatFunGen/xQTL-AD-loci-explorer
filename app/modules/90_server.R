@@ -362,7 +362,7 @@ output$p_trans <- renderPlot({
       Tier = conf_badge(d$top_confidence),
       `#Ctx` = d$n_contexts,
       `xQTL PIP` = round(d$xqtl_max_inclusion, 3),
-      `TWAS z` = round(d$max_twas_z, 2), `TWAS context` = d$max_twas_ctx,
+      `TWAS z` = round(d$max_twas_z, 2), `TWAS context` = ds_relabel(d$max_twas_ctx),
       TWAS = ev_mark(d$twas_sig),
       MR   = ev_mark(d$mr_sig),
       cTWAS = ev_mark(d$ctwas_sig),
@@ -445,7 +445,7 @@ output$p_trans <- renderPlot({
     r <- filtered()[s, ]
     tr <- function(lbl, modg, modc) if (!is.na(modg) && nzchar(as.character(modg)))
       tags$li(strong(paste0(lbl, ": ")), as.character(modg),
-              if (!is.na(modc) && nzchar(as.character(modc))) tags$em(paste0(" (", modc, ")")))
+              if (!is.na(modc) && nzchar(as.character(modc))) tags$em(paste0(" (", ds_relabel(modc), ")")))
     card(card_header(sprintf("%s · %s · %s", r$gene, r$ADlocus, r$rsid)),
       layout_columns(col_widths = c(6,6),
         tags$div(
@@ -825,7 +825,7 @@ observeEvent(input$locus_prev, {
     }, character(1))
     datatable(tibble(Gene = d$gene, rsID = .rs_html, Sig = sig_badge(d$significance),
         `Gene tier` = conf_badge(d$top_confidence), `xQTL PIP` = round(d$xqtl_max_inclusion,3),
-        `TWAS z` = round(d$max_twas_z,2), `TWAS context` = d$max_twas_ctx, `Cell types` = d$ct_dots,
+        `TWAS z` = round(d$max_twas_z,2), `TWAS context` = ds_relabel(d$max_twas_ctx), `Cell types` = d$ct_dots,
         `Ordered contexts` = ds_relabel(d$ordered_contexts)),
       escape = FALSE, rownames = FALSE, options = list(dom = "lrtip", pageLength = 15, scrollX = TRUE, headerCallback = hdr_js, columnDefs = link_defs(0)),
       class = "display compact hover")

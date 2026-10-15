@@ -352,12 +352,21 @@ batch_body_ui <- function() {
 # the release writes these datasets by first author; the site shows the site name
 DSET_FULL <- c(Kellis = "MIT", DeJager = "CUIMC1")
 
+# rewrite the dataset token inside a raw context string, for the places that
+# still show them whole
+ds_relabel <- function(x) {
+  x <- as.character(x)
+  for (k in names(DSET_FULL))
+    x <- gsub(paste0("(^|_)", k, "(_|$)"), paste0("\\1", unname(DSET_FULL[[k]]), "\\2"), x, perl = TRUE)
+  x
+}
+
 .ctx_one <- function(v) {
   if (is.na(v) || !nzchar(v)) return(c(NA_character_, NA_character_, NA_character_))
   m <- CTX_MAP[[v]]
   if (!is.null(m)) return(m[1:3])
   # unknown context: show it whole rather than splitting it on a guess
-  c(v, NA_character_, NA_character_)
+  c(ds_relabel(v), NA_character_, NA_character_)
 }
 
 ctx_cols <- function(v) {
@@ -376,11 +385,3 @@ ctx_cols <- function(v) {
        mod  = vapply(v, pick, character(1), 3L, USE.NAMES = FALSE))
 }
 
-# rewrite the dataset token inside a raw context string, for the places that
-# still show them whole
-ds_relabel <- function(x) {
-  x <- as.character(x)
-  for (k in names(DSET_FULL))
-    x <- gsub(paste0("_", k, "_"), paste0("_", unname(DSET_FULL[[k]]), "_"), x, fixed = TRUE)
-  x
-}
