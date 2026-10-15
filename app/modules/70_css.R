@@ -152,6 +152,7 @@ layout_css <- tags$style(HTML(paste0(
   ".tc-wrap > :first-child{margin-top:0 !important;padding-top:0 !important;border-top:0 !important}",
   ".dl-body > .ql-sec{margin-top:0;padding-top:0;border-top:0}",
   ".dl-body > .dl-wrap{margin-top:28px}",
+  ".gp-all{background:#fff;border:1px solid var(--line);border-top:0;padding:20px 40px 6px}",
   ".gene-note{margin-top:12px;padding:9px 12px;border-left:3px solid var(--cta);background:var(--surface);font-size:13px;line-height:1.6}",
   ".gene-note a{color:var(--cta);cursor:pointer}",
   "@media (min-width:821px){",
