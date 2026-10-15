@@ -260,7 +260,7 @@ panel_cell_types <- function() {
         div(class = "dc-sub", style = "max-width:820px",
             "All evidence in this release for one brain or immune cell type: its AD loci, target ",
             "genes and evidence tiers. The data match the Loci tab, organized by cell type. Differences between cell types can reflect which analyses were run ",
-            "for each, not only biology.")),
+            "for each, not only biology."),
     div(class = "tc-bar",
         div(class = "tc-f",
             selectInput("cty_ct", info("Cell type",
@@ -274,7 +274,8 @@ panel_cell_types <- function() {
         div(class = "tc-f tc-f3",
             textInput("cty_q", info("Find",
               "Matches gene symbol, AD locus or rsID. Combines with the tier filter."),
-              value = "", width = "100%", placeholder = "Gene, locus or rsID"))),
+              value = "", width = "100%", placeholder = "Gene, locus or rsID")))),
+    div(class = "tc-wrap",
     uiOutput("cty_active"),
     uiOutput("cty_stats"),
     div(class = "panel", style = "margin-top:18px",
@@ -291,7 +292,7 @@ panel_cell_types <- function() {
             div(class = "dc-figc", "One row per variant and target gene pair at an AD locus, with evidence in this cell type. The tier is the gene's tier across the whole release; the Genes page shows the tier reached in each context.")),
         withSpinner(DTOutput("cty_tbl"), type = 8, color = "#2a78d6", size = 0.6),
         div(class = "dc-exp", style = "margin-top:10px",
-            downloadLink("dl_cty", "CSV", class = "dc-btn"))))
+            downloadLink("dl_cty", "CSV", class = "dc-btn")))))
 }
 
 # ---- Batch panel: paste a list of genes, rsIDs or regions ----
@@ -304,6 +305,7 @@ panel_batch <- function() {
             "Paste a candidate list, for example from your own screen, to see which entries have ",
             "evidence in this release. Mix gene symbols, Ensembl IDs, rsIDs and regions, separated by ",
             "spaces, commas or new lines.")),
+    div(class = "tc-wrap",
     div(class = "bt-wrap",
         div(class = "bt-in",
             textAreaInput("bt_in", info("Your list",
@@ -315,7 +317,7 @@ panel_batch <- function() {
                 actionLink("bt_demo", "Load an example", class = "gp-clear"),
                 actionLink("bt_clear", "Clear", class = "gp-clear"))),
         div(class = "bt-side", uiOutput("bt_summary"))),
-    uiOutput("bt_body"))
+    uiOutput("bt_body")))
 }
 
 # body is rendered server-side so the page stays empty until a list is matched
@@ -350,12 +352,21 @@ batch_body_ui <- function() {
 # the release writes these datasets by first author; the site shows the site name
 DSET_FULL <- c(Kellis = "MIT", DeJager = "CUIMC1")
 
+# rewrite the dataset token inside a raw context string, for the places that
+# still show them whole
+ds_relabel <- function(x) {
+  x <- as.character(x)
+  for (k in names(DSET_FULL))
+    x <- gsub(paste0("(^|_)", k, "(_|$)"), paste0("\\1", unname(DSET_FULL[[k]]), "\\2"), x, perl = TRUE)
+  x
+}
+
 .ctx_one <- function(v) {
   if (is.na(v) || !nzchar(v)) return(c(NA_character_, NA_character_, NA_character_))
   m <- CTX_MAP[[v]]
   if (!is.null(m)) return(m[1:3])
   # unknown context: show it whole rather than splitting it on a guess
-  c(v, NA_character_, NA_character_)
+  c(ds_relabel(v), NA_character_, NA_character_)
 }
 
 ctx_cols <- function(v) {
@@ -374,11 +385,3 @@ ctx_cols <- function(v) {
        mod  = vapply(v, pick, character(1), 3L, USE.NAMES = FALSE))
 }
 
-# rewrite the dataset token inside a raw context string, for the places that
-# still show them whole
-ds_relabel <- function(x) {
-  x <- as.character(x)
-  for (k in names(DSET_FULL))
-    x <- gsub(paste0("_", k, "_"), paste0("_", unname(DSET_FULL[[k]]), "_"), x, fixed = TRUE)
-  x
-}

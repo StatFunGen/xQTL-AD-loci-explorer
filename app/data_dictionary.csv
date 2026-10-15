@@ -104,3 +104,22 @@ AD locus variants,median_pos,Median position of the locus's variants.
 AD locus variants,cV2F,cV2F variant-to-function score (same source as cv2f_score).
 AD locus variants,SNP,rsID that the cV2F score file gives for this position.
 AD locus variants,cV2F_rank,Rank of cV2F within the locus; 1 is the highest.
+AD loci list,ad_locus_id,AD locus name in this release (for example chr2_36).
+AD loci list,chr,"Chromosome of the locus, GRCh38."
+AD loci list,start,"Locus start, GRCh38, 1-based. Equal to end when the locus has one recorded variant position."
+AD loci list,end,"Locus end, GRCh38, 1-based."
+AD loci list,genome_build,Genome build of the coordinates (GRCh38).
+AD loci list,release,Data release the file was written from.
+AD loci list,explorer_url,Direct link that opens this locus in the explorer.
+Genes by AD locus,gene_symbol,Target gene symbol. A gene linked to several loci appears in several rows.
+Genes by AD locus,ensembl_gene_id,Ensembl gene ID; blank when none is mapped.
+Genes by AD locus,ad_locus_id,AD locus the gene is linked to.
+Genes by AD locus,explorer_gene_url,"Direct link that opens the gene in the explorer, showing every locus it is linked to."
+Genes by AD locus,explorer_locus_url,Direct link that opens this locus in the explorer.
+Variants by AD locus,rsid,dbSNP rsID of the variant; blank when the variant has none.
+Variants by AD locus,chr,"Chromosome of the variant, GRCh38."
+Variants by AD locus,pos,"Position of the variant, GRCh38, 1-based."
+Variants by AD locus,ref_allele,Reference allele.
+Variants by AD locus,alt_allele,Alternative allele.
+Variants by AD locus,ad_locus_id,AD locus the variant is assigned to.
+Variants by AD locus,explorer_locus_url,Direct link that opens this locus in the explorer.

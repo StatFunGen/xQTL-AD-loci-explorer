@@ -49,8 +49,11 @@ search_index <- local({
       .tr = suppressWarnings(as.integer(sub("^T", "", as.character(top_confidence)))),
       .tr = ifelse(is.na(.tr), 99L, .tr),
       .lp = ifelse(is.na(log10pval), -Inf, log10pval)) %>%
+    # a gene search opens the locus with the most evidence for that gene:
+    # best tier, then most variant-gene records, then strongest GWAS p-value
+    dplyr::group_by(gene, ADlocus) %>% dplyr::mutate(.nr = dplyr::n()) %>%
     dplyr::group_by(term = gene) %>%
-    dplyr::arrange(.tr, dplyr::desc(.lp), .by_group = TRUE) %>%
+    dplyr::arrange(.tr, dplyr::desc(.nr), dplyr::desc(.lp), .by_group = TRUE) %>%
     dplyr::slice(1) %>% dplyr::ungroup() %>%
     dplyr::transmute(term, ADlocus, tier = as.character(top_confidence),
                      kind = "gene")
