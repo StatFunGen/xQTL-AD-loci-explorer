@@ -37,7 +37,7 @@ server <- function(input, output, session) {
       parts[[k]] <- if (!length(v)) "none" else paste(if (k == "locus") loci_to_regions(v) else v, collapse = ",")
     }
     if (!is.null(input$q) && nzchar(input$q))            parts$q <- input$q
-    if (!is.null(input$gp_gene) && nzchar(input$gp_gene) && !identical(input$gp_gene, .gp_default)) parts$gene <- input$gp_gene
+    if (identical(input$nav, "Genes") && !is.null(input$gp_gene) && nzchar(input$gp_gene)) parts$gene <- input$gp_gene
     if (!is.null(input$minlp) && input$minlp > 0)        parts$minlp <- input$minlp
     if (isTRUE(input$transonly))                         parts$transonly <- "1"
     # locus is serialised separately below, as stable keys
@@ -46,7 +46,8 @@ server <- function(input, output, session) {
     qs <- paste(vapply(names(parts),
                        function(k) paste0(k, "=", URLencode(as.character(parts[[k]]), reserved = TRUE)),
                        character(1)), collapse = "&")
-    .lq <- if (!is.null(selected_locus()) && nzchar(selected_locus()))
+    .lq <- if (!is.null(selected_locus()) && nzchar(selected_locus()) &&
+               isTRUE(input$nav %in% c("Locus detail", "Trans")))
              sub("^\\?", "", locus_to_query(selected_locus())) else ""
     .all <- c(.lq, qs); .all <- paste(.all[nzchar(.all)], collapse = "&")
     updateQueryString(if (nzchar(.all)) paste0("?", .all) else "?", mode = "replace")
@@ -54,6 +55,10 @@ server <- function(input, output, session) {
 
   .other_loci_note <- function(term, kind, opened) {
     if (!identical(as.character(kind), "gene")) return(invisible())
+    .g <- genes[toupper(genes) == toupper(term)]
+    if (length(.g))
+      updateSelectizeInput(session, "gp_gene", choices = .gene_choices(genes),
+                           options = .gene_opts, selected = .g[1], server = TRUE)
     r <- dat[!is.na(dat$gene) & toupper(dat$gene) == toupper(term), c("ADlocus", "top_confidence"), drop = FALSE]
     if (!nrow(r)) return(invisible())
     k <- match(as.character(r$top_confidence), paste0("T", 1:6)); k[is.na(k)] <- 99L
@@ -2415,7 +2420,8 @@ output$gp_matrix <- renderUI({
   # deep links: gene, variant, region, filters and tab all route on first load
   observeEvent(session$clientData$url_search, {
     q <- shiny::parseQueryString(session$clientData$url_search)
-    if (!length(q)) return(invisible())
+    # the address writer starts only after the incoming address has been read
+    if (!length(q)) { restored(TRUE); return(invisible()) }
     gv <- function(k) { v <- q[[k]]; if (is.null(v) || !nzchar(v)) NULL else trimws(v) }
     sp <- function(v) strsplit(v, ",", fixed = TRUE)[[1]]
     if (!is.null(gv("q")))     updateTextInput(session, "q", value = gv("q"))
@@ -2440,6 +2446,7 @@ output$gp_matrix <- renderUI({
     if (!is.null(tb)) nav_select("nav", tb, session = session)
     else if (!is.null(r) && !is.null(r$locus))
       nav_select("nav", "Locus detail", session = session)
+    restored(TRUE)
   }, once = TRUE)
 
   # ---- compare two loci ------------------------------------------------
