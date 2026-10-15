@@ -56,7 +56,7 @@ COLTIPS <- c(
 js_gene_render <- DT::JS(paste0(
   "function(data, type, row){ if (type !== 'display' || !data) return data; ",
   "return '<a class=ext-link target=_blank rel=noopener href=https://platform.opentargets.org/search?q=' ",
-  "+ encodeURIComponent(data) + '>' + data + '</a>'; }"))
+  "+ encodeURIComponent(data) + '>' + data + '</a>' + ' <a class=ext-link target=_blank rel=noopener title=\"View molecular evidence for this gene in the NIAGADS xQTL Atlas\" href=https://xqtl.niagads.org/gene/' + encodeURIComponent(data) + '>Atlas&#8599;</a>'; }"))
 
 js_rsid_render <- DT::JS(paste0(
   "function(data, type, row){ if (type !== 'display' || !data) return data; ",
@@ -1260,6 +1260,22 @@ ui <- page_navbar(
                 "Variant-level unified AD loci table behind the locus definitions.",
                 "7,618", "CSV.GZ", "396 KB",
                 "chr, pos, ADlocus, variant_ID, GWAS_methods, max_variant_inclusion_probability, gwas_sources, is.cs95, max_zscore"))),
+          dl_group("Reference files for linking",
+            "for resources that link to this explorer, such as NIAGADS",
+            list(
+              dl_row("dlf_ref_loci", "AD loci list",
+                "One row per AD locus with GRCh38 start and end and a direct explorer link.",
+                "195", "CSV", "< 50 KB",
+                "ad_locus_id, chr, start, end, genome_build, release, explorer_url"),
+              dl_row("dlf_ref_genes", "Genes by AD locus",
+                "One row per gene and locus; a gene linked to several loci appears in several rows.",
+                format(nrow(unique(dat[!is.na(dat$gene) & nzchar(dat$gene), c("gene", "ADlocus")])), big.mark = ","),
+                "CSV", "< 300 KB",
+                "gene_symbol, ensembl_gene_id, ad_locus_id, explorer_gene_url, explorer_locus_url"),
+              dl_row("dlf_ref_variants", "Variants by AD locus",
+                "Every variant assigned to each locus, not only the lead variant.",
+                "7,618", "CSV", "< 1 MB",
+                "rsid, chr, pos, ref_allele, alt_allele, ad_locus_id, explorer_locus_url"))),
           dl_group("xQTL summary",
             "AD locus by xQTL evidence, as a workbook",
             list(
@@ -1279,6 +1295,9 @@ ui <- page_navbar(
               dl_ext("Trans top loci",
                 "Exported trans top loci from the FunGen-xQTL pipeline.",
                 "BED.GZ", "159 MB", "https://statfungen.github.io/xqtl-resources/"))),
+          div(class = "dc-note", style = "margin:10px 0 0;max-width:860px",
+            "For detailed molecular association results, including available gene-, variant- and region-level downloads, visit the ",
+            tags$a(href = "https://xqtl.niagads.org/download", target = "_blank", rel = "noopener", "NIAGADS xQTL Atlas"), "."),
           div(class = "dl-foot",
             span("Each file carries the release label and genome build in its name."),
             tags$a(href = "https://statfungen.github.io/xqtl-resources/",
@@ -1347,7 +1366,14 @@ ui <- page_navbar(
     div(class = "doc-sec", id = "doc-explorer-and-atlas", h2(class = "doc-h", "This explorer and the NIAGADS xQTL Atlas"),
       p("Use this explorer to review the integrated evidence and tiers at the candidate AD loci in this release. ",
         "Use the ", tags$a(href = "https://xqtl.niagads.org/", target = "_blank", rel = "noopener", "NIAGADS xQTL Atlas"),
-        " to inspect molecular associations, fine-mapping results and genomic context for genes, variants and regions.")),
+        " to inspect molecular associations, fine-mapping results and genomic context for genes, variants and regions. ",
+        "The explorer provides AD risk-region and gene-prioritization results; the Atlas provides detailed molecular-association and fine-mapping results. ",
+        "The two resources are complementary and may use different data releases, so check the release date shown on each site."),
+      p("Genes and variants link out to the Atlas and to NIAGADS GenomicsDB. Any gene or locus here can be opened directly: ",
+        tags$code("?gene=BIN1"), " opens the gene, ", tags$code("?region=chr2:127088929-127118906"),
+        " opens the locus at those GRCh38 coordinates, and ", tags$code("?variant=rs4663096"),
+        " opens the locus containing that variant, each appended to ", tags$code(EXPLORER_URL), ". ",
+        "The reference files on the Download page list every locus, gene and variant with its link.")),
     div(class = "doc-sec", id = "doc-study-design-and-data-sources", h2(class = "doc-h", "Study design and data sources"),
       p("The Alzheimer's Disease Functional Genomics (FunGen-AD) Consortium produced the molecular ",
         "data, 77 datasets from 2,328 participants with brain and immune-cell profiles. Of these ",

@@ -793,11 +793,18 @@ observeEvent(input$locus_prev, {
   })
   output$locus_tbl <- renderDT({
     d <- dat[dat$ADlocus == selected_locus(), ]
-    datatable(tibble(Gene = d$gene, rsID = d$rsid, Sig = sig_badge(d$significance),
+    .rs <- as.character(d$rsid)
+    .rs_html <- vapply(seq_along(.rs), function(i) {
+      if (is.na(.rs[i]) || !grepl("^rs[0-9]+$", .rs[i])) return(if (is.na(.rs[i])) "" else .rs[i])
+      sprintf(paste0('<a class="ext-link" target="_blank" rel="noopener" href="https://www.ncbi.nlm.nih.gov/snp/%s">%s</a> ',
+                     '<a class="ext-link" target="_blank" rel="noopener" title="View this variant in NIAGADS GenomicsDB" href="%s">NIAGADS&#8599;</a>'),
+              .rs[i], .rs[i], gdb_variant_url(d$variant_ID[i], .rs[i]))
+    }, character(1))
+    datatable(tibble(Gene = d$gene, rsID = .rs_html, Sig = sig_badge(d$significance),
         `Gene tier` = conf_badge(d$top_confidence), `xQTL PIP` = round(d$xqtl_max_inclusion,3),
         `TWAS z` = round(d$max_twas_z,2), `TWAS context` = d$max_twas_ctx, `Cell types` = d$ct_dots,
         `Ordered contexts` = ds_relabel(d$ordered_contexts)),
-      escape = FALSE, rownames = FALSE, options = list(dom = "lrtip", pageLength = 15, scrollX = TRUE, headerCallback = hdr_js, columnDefs = link_defs(0, 1)),
+      escape = FALSE, rownames = FALSE, options = list(dom = "lrtip", pageLength = 15, scrollX = TRUE, headerCallback = hdr_js, columnDefs = link_defs(0)),
       class = "display compact hover")
   }, server = TRUE)
 
@@ -1121,6 +1128,44 @@ observeEvent(input$locus_prev, {
                n_records = t$n_rows, stringsAsFactors = FALSE) }
   output$dlf_locsum <- downloadHandler(filename = function() "AD_locus_summary_20261002.csv",
     content = function(f) utils::write.csv(.locsum_df(), f, row.names = FALSE))
+  ## reference files for linking from NIAGADS, written from the loaded data so they match this release
+  .ref_loci <- function() { r <- locus_registry
+    data.frame(ad_locus_id = r$ADlocus, chr = r$chr, start = r$start, end = r$end,
+               genome_build = GENOME_BUILD, release = DATA_RELEASE,
+               explorer_url = paste0(EXPLORER_URL, "?region=", vapply(r$region, utils::URLencode, "", reserved = TRUE)),
+               stringsAsFactors = FALSE) }
+  .ref_genes <- function() {
+    g <- unique(dat[!is.na(dat$gene) & nzchar(dat$gene), c("gene", "gene_id", "ADlocus")])
+    g$gene_id <- ifelse(!is.na(g$gene_id) & nzchar(g$gene_id), g$gene_id,
+                        ifelse(g$gene %in% names(gid_map), unname(gid_map[g$gene]), ""))
+    g <- g[order(g$gene, g$ADlocus), ]
+    i <- match(g$ADlocus, locus_registry$ADlocus)
+    data.frame(gene_symbol = g$gene, ensembl_gene_id = g$gene_id, ad_locus_id = g$ADlocus,
+               explorer_gene_url = paste0(EXPLORER_URL, "?gene=", vapply(g$gene, utils::URLencode, "", reserved = TRUE)),
+               explorer_locus_url = paste0(EXPLORER_URL, "?region=", vapply(locus_registry$region[i], utils::URLencode, "", reserved = TRUE)),
+               stringsAsFactors = FALSE) }
+  .ref_variants <- function() {
+    f <- "downloads/AD_locus_variants_release.csv.gz"
+    v <- if (file.exists(f)) utils::read.csv(f, stringsAsFactors = FALSE)[, c("ADlocus", "variant_ID")]
+         else dat[!is.na(dat$variant_ID) & nzchar(dat$variant_ID), c("ADlocus", "variant_ID")]
+    v <- unique(v[!is.na(v$variant_ID) & nzchar(v$variant_ID), ])
+    rs <- unique(dat[!is.na(dat$rsid) & nzchar(dat$rsid), c("variant_ID", "rsid")])
+    rs <- rs[!duplicated(rs$variant_ID), ]
+    v$rsid <- rs$rsid[match(v$variant_ID, rs$variant_ID)]; v$rsid[is.na(v$rsid)] <- ""
+    p <- strsplit(sub("^chr", "", v$variant_ID), ":", fixed = TRUE)
+    i <- match(v$ADlocus, locus_registry$ADlocus)
+    v <- data.frame(rsid = v$rsid, chr = paste0("chr", vapply(p, `[`, "", 1)),
+                    pos = as.integer(vapply(p, `[`, "", 2)), ref_allele = vapply(p, `[`, "", 3),
+                    alt_allele = vapply(p, `[`, "", 4), ad_locus_id = v$ADlocus,
+                    explorer_locus_url = paste0(EXPLORER_URL, "?region=", vapply(locus_registry$region[i], utils::URLencode, "", reserved = TRUE)),
+                    stringsAsFactors = FALSE)
+    v[order(v$chr, v$pos, v$ad_locus_id), ] }
+  output$dlf_ref_loci     <- downloadHandler(filename = function() "AD_loci_list_20261002.csv",
+    content = function(f) utils::write.csv(.ref_loci(), f, row.names = FALSE))
+  output$dlf_ref_genes    <- downloadHandler(filename = function() "AD_locus_genes_20261002.csv",
+    content = function(f) utils::write.csv(.ref_genes(), f, row.names = FALSE))
+  output$dlf_ref_variants <- downloadHandler(filename = function() "AD_locus_variants_reference_20261002.csv",
+    content = function(f) utils::write.csv(.ref_variants(), f, row.names = FALSE))
   output$dlf_varlvl  <- .dl_file(
     "downloads/AD_locus_variants_release.csv.gz",
     "AD_locus_variants_20261002.csv.gz")
@@ -1349,6 +1394,9 @@ observeEvent(input$locus_prev, {
           span(class = "gp-chip", paste(nc, if (nc == 1) "cell type" else "cell types")),
           span(class = "gp-chip", paste(nm, if (nm == 1) "modality" else "modalities")))),
       div(class = "gp-act",
+        div(class = "ext-links", style = "margin-bottom:6px",
+          ext_a(atlas_gene_url(g), "View molecular evidence for this gene in NIAGADS xQTL Atlas \u2197"),
+          if (g %in% names(gid_map)) ext_a(gdb_gene_url(unname(gid_map[[g]])), "NIAGADS GenomicsDB \u2197")),
         downloadLink("dl_gp_all", "CSV", class = "dc-btn"),
         actionLink("gp_open", "Open in locus view →", class = "dc-btn")))
   })
