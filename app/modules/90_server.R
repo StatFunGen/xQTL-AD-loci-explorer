@@ -1392,11 +1392,11 @@ observeEvent(input$locus_prev, {
           if (!is.na(best)) span(class = "gp-chip t", best),
           span(class = "gp-chip", paste(nl, if (nl == 1) "locus" else "loci")),
           span(class = "gp-chip", paste(nc, if (nc == 1) "cell type" else "cell types")),
-          span(class = "gp-chip", paste(nm, if (nm == 1) "modality" else "modalities")))),
-      div(class = "gp-act",
-        div(class = "ext-links", style = "margin-bottom:6px",
+          span(class = "gp-chip", paste(nm, if (nm == 1) "modality" else "modalities"))),
+        div(class = "ext-links gp-ext",
           ext_a(atlas_gene_url(g), "View molecular evidence for this gene in NIAGADS xQTL Atlas \u2197"),
-          if (g %in% names(gid_map)) ext_a(gdb_gene_url(unname(gid_map[[g]])), "NIAGADS GenomicsDB \u2197")),
+          if (g %in% names(gid_map)) ext_a(gdb_gene_url(unname(gid_map[[g]])), "NIAGADS GenomicsDB \u2197"))),
+      div(class = "gp-act",
         downloadLink("dl_gp_all", "CSV", class = "dc-btn"),
         actionLink("gp_open", "Open in locus view →", class = "dc-btn")))
   })
