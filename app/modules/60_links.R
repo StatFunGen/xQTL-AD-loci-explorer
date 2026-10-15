@@ -45,7 +45,7 @@ ext_links <- function(vid, rsid = NA) {
   }
   if (!is.null(v))
     out <- c(out, list(ext_a(gdb_variant_url(vid, rsid), "NIAGADS GenomicsDB \u2197",
-                             "Open this variant in NIAGADS GenomicsDB. If the variant is not in NIAGADS the record page says so.")))
+                             "Open this variant in NIAGADS GenomicsDB.")))
   if (!is.na(rsid) && nzchar(rsid) && grepl("^rs", rsid)) {
     out <- c(out, list(
       tags$a(href = paste0("https://www.ncbi.nlm.nih.gov/snp/", rsid),
