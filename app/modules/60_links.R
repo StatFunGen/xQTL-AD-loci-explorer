@@ -2,7 +2,7 @@
 # The explorer explains why a gene is prioritised at an AD locus; the NIAGADS
 # xQTL Atlas and GenomicsDB hold the detailed molecular results. Links only,
 # nothing is imported. EXPLORER_URL is the address NIAGADS should link back to.
-EXPLORER_URL  <- "https://adsp-fgc.niagads.org/xqtl-resources"
+EXPLORER_URL  <- "https://wanggroup.org/xQTL-AD-loci-explorer/"
 NIAGADS_ATLAS <- "https://xqtl.niagads.org"
 NIAGADS_GDB   <- "https://www.niagads.org/genomics/app/record"
 
