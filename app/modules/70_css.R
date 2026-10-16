@@ -98,7 +98,7 @@ a:hover{ color:#1c5cab; }
 options(sass.cache = sass::sass_file_cache(file.path(getwd(), "sass-cache")))
 
 app_theme <- bs_theme(
-  version = 5, primary = "#233947", "navbar-bg" = "#ffffff",
+  version = 5, primary = "#19354A", "navbar-bg" = "#ffffff",
   bg = "#ffffff", fg = "#233947",
   "body-bg" = "#ffffff", "card-bg" = "#ffffff",
   "border-color" = "#dde2e6",
@@ -161,3 +161,56 @@ layout_css <- tags$style(HTML(paste0(
   ".lt-bar .lt-e{flex:0 0 auto}",
   ".rv-f label,.tc-f label,.lt-f label{min-height:22px;display:flex;align-items:center;gap:4px}",
   "}")))
+
+# ---- Visual polish (loaded last) -------------------------------------------
+# Aligns the explorer with the FunGen-xQTL resource catalog: navy for headings and
+# primary buttons, teal for links and the active tab, one sans-serif face for titles
+# and labels, sentence-case labels at a readable size, and one style for table
+# length controls. Plot colors, tier colors and the orange locus mark are unchanged.
+polish_css <- tags$style(HTML(paste0(
+  ":root{--navy:#19354a;--teal:#237c78;--accent:#237c78;--cta:#237c78}",
+  # titles and brand in the body font, navy
+  ".brand-b,.dc-h1{font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif!important;letter-spacing:-.015em}",
+  ".brand-b{font-weight:650}",
+  ".brand-b,.hero-title,.locus-title,.doc-h,.dc-h1,.dc-sec-t,.dc-figt,.gp-sym{color:var(--navy)}",
+  "a.brand:hover .brand-b{color:var(--teal)}",
+  # one link color
+  "a,.action-label,.tour-launch,.led summary,.cite summary,.figdata>summary,.fig-skip,.foot-col a,.kbd-pt,.vs-clear{color:var(--teal)}",
+  ".dc-searchbtn .action-label{color:#fff}",
+  ".navbar .nav-link.active{box-shadow:inset 0 -2px 0 var(--teal)!important;color:var(--navy)!important}",
+  # primary buttons navy
+  ".dc-searchbtn,.dc-btn-go,.btn-primary{background:var(--navy)!important;border-color:var(--navy)!important;color:#fff!important}",
+  ".dc-searchbtn:hover,.dc-btn-go:hover,.btn-primary:hover{background:#0f2433!important;border-color:#0f2433!important}",
+  ".tour-next{border-color:var(--navy)!important;background:var(--navy)!important;color:#fff!important}",
+  # focus ring
+  ":focus-visible,a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible,.nav-link:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--teal)!important;outline-offset:2px}",
+  ".form-control:focus,.selectize-input.focus{border-color:var(--teal)!important;box-shadow:0 0 0 2px rgba(35,124,120,.18)!important}",
+  # sentence-case labels at a readable size (were 10.5-11.5px uppercase)
+  ".vs-lab,.ctk-h,.dc-kicker,.dc-eyebrow,.foot-h,.keylab,.lk,.statline .sk,.sk,.sheet-title,.tn-mod,.tl-mod,.hero-ex-lab,.cb-h,.nav-meta-k,.tour-n,.tour-t,.dl-grp-h .t,.doc-toc>b,",
+  ".tc-f label,.tc-f .control-label,.lt-f label,.lt-f .control-label,.rv-f label,.gp-pick label,.gp-tbl th,.doc-tbl th,.doc-body th,.bslib-value-box .value-box-title",
+  "{text-transform:none!important;letter-spacing:0!important;font-size:13px!important;font-weight:600!important;font-family:inherit!important}",
+  ".shiny-input-container label>span{text-transform:none!important;letter-spacing:0!important}",
+  # small helper text up to 12.5px
+  ".ax-status,.scope-note,.ev-legend,.gp-chip,.locus-id,.dc-count-s,.interp-f,.cite,.figdata,.dc-figc,.dc-sub,.tchip,.vs-wrap{font-size:12.5px}",
+  ".lt-co,.cl.dc-mono,.cite-bib,.dl-code{font-size:12px!important}",
+  ".ctpill{font-size:11px}.sb-seg{font-size:11.5px}.irs-grid-text{font-size:10.5px}.irs-min,.irs-max,.irs-single,.irs-from,.irs-to{font-size:11.5px}",
+  # names, counts and tier keys in the body font; IDs, coordinates and code stay mono
+  ".dc-count-n,.gp-sym,.tk,.t6-k,.lt-mods,.lt-gene,.sb-n,.dc-chip{font-family:inherit!important;font-variant-numeric:tabular-nums}",
+  ".lt-mods{font-size:12.5px;color:var(--text)}.lt-gene{font-weight:600}",
+  ".dc-count-n{font-weight:650;letter-spacing:-.01em}",
+  # table length control on one line, like the other selects
+  ".dataTables_length label{display:inline-flex!important;align-items:center;gap:8px;width:auto!important;white-space:nowrap;font-size:13px;color:var(--muted)}",
+  ".dataTables_length select{display:inline-block!important;width:auto!important;min-width:72px;border:1px solid var(--line)!important;border-radius:5px;padding:3px 28px 3px 8px;font-size:13px;background-color:var(--surface)}",
+  ".dataTables_info{font-size:12.5px;color:var(--muted)}",
+  ".dataTables_paginate .paginate_button.current,.dataTables_paginate .page-item.active .page-link{background:var(--navy)!important;border-color:var(--navy)!important;color:#fff!important}",
+  ".dataTables_paginate .page-link{color:var(--navy)}",
+  ".dataTables_scrollBody thead th{padding-top:0!important;padding-bottom:0!important;border-bottom:0!important}",
+  "table.dataTable tbody tr:hover{background:#eef6f5!important}",
+  "#lt_stat,.rv-stat{font-family:inherit!important;font-size:13px}",
+  ".lk{display:inline-block}.lk::first-letter{text-transform:uppercase}",
+  # phone layout: Loci search button keeps its padding; Genes header no longer leaves a tall gap
+  ".lt-sb .dc-searchbtn{padding:8px 18px!important;flex:0 0 auto}",
+  "@media (max-width:640px){#gp_head{flex:0 0 auto!important;height:auto!important;align-content:flex-start}}",
+  # headings that receive focus when a tab opens show no focus box (as before)
+  "[tabindex='-1']:focus,[tabindex='-1']:focus-visible{outline:none!important;box-shadow:none!important}"
+)))

@@ -1012,10 +1012,10 @@ observeEvent(input$locus_prev, {
         if (n > 40) div(class = "dc-note", style = "margin-bottom:10px", paste0("Showing the 40 trans target genes with the most supporting modalities, of ", format(n, big.mark = ","), ". The table below lists all of them.")),
         if (identical(input$tn_view, "Bars"))
           withSpinner(plotOutput("trans_bars", height = "680px"),
-                      type = 8, color = "#2a78d6", size = 0.6)
+                      type = 8, color = "#237C78", size = 0.6)
         else
           withSpinner(plotOutput("trans_circos", height = "680px"),
-                      type = 8, color = "#2a78d6", size = 0.6)))
+                      type = 8, color = "#237C78", size = 0.6)))
     tagList(
       div(class = "dc-note", style = "margin-bottom:14px",
           sprintf("%s trans target gene%s at this locus, too few for a circle, so they are drawn on the chromosome strands.",
@@ -1292,12 +1292,12 @@ observeEvent(input$locus_prev, {
                               paste0('<span class="dc-mono">', t$lead, '</span>')),
       "Best tier" = vapply(t$best, chip, character(1)),
       "Highest-priority gene" = ifelse(is.na(t$top_gene), "<span class=\"lt-na\">&mdash;</span>",
-                          paste0('<span class="dc-mono" style="font-weight:600">',
+                          paste0('<span class="lt-gene">',
                                  t$top_gene, '</span>',
                                     ifelse(!is.na(t$n_tied) & t$n_tied > 0, paste0(' <span class="lt-co">+ ', t$n_tied, ' tied</span>'), ''))),
       "Cell types" = vapply(t$cells, lt_cells, character(1)),
       Modalities = ifelse(t$mods == "", "<span class=\"lt-na\">&mdash;</span>",
-                          paste0('<span class="dc-mono" style="font-size:11.5px">',
+                          paste0('<span class="lt-mods">',
                                  t$mods, '</span>')),
       Genes = t$n_genes,
       Rows = t$n_rows,
