@@ -980,7 +980,6 @@ ui <- page_navbar(
             div(class = "dc-kicker", "Export"),
             div(class = "dc-exp", style = "margin-top:6px",
               downloadLink("dl_loci_csv", "CSV", class = "dc-btn"))))),
-      uiOutput("lt_active"),
       div(class = "lt-wrap",
         uiOutput("ct_key"),
         div(class = "panel",

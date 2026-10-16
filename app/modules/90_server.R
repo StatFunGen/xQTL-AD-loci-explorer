@@ -1281,7 +1281,10 @@ observeEvent(input$locus_prev, {
 
   output$loci_tbl <- renderDT({
     t <- loci_view()
-    if (!nrow(t)) return(datatable(data.frame(), rownames = FALSE))
+    if (!nrow(t)) return(datatable(data.frame(Locus = character(0)), rownames = FALSE,
+      options = list(dom = "t", ordering = FALSE, language = list(emptyTable = sprintf(
+        "No AD locus matches the current search or filters. Use Clear all in the Current view bar to see all %d loci.",
+        nrow(locus_table))))))
     chip <- function(k) if (is.na(k)) "<span class=\"lt-na\">&mdash;</span>" else
       sprintf('<span class="tchip" style="background:%s;color:%s">%s</span>',
               unname(conf_pal[[k]]), unname(conf_txt[[k]]), k)
@@ -1871,7 +1874,14 @@ output$gp_matrix <- renderUI({
             panel.background = element_rect(fill = "#ffffff", colour = NA))
   }
 
-  output$cty_tier_plot <- renderPlot(.tier_bar(cty_d(), .unit(input$cty_unit)), res = 96)
+  output$cty_tier_plot <- renderPlot({
+    if (!nrow(cty_d())) {
+      op <- par(mar = c(0, 0, 0, 0)); on.exit(par(op))
+      plot.new(); text(0.5, 0.5, "No variant-gene rows in this cell type match the current filters.", col = "#63717d", cex = 1.05)
+      return(invisible())
+    }
+    .tier_bar(cty_d(), .unit(input$cty_unit))
+  }, res = 96)
 
   .rec_tbl <- function(d) {
     cc <- ctx_cols(d$context)
@@ -2388,9 +2398,6 @@ output$gp_matrix <- renderUI({
     n_now <- tryCatch(nrow(tn_tbl_d()), error = function(e) NA_integer_)
     if (identical(input$tn_scope, "locus") && !is.na(n_now) && n_now == 0L)
       it <- c(it, "no trans target genes for this locus")
-    if (length(input$tmod)) it <- c(it, paste(input$tmod, collapse = " or "))
-    q <- trimws(if (is.null(input$tn_q)) "" else input$tn_q)
-    if (nzchar(q)) it <- c(it, paste0("matching ", q))
     .chips(it, "tn_reset")
   })
   observeEvent(input$tn_reset, {

@@ -162,6 +162,11 @@ layout_css <- tags$style(HTML(paste0(
   ".rv-f label,.tc-f label,.lt-f label{min-height:22px;display:flex;align-items:center;gap:4px}",
   "}")))
 
+# Every table: one plain message when nothing matches
+options(DT.options = list(language = list(
+  emptyTable  = "Nothing matches the current filters. Use Clear all in the Current view bar to reset them.",
+  zeroRecords = "Nothing matches the current filters. Use Clear all in the Current view bar to reset them.")))
+
 # ---- Visual polish (loaded last) -------------------------------------------
 # Aligns the explorer with the FunGen-xQTL resource catalog: navy for headings and
 # primary buttons, teal for links and the active tab, one sans-serif face for titles
@@ -206,7 +211,7 @@ polish_css <- tags$style(HTML(paste0(
   ".dataTables_paginate .page-link{color:var(--navy)}",
   ".dataTables_scrollBody thead th{padding-top:0!important;padding-bottom:0!important;border-bottom:0!important}",
   "table.dataTable tbody tr:hover{background:#eef6f5!important}",
-  "#lt_stat,.rv-stat{font-family:inherit!important;font-size:13px}",
+  "#lt_stat,#lt_stat *,.lt-stat,.lt-stat *,.rv-stat{font-family:inherit!important;font-size:13px}",
   ".lk{display:inline-block}.lk::first-letter{text-transform:uppercase}",
   # phone layout: Loci search button keeps its padding; Genes header no longer leaves a tall gap
   ".lt-sb .dc-searchbtn{padding:8px 18px!important;flex:0 0 auto}",
