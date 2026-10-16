@@ -142,9 +142,9 @@ ev_key <- function() {
     span(class = "keylab", "Evidence status"),
     span(HTML('<span class="ev ev-yes">&#10003;</span>'), " detected"),
     span(HTML('<span class="ev ev-ns">NS</span>'), " tested, not significant"),
-    span(HTML('<span class="ev ev-na">&mdash;</span>'), " not available"),
+    span(HTML('<span class="ev ev-na">&mdash;</span>'), " no record"),
     span(class = "keynote",
-         "A dash means unknown, which is different from tested and negative."))
+         "A dash means no record in this release; it is not a negative result."))
 }
 hero_banner <- local({
   set.seed(7)
