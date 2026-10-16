@@ -1,4 +1,23 @@
-app_css <- tags$head(tags$style(HTML("
+# ---- Direct links: no flash of Home --------------------------------------
+# A link with ?gene=, ?variant= or ?region= shows "Opening <term>" in place of the
+# page until the server has switched to the requested view (or shown its
+# not-in-release message), instead of showing Home first. Gives up after 25 s.
+deeplink_js <- tags$script(HTML(paste0(
+  "(function(){try{var p=new URLSearchParams(location.search);var t=p.get('gene')||p.get('variant')||p.get('region');",
+  "var tab=p.get('tab');if(!t||(tab&&tab==='Home'))return;var de=document.documentElement;de.classList.add('adx-dl');",
+  "var st=document.createElement('style');st.textContent='html.adx-dl .tab-content,html.adx-dl #view_strip,html.adx-dl .site-footer{visibility:hidden}",
+  ".adx-dl-box{position:fixed;left:0;right:0;top:40%;display:flex;flex-direction:column;align-items:center;gap:12px;z-index:900;font-size:15px;color:#19354a}",
+  ".adx-dl-sp{width:28px;height:28px;border:3px solid #dce3e8;border-top-color:#237c78;border-radius:50%;animation:adxsp 0.9s linear infinite}",
+  "@keyframes adxsp{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){.adx-dl-sp{animation:none}}';",
+  "document.head.appendChild(st);var box=null;function show(){if(box||!document.body)return;box=document.createElement('div');box.className='adx-dl-box';",
+  "box.setAttribute('role','status');box.setAttribute('aria-live','polite');var sp=document.createElement('div');sp.className='adx-dl-sp';",
+  "var tx=document.createElement('div');tx.textContent='Opening '+t+'\\u2026';box.appendChild(sp);box.appendChild(tx);document.body.appendChild(box);}",
+  "function done(){de.classList.remove('adx-dl');if(box&&box.parentNode)box.parentNode.removeChild(box);clearInterval(iv);}",
+  "var t0=Date.now();var iv=setInterval(function(){show();var a=document.querySelector('.navbar .nav-link.active');",
+  "var on=a?a.textContent.trim():'';if((on&&on!=='Home')||document.querySelector('.shiny-notification')||Date.now()-t0>25000)setTimeout(done,250);},150);",
+  "if(window.jQuery)jQuery(document).on('shiny:disconnected',done);}catch(e){}})();")))
+
+app_css <- tags$head(deeplink_js, tags$style(HTML("
 /* ===== LIGHT SCIENTIFIC THEME =====
    No double quotes in this block: it lives inside an R string. */
 :root{
