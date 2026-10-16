@@ -86,8 +86,13 @@ parse_region_str <- function(x) {
 resolve_locus <- function(q) {
   hit <- function(loc, via, n) list(locus = loc, via = via, n = as.integer(n))
   if (!is.null(q$gene) && nzchar(q$gene)) {
+    g <- q$gene
+    # an Ensembl gene ID resolves through its gene symbol
+    if (grepl("^ENSG[0-9]", g, ignore.case = TRUE) && exists("ens_to_symbol")) {
+      s <- ens_to_symbol(g); if (length(s)) g <- s[1]
+    }
     h <- search_index[search_index$kind == "gene" &
-                        toupper(search_index$term) == toupper(q$gene), ]
+                        toupper(search_index$term) == toupper(g), ]
     if (nrow(h)) return(hit(h$ADlocus[1], "gene", nrow(h)))
   }
   if (!is.null(q$variant) && nzchar(q$variant)) {

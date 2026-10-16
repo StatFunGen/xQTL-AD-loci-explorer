@@ -2455,15 +2455,18 @@ output$gp_matrix <- renderUI({
     if (length(.asked) && (is.null(r) || is.null(r$locus)))
       showNotification(sprintf("%s is not in this release, so no AD locus is shown.", .asked[1]),
                        type = "warning", duration = 12)
-    g <- gv("gene")
+    # a gene link opens the Genes page for that gene; the gene's best locus is still
+    # set on Locus detail. Variant and region links open Locus detail.
+    g <- gv("gene"); gene_hit <- character(0)
     if (!is.null(g)) {
       gu  <- toupper(g)
-      hit <- genes[toupper(genes) == gu]
-      if (!length(hit)) hit <- ens_to_symbol(gu)
-      if (length(hit)) .open_gene(hit[1])
+      gene_hit <- genes[toupper(genes) == gu]
+      if (!length(gene_hit)) gene_hit <- ens_to_symbol(gu)
+      if (length(gene_hit)) .open_gene(gene_hit[1])
     }
     tb <- gv("tab")
     if (!is.null(tb)) nav_select("nav", tb, session = session)
+    else if (length(gene_hit)) nav_select("nav", "Genes", session = session)
     else if (!is.null(r) && !is.null(r$locus))
       nav_select("nav", "Locus detail", session = session)
     restored(TRUE)
