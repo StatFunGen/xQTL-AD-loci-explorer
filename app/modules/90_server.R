@@ -68,6 +68,12 @@ server <- function(input, output, session) {
       list(gene = if (length(.g)) .g[1] else term, opened = opened,
            loci = names(bt)[order(bt, -nr[names(bt)])]))
   }
+  .region_note <- function(q, opened) {
+    r <- parse_region_str(q); if (is.null(r)) return(invisible())
+    ov <- locus_registry$chr == r$chr & locus_registry$start <= r$end & locus_registry$end >= r$start
+    gene_note(if (sum(ov) < 2) NULL else
+      list(kind = "region", gene = q, opened = opened, loci = locus_registry$ADlocus[ov]))
+  }
   # Persistent note on Locus detail while the user stays on one of the
   # searched gene's loci; replaces a pop-up that was easy to miss.
   gene_note <- reactiveVal(NULL)
@@ -80,6 +86,12 @@ server <- function(input, output, session) {
     items <- list()
     for (j in seq_along(gn$loci))
       items <- c(items, if (j > 1) list(" \u00b7 "), list(lnk(gn$loci[j])))
+    if (identical(gn$kind, "region"))
+      return(div(class = "gene-note",
+        tags$b(gn$gene), sprintf(" overlaps %d AD loci. ", length(gn$loci)),
+        if (identical(loc, gn$opened))
+          "This page shows the one that overlaps it most. " else NULL,
+        "Loci: ", do.call(tagList, items)))
     div(class = "gene-note",
       tags$b(gn$gene), sprintf(" is linked to %d AD loci. ", length(gn$loci)),
       if (identical(loc, gn$opened))
@@ -114,12 +126,22 @@ server <- function(input, output, session) {
       nav_select("nav", "Locus detail", session = session)
       return(invisible())
     }
-    .r <- resolve_locus(list(region = input$hero_search))
+    # Typed text (not picked from the list) uses the same lookup as direct links:
+    # gene symbol or Ensembl ID, then rsID, then region.
+    .x <- trimws(input$hero_search)
+    .r <- resolve_locus(list(gene = .x))
+    if (is.null(.r)) .r <- resolve_locus(list(variant = .x))
+    if (is.null(.r)) .r <- resolve_locus(list(region = .x))
     if (!is.null(.r)) {
       selected_locus(.r$locus)
+      if (identical(.r$via, "gene")) {
+        .g <- genes[toupper(genes) == toupper(.x)]
+        if (!length(.g)) .g <- ens_to_symbol(.x)
+        .other_loci_note(if (length(.g)) .g[1] else .x, "gene", .r$locus)
+      } else if (identical(.r$via, "region")) .region_note(.x, .r$locus)
       nav_select("nav", "Locus detail", session = session)
     } else {
-      showNotification("No gene, variant or region matched that.",
+      showNotification(sprintf("%s is not in this release. No gene, variant or region matched it.", .x),
                        type = "warning", duration = 5)
     }
   }, ignoreInit = TRUE)
@@ -1072,6 +1094,7 @@ observeEvent(input$locus_prev, {
     .r <- resolve_locus(list(region = "chr2:127088929-127118906"))
     if (!is.null(.r)) {
       selected_locus(.r$locus)
+      .region_note("chr2:127088929-127118906", .r$locus)
       nav_select("nav", "Locus detail", session = session)
     }
   })
@@ -1281,7 +1304,10 @@ observeEvent(input$locus_prev, {
 
   output$loci_tbl <- renderDT({
     t <- loci_view()
-    if (!nrow(t)) return(datatable(data.frame(), rownames = FALSE))
+    if (!nrow(t)) return(datatable(data.frame(Locus = character(0)), rownames = FALSE,
+      options = list(dom = "t", ordering = FALSE, language = list(emptyTable = sprintf(
+        "No AD locus matches the current search or filters. Use Clear all in the Current view bar to see all %d loci.",
+        nrow(locus_table))))))
     chip <- function(k) if (is.na(k)) "<span class=\"lt-na\">&mdash;</span>" else
       sprintf('<span class="tchip" style="background:%s;color:%s">%s</span>',
               unname(conf_pal[[k]]), unname(conf_txt[[k]]), k)
@@ -1871,7 +1897,14 @@ output$gp_matrix <- renderUI({
             panel.background = element_rect(fill = "#ffffff", colour = NA))
   }
 
-  output$cty_tier_plot <- renderPlot(.tier_bar(cty_d(), .unit(input$cty_unit)), res = 96)
+  output$cty_tier_plot <- renderPlot({
+    if (!nrow(cty_d())) {
+      op <- par(mar = c(0, 0, 0, 0)); on.exit(par(op))
+      plot.new(); text(0.5, 0.5, "No variant-gene rows in this cell type match the current filters.", col = "#63717d", cex = 1.05)
+      return(invisible())
+    }
+    .tier_bar(cty_d(), .unit(input$cty_unit))
+  }, res = 96)
 
   .rec_tbl <- function(d) {
     cc <- ctx_cols(d$context)
@@ -2388,9 +2421,6 @@ output$gp_matrix <- renderUI({
     n_now <- tryCatch(nrow(tn_tbl_d()), error = function(e) NA_integer_)
     if (identical(input$tn_scope, "locus") && !is.na(n_now) && n_now == 0L)
       it <- c(it, "no trans target genes for this locus")
-    if (length(input$tmod)) it <- c(it, paste(input$tmod, collapse = " or "))
-    q <- trimws(if (is.null(input$tn_q)) "" else input$tn_q)
-    if (nzchar(q)) it <- c(it, paste0("matching ", q))
     .chips(it, "tn_reset")
   })
   observeEvent(input$tn_reset, {
@@ -2450,6 +2480,7 @@ output$gp_matrix <- renderUI({
     r <- tryCatch(resolve_locus(q), error = function(e) NULL)
     if (!is.null(r) && !is.null(r$locus)) selected_locus(r$locus)
     if (!is.null(r) && identical(r$via, "gene")) .other_loci_note(gv("gene"), "gene", r$locus)
+    if (!is.null(r) && identical(r$via, "region")) .region_note(gv("region"), r$locus)
     # a direct link to something outside this release says so instead of silently showing Home
     .asked <- c(gv("gene"), gv("variant"), gv("region"))
     if (length(.asked) && (is.null(r) || is.null(r$locus)))

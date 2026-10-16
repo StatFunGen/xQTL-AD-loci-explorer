@@ -276,7 +276,6 @@ panel_cell_types <- function() {
               "Matches gene symbol, AD locus or rsID. Combines with the tier filter."),
               value = "", width = "100%", placeholder = "Gene, locus or rsID")))),
     div(class = "tc-wrap",
-    uiOutput("cty_active"),
     uiOutput("cty_stats"),
     div(class = "panel", style = "margin-top:18px",
         div(class = "dc-sechead",
