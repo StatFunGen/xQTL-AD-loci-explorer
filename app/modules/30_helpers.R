@@ -77,7 +77,7 @@ dl_row <- function(id, file, desc, rows, fmt, size, cols) {
     tags$td(class = "n dc-mono", rows),
     tags$td(class = "fm", fmt),
     tags$td(class = "n dc-mono", size),
-    tags$td(class = "a", downloadLink(id, "Download", class = "dc-btn")))
+    tags$td(class = "a", downloadLink(id, "Download", class = "dc-btn", `aria-label` = paste("Download", file))))
 }
 
 dl_ext <- function(file, desc, fmt, size, href) {
@@ -90,7 +90,8 @@ dl_ext <- function(file, desc, fmt, size, href) {
     tags$td(class = "n dc-mono", size),
     tags$td(class = "a",
       tags$a(href = href, target = "_blank", rel = "noopener",
-             class = "dc-btn", "Catalogue →")))
+             class = "dc-btn", `aria-label` = paste(file, "in the resource catalog (opens in a new tab)"),
+             "Catalog →")))
 }
 
 dl_group <- function(title, note, rows) {
