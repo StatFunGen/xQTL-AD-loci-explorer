@@ -2480,6 +2480,7 @@ output$gp_matrix <- renderUI({
     r <- tryCatch(resolve_locus(q), error = function(e) NULL)
     if (!is.null(r) && !is.null(r$locus)) selected_locus(r$locus)
     if (!is.null(r) && identical(r$via, "gene")) .other_loci_note(gv("gene"), "gene", r$locus)
+    if (!is.null(r) && identical(r$via, "region")) .region_note(gv("region"), r$locus)
     # a direct link to something outside this release says so instead of silently showing Home
     .asked <- c(gv("gene"), gv("variant"), gv("region"))
     if (length(.asked) && (is.null(r) || is.null(r$locus)))
