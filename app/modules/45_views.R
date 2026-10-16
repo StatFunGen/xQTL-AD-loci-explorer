@@ -288,7 +288,7 @@ panel_cell_types <- function() {
         div(class = "dc-exp", style = "margin-top:6px", downloadLink("dl_cty_tier_png", "PNG", class = "dc-btn"), downloadLink("dl_cty_tier_csv", "CSV", class = "dc-btn"))),
     div(class = "panel", style = "margin-top:20px",
         div(class = "dc-sechead",
-            div(class = "dc-figt", "Gene records"),
+            div(class = "dc-figt", "Variant-gene rows"),
             div(class = "dc-figc", "One row per variant and target gene pair at an AD locus, with evidence in this cell type. The tier is the gene's tier across the whole release; the Genes page shows the tier reached in each context.")),
         withSpinner(DTOutput("cty_tbl"), type = 8, color = "#2a78d6", size = 0.6),
         div(class = "dc-exp", style = "margin-top:10px",

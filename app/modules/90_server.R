@@ -1837,7 +1837,7 @@ output$gp_matrix <- renderUI({
     div(class = "dc-counts",
         .cnt(length(unique(d$ADlocus)), "AD loci"),
         .cnt(length(unique(d$gene[!is.na(d$gene) & nzchar(d$gene)])), "genes"),
-        .cnt(nrow(d), "gene records"),
+        .cnt(nrow(d), "variant-gene rows"),
         .cnt(length(unique(na.omit(d$context))), "contexts"))
   })
 
@@ -1921,7 +1921,7 @@ output$gp_matrix <- renderUI({
       div(class = "kv", span("Found here"),       tags$b(sum(m$matched))),
       div(class = "kv", span("Not in this release"), tags$b(sum(!m$matched))),
       div(class = "kv", span("AD loci reached"),  tags$b(length(unique(r$ADlocus)))),
-      div(class = "kv", span("Gene records"),     tags$b(nrow(r))))
+      div(class = "kv", span("Variant-gene rows"),     tags$b(nrow(r))))
   })
 
   output$bt_body <- renderUI({
@@ -1977,7 +1977,7 @@ output$gp_matrix <- renderUI({
     gw  <- sum(!is.na(dat$significance) & dat$significance == "genome wide")
     cv  <- sum(!is.na(dat$cv2f_score))
     div(class = "dc-counts", style = "margin-top:20px",
-        .cnt(n, "gene records"),
+        .cnt(n, "variant-gene rows"),
         .cnt(round(100 * sharp / n), "% reach PIP 0.5 or more"),
         .cnt(round(100 * gw / n), "% genome-wide significant"),
         .cnt(round(100 * cv / n), "% carry a cV2F score"))
@@ -2047,13 +2047,13 @@ output$gp_matrix <- renderUI({
     content = function(f) .prov_csv(.rec_cols("max_inclusion"), f, "highest PIP per gene record"))
   output$dl_ql_cv2f_png <- .png_only("variant_to_function_score", .fig_ql_cv2f, 6, 3.2)
   output$dl_ql_cv2f_csv <- downloadHandler(filename = function() "variant_to_function_score.csv",
-    content = function(f) .prov_csv(.rec_cols("cv2f_score"), f, "cV2F score per gene record"))
+    content = function(f) .prov_csv(.rec_cols("cv2f_score"), f, "cV2F score per variant-gene row"))
   output$dl_ql_sig_png  <- .png_only("GWAS_support", .fig_ql_sig, 6, 3.2)
   output$dl_ql_sig_csv  <- downloadHandler(filename = function() "GWAS_support.csv",
     content = function(f) {
       v <- as.character(dat$significance); v[is.na(v) | !nzchar(v)] <- "no p-value"
-      tb <- as.data.frame(table(v), stringsAsFactors = FALSE); names(tb) <- c("GWAS_significance", "gene_records")
-      .prov_csv(tb, f, "gene records by GWAS significance")
+      tb <- as.data.frame(table(v), stringsAsFactors = FALSE); names(tb) <- c("GWAS_significance", "variant_gene_rows")
+      .prov_csv(tb, f, "variant-gene rows by GWAS significance")
     })
   output$dl_cty_tier_png <- .png_only("cell_type_evidence_tiers", function() .tier_bar(cty_d(), .unit(input$cty_unit)), 6, 3.4)
   output$dl_cty_tier_csv <- downloadHandler(filename = function() "cell_type_evidence_tiers.csv",
@@ -2507,7 +2507,7 @@ output$gp_matrix <- renderUI({
         row("Region", txt(fa$region), txt(fb$region), FALSE),
         row("Best tier", tchip(fa$best), tchip(fb$best), FALSE),
         row("Target genes", format(fa$genes, big.mark = ","), format(fb$genes, big.mark = ",")),
-        row("Gene records", format(fa$recs, big.mark = ","), format(fb$recs, big.mark = ",")),
+        row("Variant-gene rows", format(fa$recs, big.mark = ","), format(fb$recs, big.mark = ",")),
         row("Contexts", fa$ctx, fb$ctx),
         row("Modalities", fa$mods, fb$mods),
         row("Trans links", format(fa$trans, big.mark = ","), format(fb$trans, big.mark = ",")),
@@ -2523,7 +2523,7 @@ output$gp_matrix <- renderUI({
       a <- input$cmp_a; b <- input$cmp_b
       fa <- .loc_facts(a); fb <- .loc_facts(b)
       v <- function(x) if (is.null(x) || length(x) == 0 || is.na(x)) "" else as.character(x)
-      k <- c(region = "Region", best = "Best tier", genes = "Target genes", recs = "Gene records",
+      k <- c(region = "Region", best = "Best tier", genes = "Target genes", recs = "Variant-gene rows",
              ctx = "Contexts", mods = "Modalities", trans = "Trans links",
              top = "Strongest gene", lead = "Lead variant")
       d <- data.frame(field = unname(k),
