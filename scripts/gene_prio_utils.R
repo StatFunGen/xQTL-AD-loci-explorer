@@ -183,7 +183,8 @@ SummarizeTable<-function(res_adx,
   message('summarizing per ',group.by,' the xQTL evidence for each variant')
   .fm_methods<-c('single_context_finemapping','multi_context_finemapping',
                 'multi_gene_finemapping','fSuSiE_finemapping')
-  res_adx[!str_detect(context,'^AD'),confidence_lvl:={
+  ## trans evidence (trans fine-mapping, transmap targets) is reference only and gets no tier
+  res_adx[!str_detect(context,'^AD')&!grepl('trans',Method)&!grepl('^tmAD_',gene_ID),confidence_lvl:={
     .xcs95<-(Method%in%.fm_methods&str_detect(credibleset,'^cs95'))|Method%in%'fSuSiE_finemapping'
     .ov95<-.xcs95&susie_coverage%in%'cs95'
     .ov70<-Method%in%.fm_methods&str_detect(credibleset,'^cs70')&susie_coverage%in%'cs95'
