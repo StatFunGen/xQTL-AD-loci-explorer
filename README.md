@@ -1,7 +1,7 @@
 # xQTL AD Loci Explorer
 
 Code and released tables behind the **AD Loci Explorer**, a browsable view of the
-ADSP FunGen-xQTL release across 195 candidate Alzheimer's disease loci.
+ADSP FunGen-xQTL release across 196 candidate Alzheimer's disease loci.
 
 Live app: https://wanggroup.org/xQTL-AD-loci-explorer/ (direct link: https://jenny-empawi.shinyapps.io/xQTL-AD-loci-explorer/)
 
@@ -50,7 +50,7 @@ export AD_LOCI_OUT=$AD_LOCI_ROOT/out_$(date +%Y%m%d)    # optional
 export AD_LOCI_CONFIG=/path/to/private/config          # optional, see Inputs
 
 Rscript scripts/build_AD_locus_table.R                 # -> $AD_LOCI_OUT
-Rscript scripts/validate_outputs.R  $AD_LOCI_OUT       # expected tables, 195 loci, 494 genes
+Rscript scripts/validate_outputs.R  $AD_LOCI_OUT       # expected tables, 196 loci, 452 genes
 Rscript app/build_shiny_data.R $AD_LOCI_OUT app/data.csv
 ```
 
@@ -270,7 +270,7 @@ The build writes the locus-level summary, the variant-level membership table and
 the unified workbook to `$AD_LOCI_OUT`, together with a `_provenance.csv`
 recording the commit, host, time and the exact configuration the run used, and a
 copy of the two config tables as they stood. `scripts/validate_outputs.R` then
-checks that release: the expected tables are present, 195 loci, 494 genes, and
+checks that release: the expected tables are present, 196 loci, 452 genes, and
 the published tier distribution.
 
 The output directory is deliberately created empty. The GWAS credible-set

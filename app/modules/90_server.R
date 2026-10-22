@@ -2053,7 +2053,7 @@ output$gp_matrix <- renderUI({
   }
 
   # ---- P2.14 / P2.15 provenance ------------------------------------------
-  .rel_lab  <- if (exists("RELEASE_LABEL")) as.character(RELEASE_LABEL) else "2026-10-02"
+  .rel_lab  <- if (exists("RELEASE_LABEL")) as.character(RELEASE_LABEL) else "2026-10-22"
   .bld_lab  <- if (exists("BUILD_LABEL")) as.character(BUILD_LABEL) else "GRCh38"
   .cite_txt <- "The Alzheimer Disease Functional Genomics (FunGen-AD) Consortium. Broad and deep dissection of Alzheimer disease genetics with FunGen-xQTL."
   .cur_q <- function() {

@@ -1245,7 +1245,7 @@ ui <- page_navbar(
                 sprintf("%.0f KB", file.size("data_dictionary.csv") / 1024),
                 "file, column, description"))),
           dl_group("AD locus tables",
-            "the 2026-10-02 unified AD loci release",
+            "the 2026-10-22 unified AD loci release",
             list(
               dl_row("dlf_locsum", "AD locus summary",
                 "One row per AD locus: region, lead variant and gene count.",
