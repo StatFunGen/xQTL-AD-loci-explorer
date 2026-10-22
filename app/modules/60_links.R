@@ -1,3 +1,27 @@
+# ---- NIAGADS cross-links ------------------------------------------------
+# The explorer explains why a gene is prioritised at an AD locus; the NIAGADS
+# xQTL Atlas and GenomicsDB hold the detailed molecular results. Links only,
+# nothing is imported. EXPLORER_URL is the address NIAGADS should link back to.
+EXPLORER_URL  <- "https://xqtl.niagads.org/AD-loci-explorer/"
+NIAGADS_ATLAS <- "https://xqtl.niagads.org"
+NIAGADS_GDB   <- "https://www.niagads.org/genomics/app/record"
+
+atlas_gene_url <- function(sym) paste0(NIAGADS_ATLAS, "/gene/", utils::URLencode(as.character(sym), reserved = TRUE))
+gdb_gene_url   <- function(ensg) paste0(NIAGADS_GDB, "/gene/", ensg)
+# Atlas region pages read chrN:start-end; a single-position locus uses start = end.
+atlas_region_url <- function(chr, start, end)
+  paste0(NIAGADS_ATLAS, "/region/", chr, ":", format(start, scientific = FALSE, trim = TRUE), "-", format(end, scientific = FALSE, trim = TRUE))
+# GenomicsDB variant records read chromosome:position:ref:alt[:rsID], no "chr".
+gdb_variant_url <- function(vid, rsid = NA) {
+  v <- variant_parts(vid)
+  if (is.null(v)) return(NA_character_)
+  id <- paste(v$chr, v$pos, v$ref, v$alt, sep = ":")
+  if (!is.na(rsid) && nzchar(rsid) && grepl("^rs", rsid)) id <- paste0(id, ":", rsid)
+  paste0(NIAGADS_GDB, "/variant/", id)
+}
+ext_a <- function(href, label, tip = NULL)
+  tags$a(href = href, target = "_blank", rel = "noopener", class = "ext-link", title = tip, label)
+
 # ---- external variant resources ---------------------------------------
 # variant_ID arrives as "chr1:17117119:G:A"; gnomAD and Open Targets want
 # positional forms, so parse once and build each link from the parts.
@@ -15,13 +39,16 @@ ext_links <- function(vid, rsid = NA) {
       tags$a(href = sprintf("https://gnomad.broadinstitute.org/variant/%s-%s-%s-%s?dataset=gnomad_r4",
                             v$chr, v$pos, v$ref, v$alt),
              target = "_blank", rel = "noopener", class = "ext-link", "gnomAD"),
-      tags$a(href = sprintf("https://genetics.opentargets.org/variant/%s_%s_%s_%s",
+      tags$a(href = sprintf("https://platform.opentargets.org/variant/%s_%s_%s_%s",
                             v$chr, v$pos, v$ref, v$alt),
              target = "_blank", rel = "noopener", class = "ext-link", "Open Targets"),
       tags$a(href = sprintf("https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&position=chr%s:%s-%s",
                             v$chr, max(as.numeric(v$pos) - 500, 1), as.numeric(v$pos) + 500),
              target = "_blank", rel = "noopener", class = "ext-link", "UCSC")))
   }
+  if (!is.null(v))
+    out <- c(out, list(ext_a(gdb_variant_url(vid, rsid), "NIAGADS GenomicsDB \u2197",
+                             "Open this variant in NIAGADS GenomicsDB.")))
   if (!is.na(rsid) && nzchar(rsid) && grepl("^rs", rsid)) {
     out <- c(out, list(
       tags$a(href = paste0("https://www.ncbi.nlm.nih.gov/snp/", rsid),
@@ -33,6 +60,12 @@ ext_links <- function(vid, rsid = NA) {
 
 gene_links <- function(sym, ensg = NA) {
   out <- list()
+  if (!is.na(sym) && nzchar(sym))
+    out <- c(out, list(ext_a(atlas_gene_url(sym), "NIAGADS xQTL Atlas \u2197",
+                             "View molecular evidence for this gene in the NIAGADS xQTL Atlas")))
+  if (!is.na(ensg) && nzchar(ensg))
+    out <- c(out, list(ext_a(gdb_gene_url(ensg), "NIAGADS GenomicsDB \u2197",
+                             "Open this gene in NIAGADS GenomicsDB")))
   if (!is.na(sym) && nzchar(sym))
     out <- c(out, list(tags$a(href = paste0("https://gnomad.broadinstitute.org/gene/", sym, "?dataset=gnomad_r4"),
                               target = "_blank", rel = "noopener", class = "ext-link", "gnomAD gene")))
@@ -109,9 +142,9 @@ ev_key <- function() {
     span(class = "keylab", "Evidence status"),
     span(HTML('<span class="ev ev-yes">&#10003;</span>'), " detected"),
     span(HTML('<span class="ev ev-ns">NS</span>'), " tested, not significant"),
-    span(HTML('<span class="ev ev-na">&mdash;</span>'), " not available"),
+    span(HTML('<span class="ev ev-na">&mdash;</span>'), " no record"),
     span(class = "keynote",
-         "A dash means unknown, which is different from tested and negative."))
+         "A dash means no record in this release; it is not a negative result."))
 }
 hero_banner <- local({
   set.seed(7)

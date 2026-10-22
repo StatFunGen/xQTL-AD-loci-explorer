@@ -37,7 +37,7 @@ server <- function(input, output, session) {
       parts[[k]] <- if (!length(v)) "none" else paste(if (k == "locus") loci_to_regions(v) else v, collapse = ",")
     }
     if (!is.null(input$q) && nzchar(input$q))            parts$q <- input$q
-    if (!is.null(input$gp_gene) && nzchar(input$gp_gene) && !identical(input$gp_gene, .gp_default)) parts$gene <- input$gp_gene
+    if (identical(input$nav, "Genes") && !is.null(input$gp_gene) && nzchar(input$gp_gene)) parts$gene <- input$gp_gene
     if (!is.null(input$minlp) && input$minlp > 0)        parts$minlp <- input$minlp
     if (isTRUE(input$transonly))                         parts$transonly <- "1"
     # locus is serialised separately below, as stable keys
@@ -46,7 +46,8 @@ server <- function(input, output, session) {
     qs <- paste(vapply(names(parts),
                        function(k) paste0(k, "=", URLencode(as.character(parts[[k]]), reserved = TRUE)),
                        character(1)), collapse = "&")
-    .lq <- if (!is.null(selected_locus()) && nzchar(selected_locus()))
+    .lq <- if (!is.null(selected_locus()) && nzchar(selected_locus()) &&
+               isTRUE(input$nav %in% c("Locus detail", "Trans")))
              sub("^\\?", "", locus_to_query(selected_locus())) else ""
     .all <- c(.lq, qs); .all <- paste(.all[nzchar(.all)], collapse = "&")
     updateQueryString(if (nzchar(.all)) paste0("?", .all) else "?", mode = "replace")
@@ -54,20 +55,49 @@ server <- function(input, output, session) {
 
   .other_loci_note <- function(term, kind, opened) {
     if (!identical(as.character(kind), "gene")) return(invisible())
+    .g <- genes[toupper(genes) == toupper(term)]
+    if (length(.g))
+      updateSelectizeInput(session, "gp_gene", choices = .gene_choices(genes),
+                           options = .gene_opts, selected = .g[1], server = TRUE)
     r <- dat[!is.na(dat$gene) & toupper(dat$gene) == toupper(term), c("ADlocus", "top_confidence"), drop = FALSE]
     if (!nrow(r)) return(invisible())
     k <- match(as.character(r$top_confidence), paste0("T", 1:6)); k[is.na(k)] <- 99L
+    nr <- table(as.character(r$ADlocus))
     bt <- tapply(k, as.character(r$ADlocus), min)
-    if (length(bt) < 2) return(invisible())
-    lab <- function(l) l
-    oth <- setdiff(names(bt)[order(bt)], opened)
-    links <- vapply(oth, function(l) sprintf(
-      '<a href="#" onclick="Shiny.setInputValue(\'jump_locus\', \'%s\', {priority: \'event\'}); return false;">%s</a>', l, lab(l)), "")
-    showNotification(HTML(sprintf(
-      "<b>%s</b> is linked to %d AD loci. Showing %s, the locus with its strongest GWAS signal. Also: %s",
-      htmltools::htmlEscape(term), length(bt), lab(opened), paste(links, collapse = ", "))),
-      duration = 15, type = "message")
+    gene_note(if (length(bt) < 2) NULL else
+      list(gene = if (length(.g)) .g[1] else term, opened = opened,
+           loci = names(bt)[order(bt, -nr[names(bt)])]))
   }
+  .region_note <- function(q, opened) {
+    r <- parse_region_str(q); if (is.null(r)) return(invisible())
+    ov <- locus_registry$chr == r$chr & locus_registry$start <= r$end & locus_registry$end >= r$start
+    gene_note(if (sum(ov) < 2) NULL else
+      list(kind = "region", gene = q, opened = opened, loci = locus_registry$ADlocus[ov]))
+  }
+  # Persistent note on Locus detail while the user stays on one of the
+  # searched gene's loci; replaces a pop-up that was easy to miss.
+  gene_note <- reactiveVal(NULL)
+  output$gene_note <- renderUI({
+    gn <- gene_note(); loc <- selected_locus()
+    if (is.null(gn) || !(loc %in% gn$loci)) return(NULL)
+    lnk <- function(l) if (identical(l, loc)) tags$b(l) else
+      tags$a(href = "#", l, onclick = sprintf(
+        "Shiny.setInputValue('jump_locus', '%s', {priority: 'event'}); return false;", l))
+    items <- list()
+    for (j in seq_along(gn$loci))
+      items <- c(items, if (j > 1) list(" \u00b7 "), list(lnk(gn$loci[j])))
+    if (identical(gn$kind, "region"))
+      return(div(class = "gene-note",
+        tags$b(gn$gene), sprintf(" overlaps %d AD loci. ", length(gn$loci)),
+        if (identical(loc, gn$opened))
+          "This page shows the one that overlaps it most. " else NULL,
+        "Loci: ", do.call(tagList, items)))
+    div(class = "gene-note",
+      tags$b(gn$gene), sprintf(" is linked to %d AD loci. ", length(gn$loci)),
+      if (identical(loc, gn$opened))
+        "This page shows the one with the most evidence for it. " else NULL,
+      "Loci: ", do.call(tagList, items))
+  })
   observeEvent(input$jump_locus, {
     selected_locus(input$jump_locus)
     nav_select("nav", "Locus detail", session = session)
@@ -96,12 +126,22 @@ server <- function(input, output, session) {
       nav_select("nav", "Locus detail", session = session)
       return(invisible())
     }
-    .r <- resolve_locus(list(region = input$hero_search))
+    # Typed text (not picked from the list) uses the same lookup as direct links:
+    # gene symbol or Ensembl ID, then rsID, then region.
+    .x <- trimws(input$hero_search)
+    .r <- resolve_locus(list(gene = .x))
+    if (is.null(.r)) .r <- resolve_locus(list(variant = .x))
+    if (is.null(.r)) .r <- resolve_locus(list(region = .x))
     if (!is.null(.r)) {
       selected_locus(.r$locus)
+      if (identical(.r$via, "gene")) {
+        .g <- genes[toupper(genes) == toupper(.x)]
+        if (!length(.g)) .g <- ens_to_symbol(.x)
+        .other_loci_note(if (length(.g)) .g[1] else .x, "gene", .r$locus)
+      } else if (identical(.r$via, "region")) .region_note(.x, .r$locus)
       nav_select("nav", "Locus detail", session = session)
     } else {
-      showNotification("No gene, variant or region matched that.",
+      showNotification(sprintf("%s is not in this release. No gene, variant or region matched it.", .x),
                        type = "warning", duration = 5)
     }
   }, ignoreInit = TRUE)
@@ -344,7 +384,7 @@ output$p_trans <- renderPlot({
       Tier = conf_badge(d$top_confidence),
       `#Ctx` = d$n_contexts,
       `xQTL PIP` = round(d$xqtl_max_inclusion, 3),
-      `TWAS z` = round(d$max_twas_z, 2), `TWAS context` = d$max_twas_ctx,
+      `TWAS z` = round(d$max_twas_z, 2), `TWAS context` = ds_relabel(d$max_twas_ctx),
       TWAS = ev_mark(d$twas_sig),
       MR   = ev_mark(d$mr_sig),
       cTWAS = ev_mark(d$ctwas_sig),
@@ -382,7 +422,7 @@ output$p_trans <- renderPlot({
   })
 
   output$dl_gene_sum <- downloadHandler(
-    filename = function() "AD_loci_gene_summary_20261002.csv",
+    filename = function() "AD_loci_gene_summary_20261022.csv",
     content  = function(f) {
       g <- gene_summary(); if (is.null(g)) g <- data.frame()
       g$.tr <- NULL
@@ -427,7 +467,7 @@ output$p_trans <- renderPlot({
     r <- filtered()[s, ]
     tr <- function(lbl, modg, modc) if (!is.na(modg) && nzchar(as.character(modg)))
       tags$li(strong(paste0(lbl, ": ")), as.character(modg),
-              if (!is.na(modc) && nzchar(as.character(modc))) tags$em(paste0(" (", modc, ")")))
+              if (!is.na(modc) && nzchar(as.character(modc))) tags$em(paste0(" (", ds_relabel(modc), ")")))
     card(card_header(sprintf("%s · %s · %s", r$gene, r$ADlocus, r$rsid)),
       layout_columns(col_widths = c(6,6),
         tags$div(
@@ -789,20 +829,32 @@ observeEvent(input$locus_prev, {
         if (!is.na(bgl)) kvt("strongest gene here", tags$b(bgl), "Target gene with the strongest evidence at this locus. Localized support means a variant here was fine-mapped to the gene. Gene-level support (TWAS, MR) links the gene to AD without identifying a variant. Trans support means the variant acts on a gene outside this locus."),
         if (!is.na(bt)) kvt("its tier", bt, "Best tier among the target genes at this locus. Tiers belong to genes, and each gene carries its best tier from anywhere in the release. A locus can therefore read T4 while APOE within it reads T6, because APOE has TWAS or MR evidence without localized AD-xQTL support."),
         if (!is.na(sg)) kv("GWAS", sg)),
-      div(class = "locus-id", "pipeline ID ", tags$code(loc)))
+      if (!is.na(i) && !is.na(locus_registry$start[i]))
+        div(class = "ext-links gp-ext",
+          ext_a(atlas_region_url(locus_registry$chr[i], locus_registry$start[i], locus_registry$end[i]),
+                "Explore molecular associations in this region in NIAGADS \u2197")),
+      div(class = "locus-id", "pipeline ID ", tags$code(loc)),
+      uiOutput("gene_note"))
   })
   output$locus_tbl <- renderDT({
     d <- dat[dat$ADlocus == selected_locus(), ]
-    datatable(tibble(Gene = d$gene, rsID = d$rsid, Sig = sig_badge(d$significance),
+    .rs <- as.character(d$rsid)
+    .rs_html <- vapply(seq_along(.rs), function(i) {
+      if (is.na(.rs[i]) || !grepl("^rs[0-9]+$", .rs[i])) return(if (is.na(.rs[i])) "" else .rs[i])
+      sprintf(paste0('<a class="ext-link" target="_blank" rel="noopener" href="https://www.ncbi.nlm.nih.gov/snp/%s">%s</a> ',
+                     '<a class="ext-link" target="_blank" rel="noopener" title="View this variant in NIAGADS GenomicsDB" href="%s">NIAGADS&#8599;</a>'),
+              .rs[i], .rs[i], gdb_variant_url(d$variant_ID[i], .rs[i]))
+    }, character(1))
+    datatable(tibble(Gene = d$gene, rsID = .rs_html, Sig = sig_badge(d$significance),
         `Gene tier` = conf_badge(d$top_confidence), `xQTL PIP` = round(d$xqtl_max_inclusion,3),
-        `TWAS z` = round(d$max_twas_z,2), `TWAS context` = d$max_twas_ctx, `Cell types` = d$ct_dots,
+        `TWAS z` = round(d$max_twas_z,2), `TWAS context` = ds_relabel(d$max_twas_ctx), `Cell types` = d$ct_dots,
         `Ordered contexts` = ds_relabel(d$ordered_contexts)),
-      escape = FALSE, rownames = FALSE, options = list(dom = "lrtip", pageLength = 15, scrollX = TRUE, headerCallback = hdr_js, columnDefs = link_defs(0, 1)),
+      escape = FALSE, rownames = FALSE, options = list(dom = "lrtip", pageLength = 15, scrollX = TRUE, headerCallback = hdr_js, columnDefs = link_defs(0)),
       class = "display compact hover")
   }, server = TRUE)
 
   output$dl_locus_tbl <- downloadHandler(
-    filename = function() sprintf("AD_locus_%s_genes_evidence_20261002.csv", gsub("[^A-Za-z0-9]+", "_", selected_locus())),
+    filename = function() sprintf("AD_locus_%s_genes_evidence_20261022.csv", gsub("[^A-Za-z0-9]+", "_", selected_locus())),
     content  = function(f) .prov_csv(dat[dat$ADlocus == selected_locus(), , drop = FALSE], f,
                                      paste("genes and evidence at", selected_locus())))
 
@@ -982,10 +1034,10 @@ observeEvent(input$locus_prev, {
         if (n > 40) div(class = "dc-note", style = "margin-bottom:10px", paste0("Showing the 40 trans target genes with the most supporting modalities, of ", format(n, big.mark = ","), ". The table below lists all of them.")),
         if (identical(input$tn_view, "Bars"))
           withSpinner(plotOutput("trans_bars", height = "680px"),
-                      type = 8, color = "#2a78d6", size = 0.6)
+                      type = 8, color = "#237C78", size = 0.6)
         else
           withSpinner(plotOutput("trans_circos", height = "680px"),
-                      type = 8, color = "#2a78d6", size = 0.6)))
+                      type = 8, color = "#237C78", size = 0.6)))
     tagList(
       div(class = "dc-note", style = "margin-bottom:14px",
           sprintf("%s trans target gene%s at this locus, too few for a circle, so they are drawn on the chromosome strands.",
@@ -1042,6 +1094,7 @@ observeEvent(input$locus_prev, {
     .r <- resolve_locus(list(region = "chr2:127088929-127118906"))
     if (!is.null(.r)) {
       selected_locus(.r$locus)
+      .region_note("chr2:127088929-127118906", .r$locus)
       nav_select("nav", "Locus detail", session = session)
     }
   })
@@ -1111,26 +1164,64 @@ observeEvent(input$locus_prev, {
   .dl_file <- function(path, name) downloadHandler(
     filename = function() name,
     content  = function(f) file.copy(path, f, overwrite = TRUE))
-  output$dlf_browser <- .dl_file("data.csv", "AD_locus_evidence_20261002.csv")
-  output$dlf_genepos <- .dl_file("gene_positions.csv", "gene_coordinates_GRCh38_20261002.csv")
-  output$dlf_dict    <- .dl_file("data_dictionary.csv", "AD_loci_data_dictionary_20261002.csv")
+  output$dlf_browser <- .dl_file("data.csv", "AD_locus_evidence_20261022.csv")
+  output$dlf_genepos <- .dl_file("gene_positions.csv", "gene_coordinates_GRCh38_20261022.csv")
+  output$dlf_dict    <- .dl_file("data_dictionary.csv", "AD_loci_data_dictionary_20261022.csv")
   ## locus summary is written from the loaded locus table so it always matches this release
   .locsum_df <- function() { t <- locus_table
     data.frame(AD_locus = t$ADlocus, region = t$region, chr = t$chr, lead_variant = t$lead, best_tier = t$best,
                top_gene = t$top_gene, cell_types = t$cells, modalities = t$mods, n_genes = t$n_genes,
                n_records = t$n_rows, stringsAsFactors = FALSE) }
-  output$dlf_locsum <- downloadHandler(filename = function() "AD_locus_summary_20261002.csv",
+  output$dlf_locsum <- downloadHandler(filename = function() "AD_locus_summary_20261022.csv",
     content = function(f) utils::write.csv(.locsum_df(), f, row.names = FALSE))
+  ## reference files for linking from NIAGADS, written from the loaded data so they match this release
+  .ref_loci <- function() { r <- locus_registry
+    data.frame(ad_locus_id = r$ADlocus, chr = r$chr, start = r$start, end = r$end,
+               genome_build = GENOME_BUILD, release = DATA_RELEASE,
+               explorer_url = paste0(EXPLORER_URL, "?region=", r$region),
+               stringsAsFactors = FALSE) }
+  .ref_genes <- function() {
+    g <- unique(dat[!is.na(dat$gene) & nzchar(dat$gene), c("gene", "gene_id", "ADlocus")])
+    g$gene_id <- ifelse(!is.na(g$gene_id) & nzchar(g$gene_id), g$gene_id,
+                        ifelse(g$gene %in% names(gid_map), unname(gid_map[g$gene]), ""))
+    g <- g[order(g$gene, g$ADlocus), ]
+    i <- match(g$ADlocus, locus_registry$ADlocus)
+    data.frame(gene_symbol = g$gene, ensembl_gene_id = g$gene_id, ad_locus_id = g$ADlocus,
+               explorer_gene_url = paste0(EXPLORER_URL, "?gene=", vapply(g$gene, utils::URLencode, "", reserved = TRUE)),
+               explorer_locus_url = paste0(EXPLORER_URL, "?region=", locus_registry$region[i]),
+               stringsAsFactors = FALSE) }
+  .ref_variants <- function() {
+    f <- "downloads/AD_locus_variants_release.csv.gz"
+    v <- if (file.exists(f)) utils::read.csv(f, stringsAsFactors = FALSE)[, c("ADlocus", "variant_ID")]
+         else dat[!is.na(dat$variant_ID) & nzchar(dat$variant_ID), c("ADlocus", "variant_ID")]
+    v <- unique(v[!is.na(v$variant_ID) & nzchar(v$variant_ID), ])
+    rs <- unique(dat[!is.na(dat$rsid) & nzchar(dat$rsid), c("variant_ID", "rsid")])
+    rs <- rs[!duplicated(rs$variant_ID), ]
+    v$rsid <- rs$rsid[match(v$variant_ID, rs$variant_ID)]; v$rsid[is.na(v$rsid)] <- ""
+    p <- strsplit(sub("^chr", "", v$variant_ID), ":", fixed = TRUE)
+    i <- match(v$ADlocus, locus_registry$ADlocus)
+    v <- data.frame(rsid = v$rsid, chr = paste0("chr", vapply(p, `[`, "", 1)),
+                    pos = as.integer(vapply(p, `[`, "", 2)), ref_allele = vapply(p, `[`, "", 3),
+                    alt_allele = vapply(p, `[`, "", 4), ad_locus_id = v$ADlocus,
+                    explorer_locus_url = paste0(EXPLORER_URL, "?region=", locus_registry$region[i]),
+                    stringsAsFactors = FALSE)
+    v[order(v$chr, v$pos, v$ad_locus_id), ] }
+  output$dlf_ref_loci     <- downloadHandler(filename = function() "AD_loci_list_20261022.csv",
+    content = function(f) utils::write.csv(.ref_loci(), f, row.names = FALSE))
+  output$dlf_ref_genes    <- downloadHandler(filename = function() "AD_locus_genes_20261022.csv",
+    content = function(f) utils::write.csv(.ref_genes(), f, row.names = FALSE))
+  output$dlf_ref_variants <- downloadHandler(filename = function() "AD_locus_variants_reference_20261022.csv",
+    content = function(f) utils::write.csv(.ref_variants(), f, row.names = FALSE))
   output$dlf_varlvl  <- .dl_file(
     "downloads/AD_locus_variants_release.csv.gz",
-    "AD_locus_variants_20261002.csv.gz")
+    "AD_locus_variants_20261022.csv.gz")
   output$dlf_tier   <- .dl_file("downloads/gene_tier_assignment_release.csv",
-    "AD_gene_tier_assignment_20261002.csv")
+    "AD_gene_tier_assignment_20261022.csv")
   output$dlf_xlsx    <- .dl_file(
     "downloads/AD_loci_xQTL_summary_release.xlsx",
-    "AD_locus_xQTL_summary_20261002.xlsx")
+    "AD_locus_xQTL_summary_20261022.xlsx")
   output$dl_zip <- downloadHandler(
-    filename = function() "AD_loci_explorer_20261002.zip",
+    filename = function() "AD_loci_explorer_20261022.zip",
     content  = function(f) {
       fs <- c("data.csv", "gene_positions.csv",
               list.files("downloads", full.names = TRUE))
@@ -1213,7 +1304,10 @@ observeEvent(input$locus_prev, {
 
   output$loci_tbl <- renderDT({
     t <- loci_view()
-    if (!nrow(t)) return(datatable(data.frame(), rownames = FALSE))
+    if (!nrow(t)) return(datatable(data.frame(Locus = character(0)), rownames = FALSE,
+      options = list(dom = "t", ordering = FALSE, language = list(emptyTable = sprintf(
+        "No AD locus matches the current search or filters. Use Clear all in the Current view bar to see all %d loci.",
+        nrow(locus_table))))))
     chip <- function(k) if (is.na(k)) "<span class=\"lt-na\">&mdash;</span>" else
       sprintf('<span class="tchip" style="background:%s;color:%s">%s</span>',
               unname(conf_pal[[k]]), unname(conf_txt[[k]]), k)
@@ -1224,12 +1318,12 @@ observeEvent(input$locus_prev, {
                               paste0('<span class="dc-mono">', t$lead, '</span>')),
       "Best tier" = vapply(t$best, chip, character(1)),
       "Highest-priority gene" = ifelse(is.na(t$top_gene), "<span class=\"lt-na\">&mdash;</span>",
-                          paste0('<span class="dc-mono" style="font-weight:600">',
+                          paste0('<span class="lt-gene">',
                                  t$top_gene, '</span>',
                                     ifelse(!is.na(t$n_tied) & t$n_tied > 0, paste0(' <span class="lt-co">+ ', t$n_tied, ' tied</span>'), ''))),
       "Cell types" = vapply(t$cells, lt_cells, character(1)),
       Modalities = ifelse(t$mods == "", "<span class=\"lt-na\">&mdash;</span>",
-                          paste0('<span class="dc-mono" style="font-size:11.5px">',
+                          paste0('<span class="lt-mods">',
                                  t$mods, '</span>')),
       Genes = t$n_genes,
       Rows = t$n_rows,
@@ -1254,7 +1348,7 @@ observeEvent(input$locus_prev, {
   })
 
   output$dl_loci_csv <- downloadHandler(
-    filename = function() "AD_loci_overview_20261002.csv",
+    filename = function() "AD_loci_overview_20261022.csv",
     content  = function(f) {
       t <- loci_view()
       o <- data.frame(ADlocus = t$ADlocus, region = t$region, lead_variant = t$lead,
@@ -1297,7 +1391,7 @@ observeEvent(input$locus_prev, {
   })
 
   output$dl_figB_csv <- downloadHandler(
-    filename = function() "cell_type_by_tier_20261002.csv",
+    filename = function() "cell_type_by_tier_20261022.csv",
     content  = function(f) {
       m <- ctx_tier_counts
       o <- data.frame(cell_type = rownames(m), m, total = rowSums(m),
@@ -1347,7 +1441,10 @@ observeEvent(input$locus_prev, {
           if (!is.na(best)) span(class = "gp-chip t", best),
           span(class = "gp-chip", paste(nl, if (nl == 1) "locus" else "loci")),
           span(class = "gp-chip", paste(nc, if (nc == 1) "cell type" else "cell types")),
-          span(class = "gp-chip", paste(nm, if (nm == 1) "modality" else "modalities")))),
+          span(class = "gp-chip", paste(nm, if (nm == 1) "modality" else "modalities"))),
+        div(class = "ext-links gp-ext",
+          ext_a(atlas_gene_url(g), "View molecular evidence for this gene in NIAGADS xQTL Atlas \u2197"),
+          if (g %in% names(gid_map)) ext_a(gdb_gene_url(unname(gid_map[[g]])), "NIAGADS GenomicsDB \u2197"))),
       div(class = "gp-act",
         downloadLink("dl_gp_all", "CSV", class = "dc-btn"),
         actionLink("gp_open", "Open in locus view →", class = "dc-btn")))
@@ -1766,7 +1863,7 @@ output$gp_matrix <- renderUI({
     div(class = "dc-counts",
         .cnt(length(unique(d$ADlocus)), "AD loci"),
         .cnt(length(unique(d$gene[!is.na(d$gene) & nzchar(d$gene)])), "genes"),
-        .cnt(nrow(d), "gene records"),
+        .cnt(nrow(d), "variant-gene rows"),
         .cnt(length(unique(na.omit(d$context))), "contexts"))
   })
 
@@ -1800,7 +1897,14 @@ output$gp_matrix <- renderUI({
             panel.background = element_rect(fill = "#ffffff", colour = NA))
   }
 
-  output$cty_tier_plot <- renderPlot(.tier_bar(cty_d(), .unit(input$cty_unit)), res = 96)
+  output$cty_tier_plot <- renderPlot({
+    if (!nrow(cty_d())) {
+      op <- par(mar = c(0, 0, 0, 0)); on.exit(par(op))
+      plot.new(); text(0.5, 0.5, "No variant-gene rows in this cell type match the current filters.", col = "#63717d", cex = 1.05)
+      return(invisible())
+    }
+    .tier_bar(cty_d(), .unit(input$cty_unit))
+  }, res = 96)
 
   .rec_tbl <- function(d) {
     cc <- ctx_cols(d$context)
@@ -1850,7 +1954,7 @@ output$gp_matrix <- renderUI({
       div(class = "kv", span("Found here"),       tags$b(sum(m$matched))),
       div(class = "kv", span("Not in this release"), tags$b(sum(!m$matched))),
       div(class = "kv", span("AD loci reached"),  tags$b(length(unique(r$ADlocus)))),
-      div(class = "kv", span("Gene records"),     tags$b(nrow(r))))
+      div(class = "kv", span("Variant-gene rows"),     tags$b(nrow(r))))
   })
 
   output$bt_body <- renderUI({
@@ -1906,7 +2010,7 @@ output$gp_matrix <- renderUI({
     gw  <- sum(!is.na(dat$significance) & dat$significance == "genome wide")
     cv  <- sum(!is.na(dat$cv2f_score))
     div(class = "dc-counts", style = "margin-top:20px",
-        .cnt(n, "gene records"),
+        .cnt(n, "variant-gene rows"),
         .cnt(round(100 * sharp / n), "% reach PIP 0.5 or more"),
         .cnt(round(100 * gw / n), "% genome-wide significant"),
         .cnt(round(100 * cv / n), "% carry a cV2F score"))
@@ -1976,13 +2080,13 @@ output$gp_matrix <- renderUI({
     content = function(f) .prov_csv(.rec_cols("max_inclusion"), f, "highest PIP per gene record"))
   output$dl_ql_cv2f_png <- .png_only("variant_to_function_score", .fig_ql_cv2f, 6, 3.2)
   output$dl_ql_cv2f_csv <- downloadHandler(filename = function() "variant_to_function_score.csv",
-    content = function(f) .prov_csv(.rec_cols("cv2f_score"), f, "cV2F score per gene record"))
+    content = function(f) .prov_csv(.rec_cols("cv2f_score"), f, "cV2F score per variant-gene row"))
   output$dl_ql_sig_png  <- .png_only("GWAS_support", .fig_ql_sig, 6, 3.2)
   output$dl_ql_sig_csv  <- downloadHandler(filename = function() "GWAS_support.csv",
     content = function(f) {
       v <- as.character(dat$significance); v[is.na(v) | !nzchar(v)] <- "no p-value"
-      tb <- as.data.frame(table(v), stringsAsFactors = FALSE); names(tb) <- c("GWAS_significance", "gene_records")
-      .prov_csv(tb, f, "gene records by GWAS significance")
+      tb <- as.data.frame(table(v), stringsAsFactors = FALSE); names(tb) <- c("GWAS_significance", "variant_gene_rows")
+      .prov_csv(tb, f, "variant-gene rows by GWAS significance")
     })
   output$dl_cty_tier_png <- .png_only("cell_type_evidence_tiers", function() .tier_bar(cty_d(), .unit(input$cty_unit)), 6, 3.4)
   output$dl_cty_tier_csv <- downloadHandler(filename = function() "cell_type_evidence_tiers.csv",
@@ -2078,11 +2182,11 @@ output$gp_matrix <- renderUI({
       suppressWarnings(readr::write_csv(d, f, append = TRUE, col_names = TRUE))
   }
   .cite_url <- function() {
-    ## Links point to the lab-site page, which passes the query on to the app.
+    ## Links point to the explorer's public address (EXPLORER_URL).
     v <- tryCatch(session$clientData$url_search, error = function(e) "")
     if (is.null(v)) v <- ""
     v <- sub("^[?]", "", v)
-    paste0("https://wanggroup.org/xQTL-AD-loci-explorer/", if (nzchar(v)) paste0("?", v) else "")
+    paste0(EXPLORER_URL, if (nzchar(v)) paste0("?", v) else "")
   }
 
   .man_txt <- paste0(
@@ -2317,9 +2421,6 @@ output$gp_matrix <- renderUI({
     n_now <- tryCatch(nrow(tn_tbl_d()), error = function(e) NA_integer_)
     if (identical(input$tn_scope, "locus") && !is.na(n_now) && n_now == 0L)
       it <- c(it, "no trans target genes for this locus")
-    if (length(input$tmod)) it <- c(it, paste(input$tmod, collapse = " or "))
-    q <- trimws(if (is.null(input$tn_q)) "" else input$tn_q)
-    if (nzchar(q)) it <- c(it, paste0("matching ", q))
     .chips(it, "tn_reset")
   })
   observeEvent(input$tn_reset, {
@@ -2363,7 +2464,8 @@ output$gp_matrix <- renderUI({
   # deep links: gene, variant, region, filters and tab all route on first load
   observeEvent(session$clientData$url_search, {
     q <- shiny::parseQueryString(session$clientData$url_search)
-    if (!length(q)) return(invisible())
+    # the address writer starts only after the incoming address has been read
+    if (!length(q)) { restored(TRUE); return(invisible()) }
     gv <- function(k) { v <- q[[k]]; if (is.null(v) || !nzchar(v)) NULL else trimws(v) }
     sp <- function(v) strsplit(v, ",", fixed = TRUE)[[1]]
     if (!is.null(gv("q")))     updateTextInput(session, "q", value = gv("q"))
@@ -2377,17 +2479,28 @@ output$gp_matrix <- renderUI({
           value = match(gv("transonly"), c("1", "true", "TRUE"), nomatch = 0L) > 0L)
     r <- tryCatch(resolve_locus(q), error = function(e) NULL)
     if (!is.null(r) && !is.null(r$locus)) selected_locus(r$locus)
-    g <- gv("gene")
+    if (!is.null(r) && identical(r$via, "gene")) .other_loci_note(gv("gene"), "gene", r$locus)
+    if (!is.null(r) && identical(r$via, "region")) .region_note(gv("region"), r$locus)
+    # a direct link to something outside this release says so instead of silently showing Home
+    .asked <- c(gv("gene"), gv("variant"), gv("region"))
+    if (length(.asked) && (is.null(r) || is.null(r$locus)))
+      showNotification(sprintf("%s is not in this release, so no AD locus is shown.", .asked[1]),
+                       type = "warning", duration = 12)
+    # a gene link opens the Genes page for that gene; the gene's best locus is still
+    # set on Locus detail. Variant and region links open Locus detail.
+    g <- gv("gene"); gene_hit <- character(0)
     if (!is.null(g)) {
       gu  <- toupper(g)
-      hit <- genes[toupper(genes) == gu]
-      if (!length(hit)) hit <- ens_to_symbol(gu)
-      if (length(hit)) .open_gene(hit[1])
+      gene_hit <- genes[toupper(genes) == gu]
+      if (!length(gene_hit)) gene_hit <- ens_to_symbol(gu)
+      if (length(gene_hit)) .open_gene(gene_hit[1])
     }
     tb <- gv("tab")
     if (!is.null(tb)) nav_select("nav", tb, session = session)
+    else if (length(gene_hit)) nav_select("nav", "Genes", session = session)
     else if (!is.null(r) && !is.null(r$locus))
       nav_select("nav", "Locus detail", session = session)
+    restored(TRUE)
   }, once = TRUE)
 
   # ---- compare two loci ------------------------------------------------
@@ -2428,7 +2541,7 @@ output$gp_matrix <- renderUI({
         row("Region", txt(fa$region), txt(fb$region), FALSE),
         row("Best tier", tchip(fa$best), tchip(fb$best), FALSE),
         row("Target genes", format(fa$genes, big.mark = ","), format(fb$genes, big.mark = ",")),
-        row("Gene records", format(fa$recs, big.mark = ","), format(fb$recs, big.mark = ",")),
+        row("Variant-gene rows", format(fa$recs, big.mark = ","), format(fb$recs, big.mark = ",")),
         row("Contexts", fa$ctx, fb$ctx),
         row("Modalities", fa$mods, fb$mods),
         row("Trans links", format(fa$trans, big.mark = ","), format(fb$trans, big.mark = ",")),
@@ -2444,7 +2557,7 @@ output$gp_matrix <- renderUI({
       a <- input$cmp_a; b <- input$cmp_b
       fa <- .loc_facts(a); fb <- .loc_facts(b)
       v <- function(x) if (is.null(x) || length(x) == 0 || is.na(x)) "" else as.character(x)
-      k <- c(region = "Region", best = "Best tier", genes = "Target genes", recs = "Gene records",
+      k <- c(region = "Region", best = "Best tier", genes = "Target genes", recs = "Variant-gene rows",
              ctx = "Contexts", mods = "Modalities", trans = "Trans links",
              top = "Strongest gene", lead = "Lead variant")
       d <- data.frame(field = unname(k),
