@@ -71,11 +71,12 @@ bulk p-sQTL,bulk_brain_p_sQTL,ROSMAP_AC_p_sQTL,,AC_lf2_sQTL,,bulk_brain_p_sQTL,,
 bulk p-sQTL,bulk_brain_p_sQTL,ROSMAP_DLPFC_p_sQTL,,DLPFC_lf2_sQTL,,bulk_brain_p_sQTL,,#b5b8b4,black
 bulk p-sQTL,bulk_brain_p_sQTL,ROSMAP_PCC_p_sQTL,,PCC_lf2_sQTL,,bulk_brain_p_sQTL,,#b5b8b4,black
 B,GWAS,AD_Bellenguez_EADI_2022,,,,GWAS,,#fcfcfc,#299da6
-Exc sQTL,Exc_sQTL,Exc_Mega_sQTL,,,,Exc_sQTL,Excitatory,#D5F2CE,black
-Inh sQTL,Inh_sQTL,Inh_Mega_sQTL,,,,Inh_sQTL,Inhibitory,#CED5F2,black
-Ast sQTL,Ast_sQTL,Ast_Mega_sQTL,,,,Ast_sQTL,astrocytes,#F0E4B4,black
-Oli sQTL,Oli_sQTL,Oli_Mega_sQTL,,,,Oli_sQTL,oligodendrocyte,#F2CEF1,black
-OPC sQTL,OPC_sQTL,OPC_Mega_sQTL,,,,OPC_sQTL,OPC,#EBCEF2,black
+Exc sQTL,Exc_sQTL,Exc_Mega_sQTL,,Excitatory,,Exc_sQTL,Excitatory,#D5F2CE,black
+Inh sQTL,Inh_sQTL,Inh_Mega_sQTL,,Inhibitory,,Inh_sQTL,Inhibitory,#CED5F2,black
+Ast sQTL,Ast_sQTL,Ast_Mega_sQTL,,astrocytes,,Ast_sQTL,astrocytes,#F0E4B4,black
+Oli sQTL,Oli_sQTL,Oli_Mega_sQTL,,oligodendrocyte,,Oli_sQTL,oligodendrocyte,#F2CEF1,black
+OPC sQTL,OPC_sQTL,OPC_Mega_sQTL,,OPC,,OPC_sQTL,OPC,#EBCEF2,black
+Mic sQTL,Mic_sQTL,Mic_Mega_sQTL,,microglia,,Mic_sQTL,,#FDE3CF,black
 End eQTL,End_eQTL,End_DeJager_eQTL,,DeJager_End,,End_eQTL,,#691412,white
 Peri eQTL,Peri_eQTL,Peri_DeJager_eQTL,,DeJager_Peri,,Peri_eQTL,,#a90904,white
 protein transMap,protein_transmap,protein_transmap,protein_transmap,,,pQTL,,#e6e6e6,black
