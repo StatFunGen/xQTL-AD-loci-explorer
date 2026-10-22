@@ -162,33 +162,52 @@ SummarizeTable<-function(res_adx,
                          group.by='context_short',
                          xqtl_methods=c('fSuSiE_finemapping','single_context_finemapping',
                                         'multi_context_finemapping','AD_xQTL_colocalization',
-                                        'TWAS/MR','cTWAS','Coloc')){
+                                        'TWAS/MR','cTWAS','Coloc','multi_gene_finemapping',
+                                        'QR','APOE interaction','msex interaction')){
   #res_adx<-res_adx[!str_detect(context,'^AD')]
   
   
-  #COntexts summary
-  ##for each locus, add confidence level of each broad context
-  #C1: cTWAS/MR, cs95 single context fine-mapping overlap
-  #C2: cTWAS/MR, colocalization
-  #C3: TWAS and (cs95 fine-mapping overlap OR colocalization)
-  #C4: cs95 single context fine-mapping overlap
-  #C5: colocalization OR any fine-mapping overlap (multicontext, cs50, cs70..)
-  #C6: TWAS only
+  ## Tier rules (Oct 2026), assigned per variant, gene and group.
+  ## Evidence:
+  ##  AD GWAS credible set (CS): SuSiE-rss, used at 95% coverage only.
+  ##  xQTL CS: single-context, multi-context or multi-gene fine-mapping, or fSuSiE.
+  ##  CoS: ColocBoost AD-xQTL colocalization, or SuSiE-coloc where ColocBoost did not run.
+  ## T1: AD 95% CS overlaps an xQTL 95% CS, and 95% CoS, with MR or causal TWAS.
+  ## T2: AD 95% CS overlaps an xQTL 95% CS, or 95% CoS, with MR or causal TWAS.
+  ## T3: AD 95% CS overlaps an xQTL 95% CS, or 95% CoS, with TWAS.
+  ## T4: 95% CoS with a matching xQTL 95% CS; no AD GWAS CS needed.
+  ## T5: other localized evidence: 95% CoS alone, or AD 95% CS overlapping an xQTL CS at 95% or 70%.
+  ## T6: gene-level evidence only: TWAS, MR or causal TWAS, or cis quantile/interaction QTL
+  ##     at a locus with an AD 95% CS.
+  ## Single-nucleus sQTL and 50% credible sets give no tier (NA).
   message('summarizing per ',group.by,' the xQTL evidence for each variant')
+  .fm_methods<-c('single_context_finemapping','multi_context_finemapping',
+                'multi_gene_finemapping','fSuSiE_finemapping')
   res_adx[!str_detect(context,'^AD'),confidence_lvl:={
-    if((any(MR_signif,na.rm = T)|any(cTWAS_signif,na.rm = T))&(any(Method%in%c('single_context_finemapping','fSuSiE_finemapping')&str_detect(credibleset,'cs95')&susie_coverage%in%c('cs95','cs70'),na.rm = T))){
+    .xcs95<-(Method%in%.fm_methods&str_detect(credibleset,'^cs95'))|Method%in%'fSuSiE_finemapping'
+    .ov95<-.xcs95&susie_coverage%in%'cs95'
+    .ov70<-Method%in%.fm_methods&str_detect(credibleset,'^cs70')&susie_coverage%in%'cs95'
+    .cos95<-Method%in%c('AD_xQTL_colocalization','Coloc')&
+      (is.na(credibleset)|credibleset==''|str_detect(credibleset,'^cs95'))
+    .A<-any(.ov95,na.rm = T)
+    .B<-any(.cos95,na.rm = T)
+    .causal<-any(MR_signif,na.rm = T)|any(cTWAS_signif,na.rm = T)
+    .twas<-any(TWAS_signif,na.rm = T)
+    .q95<-any(Method%in%c('QR','APOE interaction','msex interaction')&susie_coverage%in%'cs95',na.rm = T)
+    if(.A&.B&.causal){
       'T1'
-    }else if((any(MR_signif,na.rm = T)|any(cTWAS_signif,na.rm = T))&any(Method=='AD_xQTL_colocalization',na.rm = T)){
+    }else if((.A|.B)&.causal){
       'T2'
-    }else if(any(TWAS_signif,na.rm = T)&(any(Method%in%c('single_context_finemapping','fSuSiE_finemapping')&str_detect(credibleset,'cs95'),na.rm = T)|any(Method=='AD_xQTL_colocalization',na.rm = T))){
+    }else if((.A|.B)&.twas){
       'T3'
-    }else if(any(Method%in%c('single_context_finemapping','fSuSiE_finemapping')&str_detect(credibleset,'cs95')&susie_coverage%in%c('cs95','cs70'),na.rm = T)){
+    }else if(.B&any(.xcs95,na.rm = T)){
       'T4'
-    }else if(any(Method%in%c('AD_xQTL_colocalization','multi_context_finemapping',
-                             'single_context_finemapping','fSuSiE_finemapping','sn_sQTL','Coloc'),na.rm = T)){
+    }else if(.A|.B|any(.ov70,na.rm = T)){
       'T5'
-    }else{
+    }else if(.twas|.causal|.q95){
       'T6'
+    }else{
+      NA_character_
     }
   },
   by=c('variant_ID','gene_ID',group.by)]
@@ -205,7 +224,7 @@ SummarizeTable<-function(res_adx,
   
   res_adx[!str_detect(context,'^AD')&Method%in%c(xqtl_methods,'sn_sQTL'),n_study:=length(unique(context)),by=c('ADlocus','gene_ID',group.by)]
   
-  res_adx[!str_detect(context,'^AD')&Method%in%c(xqtl_methods,'sn_sQTL'),xQTL_effect:=paste0(xQTL_effect,' (',confidence_lvl,',n=',n_study,')'),
+  res_adx[!str_detect(context,'^AD')&Method%in%c(xqtl_methods,'sn_sQTL'),xQTL_effect:=paste0(xQTL_effect,' (',fifelse(is.na(confidence_lvl),'no tier',as.character(confidence_lvl)),',n=',n_study,')'),
           by=c('variant_ID','gene_ID',group.by)]
   res_adx[order(variant_ID,confidence_lvl,-abs(twas_z),-cos_npc),xQTL_effects:=paste(unique(xQTL_effect[!is.na(xQTL_effect)]),collapse =  '|'),by=c('variant_ID','gene_ID')]
   
