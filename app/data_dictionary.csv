@@ -19,7 +19,7 @@ AD locus evidence table,context,"One xQTL context for this variant and gene, as 
 AD locus evidence table,gene_id,Ensembl gene ID of the target gene.
 AD locus evidence table,trans_n_contexts_gene,Trans rows only: number of contexts in which this trans target gene was fine-mapped at this locus.
 AD locus evidence table,trans_source_contexts,"Trans rows only: those contexts, separated by |."
-AD locus evidence table,top_confidence,"Evidence tier of the target gene, T1 to T6; blank when the gene has no tier, because it is linked only through trans evidence or its only evidence is quantile QTL, APOE or sex interaction QTL, or multi-gene fine-mapping. Tiers are assigned per gene across the whole release: a gene linked to several loci carries the same tier at each."
+AD locus evidence table,top_confidence,"Evidence tier of the target gene, T1 to T6; blank when the gene has no tier, because it is linked only through trans evidence or through evidence the tier rules do not score (50% credible sets, AD credible sets below 95%, or single-nucleus sQTL association without colocalization)."
 AD locus evidence table,trans_genes,"Genes with a trans fine-mapping effect from this variant, highest PIP first, separated by |. Describes the variant, so it repeats on every gene row of that variant."
 AD locus evidence table,trans_contexts,"Contexts of those trans fine-mapping effects, separated by |."
 AD locus evidence table,trans_coverage,"Widest credible-set coverage (cs50, cs70 or cs95) for each gene in trans_genes, in the same order."

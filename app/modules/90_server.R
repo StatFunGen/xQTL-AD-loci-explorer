@@ -724,14 +724,14 @@ observeEvent(input$locus_prev, {
     s2 <- if (is.na(best)) "No gene at this locus has a tier assignment in this release." else
             paste0(paste(bg, collapse = " and "),
                    if (length(bg) == 1L) " has " else " have ",
-                   if (identical(best, "T6")) "T6 support, meaning TWAS or MR evidence without localized AD-xQTL support."
+                   if (identical(best, "T6")) "T6 support, meaning gene-level evidence only, without localized AD-xQTL support."
                    else paste0("tier ", best, ", its best tier in this release."))
     t6 <- g[ok & gt == "T6"]
     t6 <- setdiff(t6, bg)
     s3 <- if (!length(t6)) "" else
             paste0(" ", paste(t6, collapse = ", "),
-                   if (length(t6) == 1L) " is T6, with TWAS or MR evidence but no localized AD-xQTL support."
-                   else " are T6, with TWAS or MR evidence but no localized AD-xQTL support.")
+                   if (length(t6) == 1L) " is T6, with gene-level evidence only and no localized AD-xQTL support."
+                   else " are T6, with gene-level evidence only and no localized AD-xQTL support.")
     s4 <- if (is.na(best)) "" else paste0(" The best tier at this locus is therefore ", best, ".")
     led <- lapply(g[ok], function(x) {
       r <- d[!is.na(d$gene) & d$gene == x, , drop = FALSE][1, , drop = FALSE]
@@ -749,7 +749,7 @@ observeEvent(input$locus_prev, {
           tags$li(if (tt %in% names(TIER_DEFS)) paste0("Tier definition: ", TIER_DEFS[[tt]]) else
             if (!is.null(r$cis_trans) && identical(as.character(r$cis_trans), "trans"))
               "Tier: none. This gene is linked to the locus through trans evidence, which the tiers do not score." else
-              "Tier: none. Its only evidence comes from analyses the tier rules do not score: quantile QTL, APOE or sex interaction QTL, or multi-gene fine-mapping.")))
+              "Tier: none. Its only evidence is of a kind the tier rules do not score: 50% credible sets, AD credible sets below 95%, or single-nucleus sQTL association without colocalization.")))
     })
     div(class = "interp",
         div(class = "dc-kicker", "What this locus shows"),
