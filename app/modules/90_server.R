@@ -422,7 +422,7 @@ output$p_trans <- renderPlot({
   })
 
   output$dl_gene_sum <- downloadHandler(
-    filename = function() "AD_loci_gene_summary_20261002.csv",
+    filename = function() "AD_loci_gene_summary_20261022.csv",
     content  = function(f) {
       g <- gene_summary(); if (is.null(g)) g <- data.frame()
       g$.tr <- NULL
@@ -764,14 +764,14 @@ observeEvent(input$locus_prev, {
     s2 <- if (is.na(best)) "No gene at this locus has a tier assignment in this release." else
             paste0(paste(bg, collapse = " and "),
                    if (length(bg) == 1L) " has " else " have ",
-                   if (identical(best, "T6")) "T6 support, meaning TWAS or MR evidence without localized AD-xQTL support."
+                   if (identical(best, "T6")) "T6 support, meaning gene-level evidence only, without localized AD-xQTL support."
                    else paste0("tier ", best, ", its best tier in this release."))
     t6 <- g[ok & gt == "T6"]
     t6 <- setdiff(t6, bg)
     s3 <- if (!length(t6)) "" else
             paste0(" ", paste(t6, collapse = ", "),
-                   if (length(t6) == 1L) " is T6, with TWAS or MR evidence but no localized AD-xQTL support."
-                   else " are T6, with TWAS or MR evidence but no localized AD-xQTL support.")
+                   if (length(t6) == 1L) " is T6, with gene-level evidence only and no localized AD-xQTL support."
+                   else " are T6, with gene-level evidence only and no localized AD-xQTL support.")
     s4 <- if (is.na(best)) "" else paste0(" The best tier at this locus is therefore ", best, ".")
     led <- lapply(g[ok], function(x) {
       r <- d[!is.na(d$gene) & d$gene == x, , drop = FALSE][1, , drop = FALSE]
@@ -789,7 +789,7 @@ observeEvent(input$locus_prev, {
           tags$li(if (tt %in% names(TIER_DEFS)) paste0("Tier definition: ", TIER_DEFS[[tt]]) else
             if (!is.null(r$cis_trans) && identical(as.character(r$cis_trans), "trans"))
               "Tier: none. This gene is linked to the locus through trans evidence, which the tiers do not score." else
-              "Tier: none. Its only evidence comes from analyses the tier rules do not score: quantile QTL, APOE or sex interaction QTL, or multi-gene fine-mapping.")))
+              "Tier: none. Its only evidence is of a kind the tier rules do not score: 50% credible sets, AD credible sets below 95%, or single-nucleus sQTL association without colocalization.")))
     })
     div(class = "interp",
         div(class = "dc-kicker", "What this locus shows"),
@@ -854,7 +854,7 @@ observeEvent(input$locus_prev, {
   }, server = TRUE)
 
   output$dl_locus_tbl <- downloadHandler(
-    filename = function() sprintf("AD_locus_%s_genes_evidence_20261002.csv", gsub("[^A-Za-z0-9]+", "_", selected_locus())),
+    filename = function() sprintf("AD_locus_%s_genes_evidence_20261022.csv", gsub("[^A-Za-z0-9]+", "_", selected_locus())),
     content  = function(f) .prov_csv(dat[dat$ADlocus == selected_locus(), , drop = FALSE], f,
                                      paste("genes and evidence at", selected_locus())))
 
@@ -1164,15 +1164,15 @@ observeEvent(input$locus_prev, {
   .dl_file <- function(path, name) downloadHandler(
     filename = function() name,
     content  = function(f) file.copy(path, f, overwrite = TRUE))
-  output$dlf_browser <- .dl_file("data.csv", "AD_locus_evidence_20261002.csv")
-  output$dlf_genepos <- .dl_file("gene_positions.csv", "gene_coordinates_GRCh38_20261002.csv")
-  output$dlf_dict    <- .dl_file("data_dictionary.csv", "AD_loci_data_dictionary_20261002.csv")
+  output$dlf_browser <- .dl_file("data.csv", "AD_locus_evidence_20261022.csv")
+  output$dlf_genepos <- .dl_file("gene_positions.csv", "gene_coordinates_GRCh38_20261022.csv")
+  output$dlf_dict    <- .dl_file("data_dictionary.csv", "AD_loci_data_dictionary_20261022.csv")
   ## locus summary is written from the loaded locus table so it always matches this release
   .locsum_df <- function() { t <- locus_table
     data.frame(AD_locus = t$ADlocus, region = t$region, chr = t$chr, lead_variant = t$lead, best_tier = t$best,
                top_gene = t$top_gene, cell_types = t$cells, modalities = t$mods, n_genes = t$n_genes,
                n_records = t$n_rows, stringsAsFactors = FALSE) }
-  output$dlf_locsum <- downloadHandler(filename = function() "AD_locus_summary_20261002.csv",
+  output$dlf_locsum <- downloadHandler(filename = function() "AD_locus_summary_20261022.csv",
     content = function(f) utils::write.csv(.locsum_df(), f, row.names = FALSE))
   ## reference files for linking from NIAGADS, written from the loaded data so they match this release
   .ref_loci <- function() { r <- locus_registry
@@ -1206,22 +1206,22 @@ observeEvent(input$locus_prev, {
                     explorer_locus_url = paste0(EXPLORER_URL, "?region=", locus_registry$region[i]),
                     stringsAsFactors = FALSE)
     v[order(v$chr, v$pos, v$ad_locus_id), ] }
-  output$dlf_ref_loci     <- downloadHandler(filename = function() "AD_loci_list_20261002.csv",
+  output$dlf_ref_loci     <- downloadHandler(filename = function() "AD_loci_list_20261022.csv",
     content = function(f) utils::write.csv(.ref_loci(), f, row.names = FALSE))
-  output$dlf_ref_genes    <- downloadHandler(filename = function() "AD_locus_genes_20261002.csv",
+  output$dlf_ref_genes    <- downloadHandler(filename = function() "AD_locus_genes_20261022.csv",
     content = function(f) utils::write.csv(.ref_genes(), f, row.names = FALSE))
-  output$dlf_ref_variants <- downloadHandler(filename = function() "AD_locus_variants_reference_20261002.csv",
+  output$dlf_ref_variants <- downloadHandler(filename = function() "AD_locus_variants_reference_20261022.csv",
     content = function(f) utils::write.csv(.ref_variants(), f, row.names = FALSE))
   output$dlf_varlvl  <- .dl_file(
     "downloads/AD_locus_variants_release.csv.gz",
-    "AD_locus_variants_20261002.csv.gz")
+    "AD_locus_variants_20261022.csv.gz")
   output$dlf_tier   <- .dl_file("downloads/gene_tier_assignment_release.csv",
-    "AD_gene_tier_assignment_20261002.csv")
+    "AD_gene_tier_assignment_20261022.csv")
   output$dlf_xlsx    <- .dl_file(
     "downloads/AD_loci_xQTL_summary_release.xlsx",
-    "AD_locus_xQTL_summary_20261002.xlsx")
+    "AD_locus_xQTL_summary_20261022.xlsx")
   output$dl_zip <- downloadHandler(
-    filename = function() "AD_loci_explorer_20261002.zip",
+    filename = function() "AD_loci_explorer_20261022.zip",
     content  = function(f) {
       fs <- c("data.csv", "gene_positions.csv",
               list.files("downloads", full.names = TRUE))
@@ -1348,7 +1348,7 @@ observeEvent(input$locus_prev, {
   })
 
   output$dl_loci_csv <- downloadHandler(
-    filename = function() "AD_loci_overview_20261002.csv",
+    filename = function() "AD_loci_overview_20261022.csv",
     content  = function(f) {
       t <- loci_view()
       o <- data.frame(ADlocus = t$ADlocus, region = t$region, lead_variant = t$lead,
@@ -1391,7 +1391,7 @@ observeEvent(input$locus_prev, {
   })
 
   output$dl_figB_csv <- downloadHandler(
-    filename = function() "cell_type_by_tier_20261002.csv",
+    filename = function() "cell_type_by_tier_20261022.csv",
     content  = function(f) {
       m <- ctx_tier_counts
       o <- data.frame(cell_type = rownames(m), m, total = rowSums(m),
@@ -2157,7 +2157,7 @@ output$gp_matrix <- renderUI({
   }
 
   # ---- P2.14 / P2.15 provenance ------------------------------------------
-  .rel_lab  <- if (exists("RELEASE_LABEL")) as.character(RELEASE_LABEL) else "2026-10-02"
+  .rel_lab  <- if (exists("RELEASE_LABEL")) as.character(RELEASE_LABEL) else "2026-10-22"
   .bld_lab  <- if (exists("BUILD_LABEL")) as.character(BUILD_LABEL) else "GRCh38"
   .cite_txt <- "The Alzheimer Disease Functional Genomics (FunGen-AD) Consortium. Broad and deep dissection of Alzheimer disease genetics with FunGen-xQTL."
   .cur_q <- function() {

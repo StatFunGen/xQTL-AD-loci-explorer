@@ -1,7 +1,7 @@
 # xQTL AD Loci Explorer
 
 Code and released tables behind the **AD Loci Explorer**, a browsable view of the
-ADSP FunGen-xQTL release across 195 candidate Alzheimer's disease loci.
+ADSP FunGen-xQTL release across 196 candidate Alzheimer's disease loci.
 
 Live app: https://xqtl.niagads.org/AD-loci-explorer/ (direct link: https://jenny-empawi.shinyapps.io/xQTL-AD-loci-explorer/)
 
@@ -11,6 +11,7 @@ Live app: https://xqtl.niagads.org/AD-loci-explorer/ (direct link: https://jenny
 scripts/
   build_AD_locus_table.R   locus-level build: evidence integration and tier assignment
   gene_prio_utils.R        helper functions, including the T1-T6 tier rules
+  convert_issac_coloc.R    keys single-nucleus sQTL (ISSAC) x AD colocalization exports to genes
   add_evidence_source.R    register a new evidence source (see 'Adding data')
   validate_outputs.R       check a release against the expectations of this build
   run_pipeline.qsub        end-to-end job script for the SCC scheduler
@@ -49,7 +50,7 @@ export AD_LOCI_OUT=$AD_LOCI_ROOT/out_$(date +%Y%m%d)    # optional
 export AD_LOCI_CONFIG=/path/to/private/config          # optional, see Inputs
 
 Rscript scripts/build_AD_locus_table.R                 # -> $AD_LOCI_OUT
-Rscript scripts/validate_outputs.R  $AD_LOCI_OUT       # expected tables, 195 loci, 494 genes
+Rscript scripts/validate_outputs.R  $AD_LOCI_OUT       # expected tables, 196 loci, 452 genes
 Rscript app/build_shiny_data.R $AD_LOCI_OUT app/data.csv
 ```
 
@@ -269,7 +270,7 @@ The build writes the locus-level summary, the variant-level membership table and
 the unified workbook to `$AD_LOCI_OUT`, together with a `_provenance.csv`
 recording the commit, host, time and the exact configuration the run used, and a
 copy of the two config tables as they stood. `scripts/validate_outputs.R` then
-checks that release: the expected tables are present, 195 loci, 494 genes, and
+checks that release: the expected tables are present, 196 loci, 452 genes, and
 the published tier distribution.
 
 The output directory is deliberately created empty. The GWAS credible-set
@@ -279,21 +280,29 @@ files.
 
 ## Confidence tiers
 
+Tiers T1–T5 need localized cis-xQTL support; genes implicated only by trans-xQTL
+are reported for reference. AD GWAS credible sets (CS) come from SuSiE-rss.
+xQTL credible sets come from single-context SuSiE, regional fSuSiE, and
+multi-context or multi-gene mvSuSiE. A 95% CS overlap is at least one variant
+shared by an AD GWAS 95% CS and an xQTL 95% CS. CoS support is AD and a cis
+molecular trait of the gene in the same ColocBoost event with a 95% CoS.
+Gene-level TWAS, MR and cTWAS evidence follows the regulome-wide association
+companion study. Rules are checked in order.
+
 | tier | evidence |
 |---|---|
-| T1 | cTWAS or MR, plus a 95% credible set overlap from single-context or fSuSiE fine-mapping |
-| T2 | cTWAS or MR, plus colocalization |
-| T3 | TWAS, plus either a 95% credible set overlap or colocalization |
-| T4 | a 95% credible set overlap from single-context or fSuSiE fine-mapping |
-| T5 | colocalization, or a fine-mapping overlap that is not a single-context 95% set (multi-context, cs50, cs70) |
-| T6 | gene-level TWAS, MR, or cTWAS only, with no localized xQTL signal |
+| T1 | 95% CS overlap and CoS support, with MR or cTWAS |
+| T2 | 95% CS overlap or CoS support, with MR or cTWAS |
+| T3 | 95% CS overlap or CoS support, with TWAS |
+| T4 | CoS support and a matching xQTL 95% CS; no separate AD GWAS CS needed |
+| T5 | other localized evidence: CoS alone, or an AD GWAS 95% CS overlapping an xQTL CS at 95% or 70% |
+| T6 | gene-level evidence only: TWAS, MR, or cis quantile/interaction QTL at variants in an AD GWAS 95% CS |
 
-`scripts/gene_prio_utils.R` assigns `top_confidence` per row during the build. T1-T5
-describe genes with localized AD-xQTL support, ordered by strength of evidence.
-**T6** covers genes supported only by gene-level TWAS/MR or cTWAS evidence, with
-no localized xQTL signal; because the tier chain is evaluated over rows of the
-xQTL overlap table, such a gene never reaches the final branch, so the build
-assigns T6 directly from the gene-level tables produced earlier in the same run.
+`scripts/gene_prio_utils.R` assigns `top_confidence` per row during the build.
+Evidence outside these rules gives no tier: 50% credible sets, AD credible sets
+below 95%, single-nucleus sQTL association without colocalization, and trans
+evidence. Genes with TWAS, MR or cTWAS results but no row in the xQTL overlap
+table are given T6 from the gene-level tables produced earlier in the same run.
 
 A gene is reported at its strongest tier. The app takes its tiers from the
 release, so the table and the Explorer cannot diverge.

@@ -1556,8 +1556,9 @@ res_adfv[!is.na(cV2F),cV2F_rank:=rank(-cV2F),by='ADlocus']
 fwrite(res_adfv[order(locus_index)],fp(out,'AD_loci_unified_cs95orColocs_Pval1e5_variant_level.csv.gz'))
 res_adfv<-fread(fp(out,'AD_loci_unified_cs95orColocs_Pval1e5_variant_level.csv.gz'))
 
-#export
-fwrite(res_adfv[order(locus_index)],'../../../../../xqtl-resources/data/genes/AD_loci_unified_cs95orColocs_Pval1e5_variant_level.csv.gz')
+#export: optional copy for the xqtl-resources site; skipped when that folder is not present
+.xr_genes <- '../../../../../xqtl-resources/data/genes'
+if (dir.exists(.xr_genes)) fwrite(res_adfv[order(locus_index)], file.path(.xr_genes, 'AD_loci_unified_cs95orColocs_Pval1e5_variant_level.csv.gz'))
 
 
 

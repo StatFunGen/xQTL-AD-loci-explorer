@@ -1,6 +1,6 @@
 # Released tables
 
-Three builds are published here. They are kept in separate directories because the
+Four builds are published here. They are kept in separate directories because the
 same workbook filename has been used across builds, and the `202605` / `202609`
 suffix is the build version of the summary script, not the number of loci.
 
@@ -8,7 +8,8 @@ suffix is the build version of the summary script, not the number of loci.
 |---|---|---|---|---|
 | 183_loci/ | earlier release | unified_AD_loci_xQTL_summary_202605.xlsx | 4,114 | 183 |
 | 188_loci/ | earlier release | unified_AD_loci_xQTL_summary_202609.xlsx | 4,195 | 188 |
-| 195_loci/ | current release, shown in the Explorer | unified_AD_loci_xQTL_summary_20261002.xlsx | 5,016 | 195 |
+| 195_loci/ | earlier release | unified_AD_loci_xQTL_summary_20261002.xlsx | 5,016 | 195 |
+| 196_loci/ | current release, shown in the Explorer | unified_AD_loci_xQTL_summary_20261022.xlsx | 5,874 | 196 |
 
 Counts are measured from the `Gene Locus table` sheet of each workbook and agree
 on both `locus index` and `ADlocus`.
@@ -53,6 +54,18 @@ Both builds use the same eight AD GWAS studies, fine-mapped the same way. The 19
 | trans evidence | all trans fine-mapping results | the selected single-context trans fine-mapping set plus trans-xQTL-only and AD-target colocalization; genome-wide trans-eGene, trans-hotspot, trans pQTL and trans gpQTL fine-mapping are not included |
 
 Loci are defined by a 95% credible set or an AD colocalization, so the added AD colocalizations define 7 new loci, and 4 existing loci gain a wider boundary. All 188 earlier loci are kept. Locus names are ordinals and are renumbered; `195_loci/ADlocus_name_map_188_to_195.csv` maps each locus to its earlier name. Gene tiers use cis evidence only.
+
+
+## What differs between 195_loci and 196_loci
+
+Both builds use the same eight AD GWAS studies, fine-mapped the same way. The 196-loci build adds evidence and changes how genes are tiered:
+
+| | 195_loci (20261002) | 196_loci (20261022) |
+|---|---|---|
+| colocalization | ColocBoost exports, tpQTL and CUIMC1 eQTL colocalization, transmap AD-target colocalization | adds single-nucleus sQTL colocalization with AD in six brain cell types |
+| evidence tiers | earlier tier rules | T1-T6 as defined in the repository README: T1-T5 need an AD GWAS 95% credible set or a 95% colocalization; trans evidence does not set a tier |
+
+The added colocalizations define 4 new loci, merge 5 earlier loci into 2, and change the boundary of 9 others. All 195 earlier loci are kept or merged. Locus names are ordinals and are renumbered; `196_loci/ADlocus_name_map_195_to_196.csv` maps each locus to its earlier name.
 
 Derived from ADSP/NIAGADS study data. Use of the underlying controlled-access
 resources is governed by their own data use terms.
