@@ -860,6 +860,18 @@ cat('[LD] precomputed variant correlations:', nrow(variants_cors), 'pairs,',
   #per region, iterate in all CS of a GWAS finding if correlation with other GWAS CS meet this condition, if it meet,
   #extend the CS 
   variants_corsf<-variants_cors[variant_ID%in%all_variants&variant_ID2%in%all_variants]
+## LD extension. By default this runs scripts/extend_ad_sets.R, a faster,
+## region-indexed version of the original loop below: same merge rule, same
+## synchronous passes, identical output (checked row for row against the
+## original on the Oct 23 inputs). AD_LOCI_LEGACY_EXTENSION=1 runs the original.
+if(Sys.getenv('AD_LOCI_LEGACY_EXTENSION')!='1'){
+  source(file.path(SCRIPTS,'extend_ad_sets.R'))
+  .ext<-extend_ad_sets(res_gwf,res_cosad,regions,variants_corsf,
+                       timing_dir=fp(out,'extension_timing'))
+  gwas_new<-.ext$result
+  i<-.ext$passes
+  rm(.ext)
+}else{
   #iteration 1
   i<-1
   gwas_new<-rbindlist(lapply(regions,function(r){
@@ -981,6 +993,7 @@ cat('[LD] precomputed variant correlations:', nrow(variants_cors), 'pairs,',
   }
   
   
+}
   message('converged after ',i,' iteration')
   gwas_new
   #recreate top_loci table
