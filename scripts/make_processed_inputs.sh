@@ -18,7 +18,7 @@ $RS $S/dedup_against_export.R AD_UofCsQTL_colocboost_export_release.bed $OUT/AD_
 $RS $S/drop_cos.R xuewei_slack/AD_xQTL_transmap_export_release.bed $OUT/tmp/AD_xQTL_transmap_export_release.noTMEM106B.bed chr7 ENSG00000106460
 $RS $S/transmap_export_to_sets.R $OUT/tmp/AD_xQTL_transmap_export_release.noTMEM106B.bed $OUT/tmp/AD_xQTL_transmap_export_release.noTMEM106B.sets.tsv
 $RS $S/convert_transmap_AD_target_trans.R $OUT/tmp/AD_xQTL_transmap_export_release.noTMEM106B.sets.tsv $OUT/trans_toploci_transmap_ADtarget_20261027
-$RS $S/convert_transmap_AD_target.R $OUT/tmp/AD_xQTL_transmap_export_release.noTMEM106B.sets.tsv $OUT/AD_transmapADtarget_colocboost_export_20261027.bed $OUT/xuewei_slack/AD_xQTL_ROSMAP_colocboost_export_release_20260422.TMEM106B_fix.bed
+$RS $S/convert_transmap_AD_target.R $OUT/tmp/AD_xQTL_transmap_export_release.noTMEM106B.sets.tsv $OUT/AD_transmapADtarget_colocboost_export_20261027.v2.bed $OUT/xuewei_slack/AD_xQTL_ROSMAP_colocboost_export_release_20260422.TMEM106B_fix.bed
 # ISSAC x AD: splice sites -> genes (GENCODE v32 genes + sn-sQTL association table)
 zcat resource/references/gencode.v32.basic.annotation.gtf.gz | awk -F'\t' '$3=="gene"' > $OUT/tmp/gencode.v32.genes.gtf
 $RS $S/convert_issac_coloc.R $OUT/tmp/gencode.v32.genes.gtf interactive_analysis/$COL/data/sn-sQTL/major_cell_FDR_0_05.txt.gz $OUT/issac_coloc_gene AD_*_issac_colocboost_export_release.bed
