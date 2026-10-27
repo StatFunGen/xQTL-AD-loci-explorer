@@ -235,6 +235,26 @@ It emits one toploci file per context with the columns the build expects:
 A source in any other format needs its own loader in `scripts/build_AD_locus_table.R`;
 follow one of the existing `Method ==` blocks.
 
+## Running on another cluster
+
+The build reads every input through one project folder (`AD_LOCI_ROOT`). On a cluster
+where the inputs sit in different places, make that folder out of links, using the
+location column of the input list (`columbia_path` for the Columbia cluster):
+
+```bash
+pixi install                                  # R and packages at the pinned versions (pixi.toml, pixi.lock)
+Rscript scripts/make_input_root.R data/build_inputs/YYYYMMDD.inputs.csv /path/to/input_root
+AD_LOCI_STAGING=/path/to/input_root/staging_gene_prio \
+  Rscript scripts/check_inputs.R data/build_inputs/YYYYMMDD.inputs.csv /path/to/input_root config scripts/build_AD_locus_table.R
+sbatch --export=ALL,AD_LOCI_ROOT=/path/to/input_root,AD_LOCI_INPUTS=data/build_inputs/YYYYMMDD.inputs.csv,AD_LOCI_OUT=/path/to/out_YYYYMMDD,AD_LOCI_RSCRIPT=$PWD/.pixi/envs/default/bin/Rscript scripts/run_pipeline.slurm
+```
+
+`make_input_root.R` only makes links; it stops if any input is missing on that cluster.
+The input check then confirms every file is byte-identical to the input list, and
+`scripts/compare_builds.R <release> <new build>` shows whether the result matches a
+release exactly. `run_pipeline.slurm` runs the same steps as `run_pipeline.qsub` and
+needs about 64 GB of memory.
+
 ## Methodology
 
 This section describes what the build does, step by step, and the thresholds it
