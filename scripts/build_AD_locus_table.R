@@ -829,6 +829,8 @@ if(update_gwas_cs_harmo|!file.exists(fp(out,'res_all_single_gwas_finemapping_cs5
                             res_cad[,source:='AD_meta_colocalization'],
                             res_cfsf[,source:='AD_epiQTL_colocalization']),fill=TRUE)
   all_variants<-Reduce(union,list(res_gwf$variant_ID,res_c$variant_ID,res_cad$variant_ID,res_cfsf$variant_ID))
+## AD_LOCI_DUMP_VARIANTS=<file>: write the variant set used for the LD table and stop (to build the LD table for a new input list)
+if(nzchar(Sys.getenv('AD_LOCI_DUMP_VARIANTS'))){writeLines(all_variants,Sys.getenv('AD_LOCI_DUMP_VARIANTS'));quit(save='no')}
   sum(duplicated(seqid(all_variants))&duplicated(pos(all_variants)))#ok
   
   #for 1 block
@@ -1523,8 +1525,8 @@ res_ad[is.na(gwas_zscore),gwas_source_effect:=str_extract(gwas_source,'[BWJK]')]
 res_ad[order(variant_ID,-variant_inclusion_probability),gwas_sources_effects:=paste(gwas_source_effect[!is.na(gwas_source_effect)&!duplicated(str_extract(gwas_source_effect,'[BWJK]'))],collapse =  '|'),by='variant_ID']
 
 
-# remove variants with min_pval>1e-5 or in cs70 or cs50 only
-res_adf<-res_ad[ADlocus%in%ADlocus[min_pval<1e-5]]
+## Locus p<1e-5 filter removed (2026-10-27): marginal p>1e-5 loci can still have small joint p-values, so every 95% CS / colocalization locus is kept.
+res_adf<-res_ad
 unique(res_adf$ADlocusID) #183
 #only cs95 or coloc
 res_adf<-res_adf[ADlocusID%in%ADlocusID[susie_coverage=='cs95'|str_detect(GWAS_methods,'coloc')]]
@@ -2168,7 +2170,7 @@ unique(res_adxubf[gwas_significance=='genome wide'][order(locus_index,top_confid
 
 res_loc<-unique(res_adxubf[!is.na(locus_index)][order(locus_index,top_confidence)],
                 by='locus_index')
-res_loc[,gwas_significance:=ifelse(gwas_significance=='ns','p<1e-5',ifelse(gwas_significance=='suggestive','p<1e-6','p<5e-8'))]
+res_loc[,gwas_significance:=ifelse(gwas_significance=='ns','p>=1e-6',ifelse(gwas_significance=='suggestive','p<1e-6','p<5e-8'))]
 ggplot(res_loc)+geom_bar(aes(x=top_confidence,fill=gwas_significance))+theme_bw()
 
 res_loc[gwas_significance=='p<5e-8']|>nrow()
