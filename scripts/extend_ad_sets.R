@@ -52,8 +52,11 @@ extend_ad_sets <- function(res_gwf, res_cosad, regions, variants_corsf,
                                            a = NULL, b = NULL))
   partition_seconds <- elapsed() - partition_start
   states <- initial; pass <- 0L; pass_times <- list(); region_times <- list()
+  work <- vapply(seq_along(regions), function(k) as.numeric(nrow(groups[[k]])) * data.table::uniqueN(initial[[k]]$locuscontext_id), numeric(1))
+  heavy <- if (workers > 1L) which(work >= 0.1 * sum(work)) else integer(0)
+  if (length(heavy)) message('extension: ', length(heavy), ' heavy region(s) run with set-level parallelism: ', paste(regions[heavy], collapse = ', '))
 
-  region_step <- function(k, pass_id) {
+  region_step <- function(k, pass_id, inner = 1L) {
     data.table::setDTthreads(1L)
     begun <- utc(); clock <- elapsed()
     x <- states[[k]]; g <- groups[[k]]; cache <- caches[[k]]
@@ -79,34 +82,41 @@ extend_ad_sets <- function(res_gwf, res_cosad, regions, variants_corsf,
     # detects their collapse in pass 2, even when unique membership is unchanged.
     changed_a <- vapply(seq_along(a), function(j) !identical(a[[j]], cache$a[[j]]), logical(1))
     changed_b <- vapply(seq_along(b), function(j) !identical(b[[j]], cache$b[[j]]), logical(1))
-    out <- vector('list', nrow(g)); checks <- 0L; hits <- 0L; added <- 0L
-    for (j in seq_len(nrow(g))) {
+    # Each set j reads the same previous-pass state and fixed LD and writes only its
+    # own output and its own cache row, so sets can run in parallel (used for the few
+    # regions that dominate run time, e.g. the chr17 MAPT region). Results are
+    # reassembled in set order, so the output is identical to the serial loop.
+    step_j <- function(j) {
       id <- g$locuscontext_id[j]; vars_a <- a[[j]]
       flags <- if (pass_id == 1L) vars_a else x$variant_ID[a_rows[[j]]][x$original_cs[a_rows[[j]]]]
-      accept <- rep(FALSE, length(loci))
+      accept <- rep(FALSE, length(loci)); vals <- cache$values[j, ]; vld <- cache$valid[j, ]; ch <- 0L; hi <- 0L
       for (h in seq_along(loci)) {
         if (loci[h] == id) next
-        # A pair's answer depends only on its two previous-pass variant vectors
-        # and fixed LD. Reuse it only if NEITHER side changed. A change in any
-        # study invalidates its comparisons in both directions on the next pass.
-        if (!reuse_pairs || !cache$valid[j, h] || changed_a[j] || changed_b[h]) {
+        if (!reuse_pairs || !vld[h] || changed_a[j] || changed_b[h]) {
           pairs <- ld[[k]][.(unique(vars_a)), on = 'variant_ID', nomatch = 0L][
             .(unique(b[[h]])), on = 'variant_ID2', nomatch = 0L]
           ok <- nrow(pairs) > 0L && isTRUE(any(abs(pairs$r) > 0.8) &&
             nrow(pairs) == length(vars_a) * length(b[[h]]))
-          cache$values[j, h] <- ok; cache$valid[j, h] <- TRUE
-          checks <- checks + 1L
-        } else hits <- hits + 1L
-        accept[h] <- cache$values[j, h]
+          vals[h] <- ok; vld[h] <- TRUE; ch <- ch + 1L
+        } else hi <- hi + 1L
+        accept[h] <- vals[h]
       }
       # Preserve the original table order of B's rows, including duplicates.
       other <- x[x$locuscontext_id != id]
       to_add <- other$variant_ID[accept[match(other$locuscontext_id, loci)]]
-      added <- added + length(setdiff(to_add, vars_a))
       merged <- union(vars_a, to_add)
-      out[[j]] <- data.table::data.table(locuscontext_id = id, source = g$source[j],
-        variant_ID = merged, original_cs = merged %in% flags)
+      list(out = data.table::data.table(locuscontext_id = id, source = g$source[j],
+        variant_ID = merged, original_cs = merged %in% flags),
+        vals = vals, vld = vld, checks = ch, hits = hi, added = length(setdiff(to_add, vars_a)))
     }
+    res <- if (inner > 1L && nrow(g) > 1L) parallel::mclapply(seq_len(nrow(g)), step_j,
+      mc.cores = inner, mc.preschedule = FALSE, mc.set.seed = FALSE) else lapply(seq_len(nrow(g)), step_j)
+    if (any(vapply(res, inherits, logical(1), 'try-error'))) stop('Set worker failed in region ', regions[k])
+    out <- lapply(res, '[[', 'out')
+    for (j in seq_along(res)) { cache$values[j, ] <- res[[j]]$vals; cache$valid[j, ] <- res[[j]]$vld }
+    checks <- sum(vapply(res, function(r) r$checks, integer(1)))
+    hits <- sum(vapply(res, function(r) r$hits, integer(1)))
+    added <- sum(vapply(res, function(r) r$added, integer(1)))
     cache$a <- a; cache$b <- b
     result <- data.table::rbindlist(out, fill = TRUE)[, region := regions[k]]
     list(state = result, cache = cache, timing = data.table::data.table(pass = pass_id,
@@ -117,9 +127,14 @@ extend_ad_sets <- function(res_gwf, res_cosad, regions, variants_corsf,
     pass <- pass + 1L; begun <- utc(); clock <- elapsed()
     # states and caches are read-only for this entire synchronous pass. Publish
     # the next state only after all workers return, retaining region order.
-    values <- if (workers == 1L) lapply(seq_along(regions), region_step, pass_id = pass) else
-      parallel::mclapply(seq_along(regions), region_step, pass_id = pass,
-                        mc.cores = workers, mc.preschedule = TRUE, mc.set.seed = FALSE)
+    values <- vector('list', length(regions))
+    # the heaviest regions run one at a time with their sets spread over all workers;
+    # the rest run as before, one region per worker
+    for (kk in heavy) values[[kk]] <- region_step(kk, pass_id = pass, inner = workers)
+    light <- setdiff(seq_along(regions), heavy)
+    values[light] <- if (workers == 1L) lapply(light, region_step, pass_id = pass) else
+      parallel::mclapply(light, region_step, pass_id = pass,
+        mc.cores = workers, mc.preschedule = TRUE, mc.set.seed = FALSE)
     if (any(vapply(values, inherits, logical(1), 'try-error'))) stop('Region worker failed')
     states <- lapply(values, '[[', 'state'); caches <- lapply(values, '[[', 'cache')
     rt <- data.table::rbindlist(lapply(values, '[[', 'timing'))
