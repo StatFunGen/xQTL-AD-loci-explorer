@@ -96,15 +96,8 @@ metadata_analysis <- file.path(RECORD, 'registry_runtime.csv')
   d[]
 }
 mtd<-fread(metadata_analysis,header = T)
-## Inputs must be the released files. A Path into interactive_analysis/ (a working copy)
-## while a file of the same name exists under analysis_result/ means the build would read
-## an outdated copy, so stop and name both files.
-.rel<-list.files(ROOTP('analysis_result'),recursive=TRUE)
-.base<-function(x) sub('\\.gz$','',basename(x))
-.stale<-mtd[grepl('^interactive_analysis/',Path)&.base(Path)%in%.base(.rel)]
-if(nrow(.stale)) stop('inputs point at working copies, but a released file of the same name exists:\n  ',
-  paste(.stale$Path,'->',file.path('analysis_result',.rel[match(.base(.stale$Path),.base(.rel))]),collapse='\n  '),
-  '\nPoint these rows of metadata_analysis.csv at the released file.',call.=FALSE)
+## Which file each input is (path and md5) is fixed by the build's input list and checked
+## by check_inputs.R before the build; no folder is assumed to hold the newer version.
 mtd <- .fix_registry_types(mtd)
 contexts<-fread(contexts_metadata)
 
