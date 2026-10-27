@@ -10,6 +10,8 @@ instead (see the README).
 ```bash
 git clone https://github.com/StatFunGen/xQTL-AD-loci-explorer
 cd xQTL-AD-loci-explorer
+curl -fsSL https://pixi.sh/install.sh | bash   # only if pixi is not installed yet
+export PATH=$HOME/.pixi/bin:$PATH
 pixi install                                   # R and packages at the pinned versions
 RS=$PWD/.pixi/envs/default/bin/Rscript
 LIST=data/build_inputs/20261027.2.inputs.csv   # the input list of the build you start from
