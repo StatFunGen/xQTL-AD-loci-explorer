@@ -52,7 +52,6 @@ if (length(.gone)) {
        'available separately: the LD table from Synapse syn75082260, the two interaction\n       summaries on request. Point AD_LOCI_STAGING at the directory holding them.',
        call. = FALSE)
 }
-if (dir.exists(STAGING)) setwd(STAGING)
 #INPUT FILES
 metadata_analysis <- file.path(CONFIG, 'metadata_analysis.csv')
 contexts_metadata <- file.path(CONFIG, 'contexts_metadata.csv')
@@ -69,18 +68,26 @@ gene_gtf=ROOTP('resource/references/Homo_sapiens.GRCh38.103.chr.reformatted.coll
 
 out <- Sys.getenv('AD_LOCI_OUT', unset = file.path(PROJECT_ROOT, paste0('out_', format(Sys.Date(), '%Y%m%d'))))
 STAMP <- sub('^out_', '', basename(out))   # version stamp used in output filenames
-dir.create(out)
+dir.create(out, showWarnings = FALSE)
+## Inputs are read-only. Scratch files go to <out>/_scratch, and the registry the build
+## fills in as it runs (summary_file paths) is a copy in <out>/_build_record, so neither
+## the config folder nor the staging folder is ever written to.
+SCRATCH <- file.path(out, '_scratch'); dir.create(SCRATCH, showWarnings = FALSE); setwd(SCRATCH)
+RECORD <- file.path(out, '_build_record'); dir.create(RECORD, showWarnings = FALSE)
+if (!file.copy(metadata_analysis, file.path(RECORD, 'registry_runtime.csv'), overwrite = TRUE)) stop('cannot copy the registry into ', RECORD)
+metadata_analysis <- file.path(RECORD, 'registry_runtime.csv')
 
 
-## The shipped registry declares summary_file / summary_file_ad but leaves them
-## empty, so fread types them logical. A later 'summary_file := <path>' is then
+## The registry does not carry summary_file / summary_file_ad (they are run-time paths);
+## they are added here as empty character columns. If present but empty, fread types them logical. A later 'summary_file := <path>' is then
 ## coerced back to logical (NA) and the per-method overlap loop finds nothing to
 ## read. The column has to be dropped and recreated as character -- assigning to
 ## it in place would just be coerced again. Column order is restored afterwards.
 .fix_registry_types <- function(d) {
   .nm <- names(d)
   for (.pc in c('summary_file', 'summary_file_ad')) {
-    if (.pc %in% .nm && !is.character(d[[.pc]])) {
+    if (!.pc %in% .nm) { d[, (.pc) := NA_character_]; .nm <- c(.nm, .pc) }
+    else if (!is.character(d[[.pc]])) {
       d[, (.pc) := NULL]
       d[, (.pc) := NA_character_]
     }

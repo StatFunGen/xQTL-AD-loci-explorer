@@ -14,7 +14,7 @@ scripts/
   convert_issac_coloc.R    keys single-nucleus sQTL (ISSAC) x AD colocalization exports to genes
   add_evidence_source.R    register a new evidence source (see 'Adding data')
   check_inputs.R           checks every file in a build input list exists and matches its md5
-  build_record.R           writes _build_record/ (inputs, output md5s, counts, changes since previous build)
+  build_record.R           writes the build record, <out>/_build_record/ (see Running it)
   compare_builds.R         compares two builds table by table
   make_processed_inputs.sh  regenerates the processed inputs from the raw exports
   convert_*.R, drop_*.R, dedup_against_export.R  the processing steps make_processed_inputs.sh runs
@@ -59,7 +59,7 @@ Rscript scripts/validate_outputs.R  $AD_LOCI_OUT       # optional count check: A
 Rscript app/build_shiny_data.R $AD_LOCI_OUT app/data.csv
 ```
 
-On the SCC the same steps run as one job. From the repository root:
+On the SCC the same steps run as one job. From the root of a clean checkout of the commit you want to build:
 
 ```bash
 qsub -v AD_LOCI_INPUTS=data/build_inputs/YYYYMMDD.inputs.csv,AD_LOCI_OUT=/path/to/out_YYYYMMDD scripts/run_pipeline.qsub
@@ -68,11 +68,25 @@ qsub -v AD_LOCI_INPUTS=data/build_inputs/YYYYMMDD.inputs.csv,AD_LOCI_OUT=/path/t
 The job:
 
 1. refuses to write into an output folder that already has files (override with `AD_LOCI_ALLOW_EXISTING_OUT=1`);
-2. copies the config into the output folder and records it with md5s in `_used_config/`, plus the commit, host and time in `_provenance.csv`;
-3. runs `check_inputs.R` on the input list and stops if any file is missing or its md5 differs;
-4. builds and validates the tables;
-5. writes `_build_record/` (`build_record.R`; set `AD_LOCI_PREV` to a previous output folder to list what changed);
-6. writes `_COMPLETE` only if the build and validation both succeeded.
+2. runs `check_inputs.R`, which stops the job if any file the build will read is missing, has changed, or is not in the input list;
+3. builds and validates the tables;
+4. writes the build record (below);
+5. writes `_COMPLETE` only if the build, the validation and the build record all succeeded.
+
+Inputs are read in place and never written to: the config comes from `config/` (or `AD_LOCI_CONFIG`), the three precomputed tables from `$AD_LOCI_ROOT/staging_gene_prio` (or `AD_LOCI_STAGING`). Scratch files go to `<out>/_scratch`.
+
+Each build has one record, `<out>/_build_record/`:
+
+| file | contents |
+|---|---|
+| `run.csv` | run id, code commit and whether the checkout had local changes, input list and its sha256, config sha256, R and package versions, host, user, time |
+| `inputs.csv` | the input list the build used |
+| `config/` | the config files the build read, with `MD5SUMS` |
+| `registry_runtime.csv` | the registry as the build filled it in (run-time paths of intermediate tables) |
+| `check_inputs.txt`, `validation.txt` | output of the input check and of the validation |
+| `outputs_md5.csv`, `summary.csv` | checksum of every output file; headline counts |
+| `changes_since_previous.txt` | inputs, counts and outputs that differ from the build in `AD_LOCI_PREV`, when set |
+| `environment.txt` | R session information |
 
 The build uses `NSLOTS` threads. The per-file overlap step runs in parallel; set `AD_LOCI_OVERLAP_WORKERS` to change the number of workers. Set `AD_LOCI_RSCRIPT` to choose which Rscript runs the steps (default: `~/.pixi/bin/Rscript`, otherwise the one on `PATH`).
 
@@ -112,7 +126,6 @@ One row per exported analysis table:
 | Modality | assay or analysis modality |
 | Method | how the table was produced; selects the loader in the build |
 | Path | location of the table, relative to `$AD_LOCI_ROOT` |
-| summary_file, summary_file_ad | written by the build at run time; leave blank |
 | variant_level_method | whether the method contributes variant-level evidence |
 
 Paths under `$AD_LOCI_ROOT` refer to the FunGen-xQTL release, Synapse
@@ -309,9 +322,8 @@ makes fine-mapping and colocalization hard to read.
 Tiers are assigned per variant, gene and context group by the rules in the next
 section, and each gene is reported at the strongest tier it reaches anywhere.
 The build writes the locus-level summary, the variant-level membership table and
-the unified workbook to `$AD_LOCI_OUT`, together with a `_provenance.csv`
-recording the commit, host, time and the exact configuration the run used, and a
-copy of the two config tables as they stood. `scripts/validate_outputs.R` then
+the unified workbook to `$AD_LOCI_OUT`; what the run used (code commit, inputs,
+config, environment) goes into the build record, `_build_record/`. `scripts/validate_outputs.R` then
 checks that release: the expected tables are present, and the locus and gene
 counts match `AD_LOCI_EXPECT_LOCI` / `AD_LOCI_EXPECT_GENES` when those are set.
 

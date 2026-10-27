@@ -1,7 +1,7 @@
 #!/bin/bash -l
 ## End-to-end rebuild of the AD loci table from this repository.
-##   qsub scripts/run_pipeline.qsub
-## Override the output directory:  qsub -v AD_LOCI_OUT=/path scripts/run_pipeline.qsub
+##   qsub -v AD_LOCI_INPUTS=data/build_inputs/YYYYMMDD.inputs.csv,AD_LOCI_OUT=/path/to/out_YYYYMMDD scripts/run_pipeline.qsub
+## Submit from a clean checkout of the commit you want to build.
 #$ -P xqtl
 #$ -N adloci_e2e
 #$ -l h_rt=24:00:00
@@ -18,60 +18,32 @@ REPO=${AD_LOCI_REPO:-${SGE_O_WORKDIR:-$PWD}}
 if [ ! -f "$REPO/scripts/build_AD_locus_table.R" ]; then
   echo "not a repository checkout: $REPO" >&2; exit 1
 fi
+cd "$REPO" || exit 1
 export OMP_NUM_THREADS=${NSLOTS:-1}
 RS=${AD_LOCI_RSCRIPT:-$HOME/.pixi/bin/Rscript}; [ -x "$RS" ] || RS=$(command -v Rscript)   # R used for every step
 export AD_LOCI_ROOT=${AD_LOCI_ROOT:-/restricted/projectnb/xqtl/jaempawi/xqtl/AD_loci_xQTL}
-## the build writes scratch files into STAGING, so each run gets its own; the three
-## precomputed tables are copied in from the project's staging folder (checked by
-## check_inputs.R against the input list)
-export AD_LOCI_STAGING=${AD_LOCI_STAGING:-__OUT__/_scratch}
+## inputs are read in place and never written: the three precomputed tables from the
+## project's staging folder, the config from the repository (or AD_LOCI_CONFIG)
+export AD_LOCI_STAGING=${AD_LOCI_STAGING:-$AD_LOCI_ROOT/staging_gene_prio}
+export AD_LOCI_CONFIG=${AD_LOCI_CONFIG:-$REPO/config}
+INPUTS=${AD_LOCI_INPUTS:?set AD_LOCI_INPUTS to the build input list, e.g. data/build_inputs/20261027.inputs.csv}
 OUT=${AD_LOCI_OUT:-$AD_LOCI_ROOT/out_e2e_$(date +%Y%m%d_%H%M)}
 export AD_LOCI_OUT=$OUT
+## the code identity goes into the build record; a checkout with local changes is flagged
+export AD_LOCI_COMMIT=$(git -C "$REPO" rev-parse HEAD 2>/dev/null)
+export AD_LOCI_DIRTY=$([ -n "$(git -C "$REPO" status --porcelain --untracked-files=no 2>/dev/null)" ] && echo yes || echo no)
 
 ## refuse to reuse an output folder: a rerun into an old folder can mix two builds' files
 if [ -e "$OUT" ] && [ -n "$(ls -A "$OUT" 2>/dev/null)" ] && [ "${AD_LOCI_ALLOW_EXISTING_OUT:-0}" != 1 ]; then
   echo "output folder already has files: $OUT (set AD_LOCI_ALLOW_EXISTING_OUT=1 to override)" >&2; exit 1
 fi
-mkdir -p "$AD_LOCI_ROOT/logs" "$OUT"
-AD_LOCI_STAGING=${AD_LOCI_STAGING/__OUT__/$OUT}; export AD_LOCI_STAGING
-mkdir -p "$AD_LOCI_STAGING"
-for f in gwas_variants_cor0.5.csv.gz res_APOE_interaction_summ.csv.gz res_msex_interaction_summ.csv.gz; do
-  [ -f "$AD_LOCI_STAGING/$f" ] || cp -p "$AD_LOCI_ROOT/staging_gene_prio/$f" "$AD_LOCI_STAGING/"
-done
-cd "$REPO" || exit 1
+mkdir -p "$OUT/_build_record"
+echo "repo $REPO commit $AD_LOCI_COMMIT (local changes: $AD_LOCI_DIRTY)"
+echo "config $AD_LOCI_CONFIG  staging $AD_LOCI_STAGING  inputs $INPUTS"
 
-## provenance: snapshot the exact config this build used
-## build_AD_locus_table.R reads AD_LOCI_CONFIG and only falls back to config/.
-## Snapshotting config/ unconditionally recorded a file the build never opened
-## whenever AD_LOCI_CONFIG was set, which is how a config change could take
-## effect while the provenance said otherwise.
-## the build writes its registry back into the config folder, so it always runs on a
-## private copy in the output folder; the source config (the repository's, or
-## AD_LOCI_CONFIG) is never modified, and concurrent jobs cannot interfere
-CFG_SRC=${AD_LOCI_CONFIG:-$REPO/config}
-mkdir -p "$OUT/_config" && cp "$CFG_SRC"/* "$OUT/_config/" || { echo "cannot copy config from $CFG_SRC" >&2; exit 1; }
-export AD_LOCI_CONFIG=$OUT/_config
-CFG=$AD_LOCI_CONFIG
-mkdir -p "$OUT/_used_config" && cp "$CFG"/* "$OUT/_used_config/" && (cd "$OUT/_used_config" && md5sum * > MD5SUMS)
-echo "config dir: $CFG"
-cp "$CFG/metadata_analysis.csv" "$OUT/_used_metadata_analysis.csv"
-cp "$CFG/contexts_metadata.csv" "$OUT/_used_contexts_metadata.csv"
-{ echo "built_at,$(date -Iseconds)"
-  echo "built_by,$USER"
-  echo "host,$(hostname)"
-  echo "repo_commit,$(git -C "$REPO" rev-parse --short HEAD 2>/dev/null)"
-  echo "out,$OUT"
-  echo "metadata_rows,$(tail -n +2 "$CFG/metadata_analysis.csv" | wc -l)"
-  echo "config_source,$CFG_SRC"
-  echo "config_dir,$CFG"
-} > "$OUT/_provenance.csv"
-
-## out/ is intentionally left empty so the GWAS credible-set harmonisation
-## recomputes rather than reusing a previous release's artifacts.
 ## stop before reading anything if an input differs from the build's input list
-INPUTS=${AD_LOCI_INPUTS:?set AD_LOCI_INPUTS to the build input list, e.g. data/build_inputs/20261027.inputs.csv}
-cp "$INPUTS" "$OUT/_used_inputs.csv"
-"$RS" scripts/check_inputs.R "$INPUTS" "$AD_LOCI_ROOT" "$CFG" scripts/build_AD_locus_table.R || { echo "CHECK_INPUTS failed $(date)"; exit 1; }
+"$RS" scripts/check_inputs.R "$INPUTS" "$AD_LOCI_ROOT" "$AD_LOCI_CONFIG" scripts/build_AD_locus_table.R 2>&1 | tee "$OUT/_build_record/check_inputs.txt"
+[ ${PIPESTATUS[0]} -eq 0 ] || { echo "CHECK_INPUTS failed $(date)"; exit 1; }
 echo "START $(date) out=$OUT"
 "$RS" scripts/build_AD_locus_table.R
 rc=$?
@@ -79,8 +51,8 @@ echo "BUILD_RC=$rc  $(date)"
 
 if [ $rc -eq 0 ]; then
   echo "---- validate ----"
-  "$RS" scripts/validate_outputs.R "$OUT"
-  vrc=$?; echo "VALIDATE_RC=$vrc"
+  "$RS" scripts/validate_outputs.R "$OUT" 2>&1 | tee "$OUT/_build_record/validation.txt"
+  vrc=${PIPESTATUS[0]}; echo "VALIDATE_RC=$vrc"
   [ $vrc -ne 0 ] && rc=$vrc
   echo "---- build record ----"
   "$RS" scripts/build_record.R "$OUT" "$INPUTS" "${AD_LOCI_PREV:-}"

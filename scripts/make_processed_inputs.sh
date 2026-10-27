@@ -28,15 +28,21 @@ $RS $S/convert_glyco_AD_coloc.R $OUT/ru_glyco_patch_20261016/AD_glycoQTL_colocbo
 for c in AC DLPFC PCC; do zcat k5_transfer/ROSMAP_sQTL_factor.GenomeWide.exported.toploci.bed.gz | awk -F'\t' -v c=ROSMAP_${c}_sQTL_factor 'NR==1 || index($8,c)==1' | gzip -n > $OUT/k5_transfer/ROSMAP_${c}_sQTL_factor.exported.toploci.bed.gz; done
 if [ -n "$INPUTS" ]; then
   cat > $OUT/tmp/verify.R <<'REOF'
+## each regenerated file must equal the file the build read: same bytes, or for .gz the
+## same decompressed content (gzip headers differ between gzip versions)
 suppressPackageStartupMessages(library(data.table)); a <- commandArgs(TRUE)
-x <- fread(a[1], colClasses = 'character'); out <- normalizePath(a[2])
+x <- fread(a[1], colClasses = 'character'); out <- normalizePath(a[2]); root <- a[3]
 fs <- list.files(out, recursive = TRUE); fs <- fs[!startsWith(fs, 'tmp/')]
-m <- data.table(rel = fs, now = unname(tools::md5sum(file.path(out, fs))))
-m[, md5 := x$md5[match(rel, x$Path)]]
-print(m[, .(file = rel, recorded = substr(md5, 1, 8), now = substr(now, 1, 8), same = !is.na(md5) & md5 == now)])
-if (any(is.na(m$md5) | m$md5 != m$now)) quit(status = 1)
-cat('MAKE-VERIFY: all', nrow(m), 'files match the input list\n')
+m <- data.table(file = fs, now = unname(tools::md5sum(file.path(out, fs))))
+m[, recorded := x$md5[match(file, x$Path)]]
+zmd5 <- function(p) system2('sh', c('-c', shQuote(paste('gzip -dc', shQuote(p), '| md5sum'))), stdout = TRUE)
+m[, result := fifelse(is.na(recorded), 'not in input list', fifelse(now == recorded, 'same bytes', 'DIFFERENT'))]
+for (i in which(m$result == 'DIFFERENT' & grepl('\\.gz$', m$file)))
+  if (identical(zmd5(file.path(out, m$file[i])), zmd5(file.path(root, m$file[i])))) m$result[i] <- 'same content (gzip header differs)'
+print(m[, .(file, result)], nrows = 200)
+if (any(m$result %in% c('DIFFERENT', 'not in input list'))) quit(status = 1)
+cat('MAKE-VERIFY: all', nrow(m), 'regenerated files match the files the build read\n')
 REOF
-  "$RS" $OUT/tmp/verify.R "$INPUTS" "$OUT" || { echo "MAKE-VERIFY failed"; exit 1; }
+  "$RS" $OUT/tmp/verify.R "$INPUTS" "$OUT" "$ROOT" || { echo "MAKE-VERIFY failed"; exit 1; }
 fi
 echo MAKE-DONE
