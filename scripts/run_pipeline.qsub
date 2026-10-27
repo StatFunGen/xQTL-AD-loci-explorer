@@ -46,6 +46,10 @@ cp "$CFG/contexts_metadata.csv" "$OUT/_used_contexts_metadata.csv"
 
 ## out/ is intentionally left empty so the GWAS credible-set harmonisation
 ## recomputes rather than reusing a previous release's artifacts.
+## stop before reading anything if an input differs from the build's input list
+INPUTS=${AD_LOCI_INPUTS:-$REPO/data/build_inputs/next_unreleased.inputs.csv}
+cp "$INPUTS" "$OUT/_used_inputs.csv"
+~/.pixi/bin/Rscript scripts/check_inputs.R "$INPUTS" "$AD_LOCI_ROOT" || { echo "CHECK_INPUTS failed $(date)"; exit 1; }
 echo "START $(date) out=$OUT"
 ~/.pixi/bin/Rscript scripts/build_AD_locus_table.R
 rc=$?
@@ -55,6 +59,8 @@ if [ $rc -eq 0 ]; then
   echo "---- validate ----"
   ~/.pixi/bin/Rscript scripts/validate_outputs.R "$OUT"
   echo "VALIDATE_RC=$?"
+echo "---- build record ----"
+~/.pixi/bin/Rscript scripts/build_record.R "$OUT" "$INPUTS" "${AD_LOCI_PREV:-}"
 fi
 echo "END $(date)"
 exit $rc
