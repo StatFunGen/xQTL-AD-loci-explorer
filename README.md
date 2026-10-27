@@ -21,7 +21,7 @@ scripts/
   validate_outputs.R       check a release against the expectations of this build
   run_pipeline.qsub        end-to-end job script for the SCC scheduler
 config/                    metadata tables the build reads
-data/                      released tables, one directory per build
+data/                      released tables, one directory per build date
 app/                       Shiny application, runnable from a clone
 DEPENDENCIES.md            R version and package versions
 ```
@@ -141,6 +141,19 @@ released variant sets cannot be reproduced without it.
 
 Each build has an input list in `data/build_inputs/`, named by build date (`YYYYMMDD.inputs.csv`). One row per file the build reads, with its path, md5, size, who provided it and where it came from. Files that were processed before use (for example, with signals removed or duplicates dropped) also list their `parents` (path and md5) and the `recipe` that produced them; `scripts/make_processed_inputs.sh` reruns every recipe and reproduces those files exactly. Rows with `role` = `reference` are lookup files rather than evidence.
 
+#### Processed inputs
+
+A few delivered files are changed before the build reads them. The original file is kept and listed as the parent; every step below is run by `scripts/make_processed_inputs.sh`.
+
+| input | what is done | why | script |
+|---|---|---|---|
+| ROSMAP AD x xQTL colocalization | remove the two TMEM106B glycoprotein (DLPFC_Klein gpQTL) signals | they are not in Ru's Oct 16 glycoQTL rerun | `drop_events.R` |
+| tpQTL x AD colocalization | remove ROSMAP eQTL outcomes that are already in the main ROSMAP export | avoid counting the same colocalization twice | `dedup_against_export.R` |
+| TransMap x AD colocalization | remove the CoS at the TMEM106B locus, group rows into colocalization sets, then write the trans part as one file per context and the AD + cis part as one ColocBoost-style file | the build reads trans evidence one context at a time, and reads cis colocalization with the other AD x xQTL files; trans is shown as annotation only and does not set tiers | `drop_cos.R`, `transmap_export_to_sets.R`, `convert_transmap_AD_target_trans.R`, `convert_transmap_AD_target.R` |
+| single-nucleus sQTL (ISSAC) x AD colocalization | map each splice site to its gene (GENCODE v32 genes and the sn-sQTL association table) | the build links colocalization to genes, and these exports carry splice sites | `convert_issac_coloc.R` |
+| glycoQTL x AD colocalization | reshape to one row per variant per colocalization set | match the format of the other AD x xQTL files | `convert_glyco_AD_coloc.R` |
+| tpQTL fine-mapping (genome-wide table) | split by context (AC, DLPFC, PCC); rows unchanged | the build reads fine-mapping one context at a time | in `make_processed_inputs.sh` |
+
 To check a set of inputs before a run:
 
 ```bash
@@ -212,7 +225,7 @@ by two neighbouring ones.
 The locus set is imported, not derived here: GWAS fine-mapping is run upstream
 and is not repeated by this pipeline. The credible sets behind the current
 build come from eight AD GWAS studies fine-mapped with SuSiE-RSS EB-mix; the
-earlier 183-loci release used SuSiE-RSS version 1 on the same studies, which is
+earlier 20260514 release used SuSiE-RSS version 1 on the same studies, which is
 why the two are not nested (see `data/README.md`).
 At startup the build scans the registry
 for the analysis methods that point at per-context top-loci files and reports
@@ -299,8 +312,8 @@ The build writes the locus-level summary, the variant-level membership table and
 the unified workbook to `$AD_LOCI_OUT`, together with a `_provenance.csv`
 recording the commit, host, time and the exact configuration the run used, and a
 copy of the two config tables as they stood. `scripts/validate_outputs.R` then
-checks that release: the expected tables are present, 196 loci, 452 genes, and
-the published tier distribution.
+checks that release: the expected tables are present, and the locus and gene
+counts match `AD_LOCI_EXPECT_LOCI` / `AD_LOCI_EXPECT_GENES` when those are set.
 
 The output directory is deliberately created empty. The GWAS credible-set
 harmonization recomputes from its inputs rather than reusing a previous

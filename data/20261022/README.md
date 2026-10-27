@@ -1,4 +1,4 @@
-# Released tables - 196-loci build
+# Released tables - 20261022 build
 
 Locus-level results for the 196 candidate Alzheimer's disease loci in this
 release, produced by build_AD_locus_table.R. See the repository README for how
@@ -10,7 +10,7 @@ Every table here comes from the same build. Verified locus and row counts:
 |---|---|---|---|
 | unified_AD_loci_xQTL_summary_20261022.xlsx | - | 196 | unified summary workbook: locus, gene and variant evidence across fine-mapping, colocalization, TWAS/MR and cTWAS, with evidence tiers T1-T6 |
 | AD_loci_unified_cs95orColocs_Pval1e5_variant_level.csv.gz | 20,572 | 196 | one row per variant-locus: variants entering a locus through a 95% credible set or a colocalization and reaching p < 1e-5, with per-variant GWAS summary columns |
-| ADlocus_name_map_195_to_196.csv | 199 | 196 | maps each locus to its name in the 195-locus build: same, boundary changed, merged, or new |
+| ADlocus_name_map_20261002_to_20261022.csv | 199 | 196 | maps each locus to its name in the 195-locus build: same, boundary changed, merged, or new |
 
 ## Not included here
 
