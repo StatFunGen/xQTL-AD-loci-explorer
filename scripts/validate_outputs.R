@@ -46,6 +46,52 @@ if (file.exists(vf)) {
   cat("\n")
 }
 
+## ---- every AD-xQTL colocalization input reaches the coloc table -----------
+root <- Sys.getenv("AD_LOCI_ROOT"); cfg <- Sys.getenv("AD_LOCI_CONFIG")
+cf <- file.path(release, "res_coloc_AD_xQTL_unified.csv.gz")
+if (nzchar(root) && nzchar(cfg) && file.exists(cf)) {
+  mtd <- fread(file.path(cfg, "metadata_analysis.csv"))
+  got <- unique(fread(cf, select = "gene_ID")$gene_ID)
+  for (f in mtd[Method == "ColocBoost" & Modality == "AD_xQTL_colocalization"]$Path) {
+    g <- unique(fread(file.path(root, f), select = "region_ID")$region_ID)
+    miss <- setdiff(g, got)
+    note(!length(miss), sprintf("coloc input %s: %d of %d genes in the coloc table",
+                                basename(f), length(g) - length(miss), length(g)))
+  }
+} else cat(" [skip] coloc input check: set AD_LOCI_ROOT and AD_LOCI_CONFIG\n")
+
+## ---- tiers agree with the evidence they are built from -------------------
+of <- file.path(release, "xQTL_all_methods_overlap_with_AD_loci_unified_cs95orColocs_Pval1e5.csv.gz")
+if (file.exists(of)) {
+  x <- fread(of, select = c("ADlocus", "gene_ID", "Method", "context", "context_short",
+                            "credibleset", "susie_coverage", "MR_signif", "cTWAS_signif",
+                            "TWAS_signif", "confidence_lvl"))
+  x <- x[!grepl("^AD", context) & !grepl("trans", Method) & !grepl("^tmAD_", gene_ID)]
+  fm <- c("single_context_finemapping", "multi_context_finemapping",
+          "multi_gene_finemapping", "fSuSiE_finemapping")
+  x[, ov95 := ((Method %in% fm & grepl("^cs95", credibleset)) | Method == "fSuSiE_finemapping") &
+              susie_coverage %in% "cs95"]
+  x[, causal := MR_signif %in% TRUE | cTWAS_signif %in% TRUE]
+  x[, twas := TWAS_signif %in% TRUE]
+  ## gene has a 95% CS overlap and MR/cTWAS in the same context -> at most T2
+  e <- x[, .(ov = any(ov95), c = any(causal), t = any(twas)), by = .(gene_ID, context_short)]
+  need2 <- unique(e[ov & c]$gene_ID); need3 <- unique(e[ov & t]$gene_ID)
+  tier <- x[!is.na(confidence_lvl) & confidence_lvl != "",
+            .(tier = min(as.character(confidence_lvl))), by = gene_ID]
+  bad2 <- setdiff(need2, tier[tier %in% c("T1", "T2")]$gene_ID)
+  bad3 <- setdiff(need3, tier[tier %in% c("T1", "T2", "T3")]$gene_ID)
+  note(!length(bad2), sprintf("overlap + MR/cTWAS in the same context gives T1/T2 (%d genes do not)", length(bad2)))
+  note(!length(bad3), sprintf("overlap + TWAS in the same context gives T1-T3 (%d genes do not)", length(bad3)))
+  if (length(bad2) || length(bad3)) cat("   e.g.", head(c(bad2, bad3), 10), "\n")
+}
+
+## ---- no locus overlap file is older than the table it was built from ------
+ov <- list.files(release, pattern = "_overlapADloci\\.csv\\.gz$", full.names = TRUE)
+src <- sub("_overlapADloci\\.csv\\.gz$", ".csv.gz", ov)
+stale <- ov[file.exists(src) & file.mtime(src) > file.mtime(ov)]
+note(!length(stale), sprintf("no stale overlap files (%d of %d older than their source)", length(stale), length(ov)))
+if (length(stale)) cat("   stale:", basename(stale), sep = "\n    ")
+
 if (length(fail)) {
   cat(sprintf("FAILED %d check(s)\n", length(fail)))
   quit(status = 1)

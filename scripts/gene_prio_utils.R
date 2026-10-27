@@ -172,10 +172,13 @@ SummarizeTable<-function(res_adx,
   ##  AD GWAS credible set (CS): SuSiE-rss, used at 95% coverage only.
   ##  xQTL CS: single-context, multi-context or multi-gene fine-mapping, or fSuSiE.
   ##  CoS: ColocBoost AD-xQTL colocalization, or SuSiE-coloc where ColocBoost did not run.
-  ## T1: AD 95% CS overlaps an xQTL 95% CS, and 95% CoS, with MR or causal TWAS.
-  ## T2: AD 95% CS overlaps an xQTL 95% CS, or 95% CoS, with MR or causal TWAS.
-  ## T3: AD 95% CS overlaps an xQTL 95% CS, or 95% CoS, with TWAS.
-  ## T4: 95% CoS with a matching xQTL 95% CS; no AD GWAS CS needed.
+## T1: AD 95% CS overlaps an xQTL 95% CS, and 95% CoS, with MR or causal TWAS.
+## T2: AD 95% CS overlaps an xQTL 95% CS, or 95% CoS, with MR or causal TWAS.
+## T3: AD 95% CS overlaps an xQTL 95% CS, or 95% CoS, with TWAS.
+## MR, causal TWAS and TWAS are gene-level tests. They support an overlap when they are
+## significant for the same gene in the same context, and support a CoS when they are
+## significant for the same gene in any one of the contexts that the CoS links.
+## T4: 95% CoS with an xQTL 95% CS for the same gene at the same AD locus, in any context.
   ## T5: other localized evidence: 95% CoS alone, or AD 95% CS overlapping an xQTL CS at 95% or 70%.
   ## T6: gene-level evidence only: TWAS, MR or causal TWAS, or cis quantile/interaction QTL
   ##     at a locus with an AD 95% CS.
@@ -183,7 +186,20 @@ SummarizeTable<-function(res_adx,
   message('summarizing per ',group.by,' the xQTL evidence for each variant')
   .fm_methods<-c('single_context_finemapping','multi_context_finemapping',
                 'multi_gene_finemapping','fSuSiE_finemapping')
-  ## trans evidence (trans fine-mapping, transmap targets) is reference only and gets no tier
+## gene-level support, spread from the TWAS/MR/cTWAS rows to every row of the gene
+.ok<-!str_detect(res_adx$context,'^AD')&!grepl('trans',res_adx$Method)&!grepl('^tmAD_',res_adx$gene_ID)
+res_adx[,tier_causal_ctx:=FALSE]
+res_adx[,tier_twas_ctx:=FALSE]
+res_adx[,tier_causal_cos:=FALSE]
+res_adx[,tier_twas_cos:=FALSE]
+res_adx[,tier_xcs95_locus:=FALSE]
+res_adx[.ok,tier_causal_ctx:=any(MR_signif,na.rm = T)|any(cTWAS_signif,na.rm = T),by=c('gene_ID',group.by)]
+res_adx[.ok,tier_twas_ctx:=any(TWAS_signif,na.rm = T),by=c('gene_ID',group.by)]
+.cosrow<-.ok&res_adx$Method%in%c('AD_xQTL_colocalization','Coloc')&!is.na(res_adx$locuscontext_id)&res_adx$locuscontext_id!=''
+res_adx[.cosrow,tier_causal_cos:=any(tier_causal_ctx),by=c('gene_ID','locuscontext_id')]
+res_adx[.cosrow,tier_twas_cos:=any(tier_twas_ctx),by=c('gene_ID','locuscontext_id')]
+res_adx[.ok,tier_xcs95_locus:=any((Method%in%.fm_methods&str_detect(credibleset,'^cs95'))|Method%in%'fSuSiE_finemapping',na.rm = T),by=c('ADlocus','gene_ID')]
+## trans evidence (trans fine-mapping, transmap targets) is reference only and gets no tier
   res_adx[!str_detect(context,'^AD')&!grepl('trans',Method)&!grepl('^tmAD_',gene_ID),confidence_lvl:={
     .xcs95<-(Method%in%.fm_methods&str_detect(credibleset,'^cs95'))|Method%in%'fSuSiE_finemapping'
     .ov95<-.xcs95&susie_coverage%in%'cs95'
@@ -192,8 +208,12 @@ SummarizeTable<-function(res_adx,
       (is.na(credibleset)|credibleset==''|str_detect(credibleset,'^cs95'))
     .A<-any(.ov95,na.rm = T)
     .B<-any(.cos95,na.rm = T)
-    .causal<-any(MR_signif,na.rm = T)|any(cTWAS_signif,na.rm = T)
-    .twas<-any(TWAS_signif,na.rm = T)
+.cC<-any(tier_causal_ctx,na.rm = T)
+.tC<-any(tier_twas_ctx,na.rm = T)
+.cB<-any((tier_causal_cos|tier_causal_ctx)[.cos95],na.rm = T)
+.tB<-any((tier_twas_cos|tier_twas_ctx)[.cos95],na.rm = T)
+.causal<-(.A&.cC)|(.B&.cB)
+.twas<-(.A&.tC)|(.B&.tB)
     .q95<-any(Method%in%c('QR','APOE interaction','msex interaction')&susie_coverage%in%'cs95',na.rm = T)
     if(.A&.B&.causal){
       'T1'
@@ -201,11 +221,11 @@ SummarizeTable<-function(res_adx,
       'T2'
     }else if((.A|.B)&.twas){
       'T3'
-    }else if(.B&any(.xcs95,na.rm = T)){
+}else if(.B&any(tier_xcs95_locus,na.rm = T)){
       'T4'
     }else if(.A|.B|any(.ov70,na.rm = T)){
       'T5'
-    }else if(.twas|.causal|.q95){
+}else if(.tC|.cC|.q95){
       'T6'
     }else{
       NA_character_
@@ -213,7 +233,8 @@ SummarizeTable<-function(res_adx,
   },
   by=c('variant_ID','gene_ID',group.by)]
   
-  res_adx[,confidence_lvl:=factor(confidence_lvl,levels = paste0('T',1:6))]
+res_adx[,c('tier_causal_ctx','tier_twas_ctx','tier_causal_cos','tier_twas_cos','tier_xcs95_locus'):=NULL]
+res_adx[,confidence_lvl:=factor(confidence_lvl,levels = paste0('T',1:6))]
   
   if('xQTL_effect'%in%colnames(res_adx)){
     res_adx[,xQTL_effect:=NULL]

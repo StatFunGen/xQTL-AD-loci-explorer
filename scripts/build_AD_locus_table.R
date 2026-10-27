@@ -89,6 +89,15 @@ dir.create(out)
   d[]
 }
 mtd<-fread(metadata_analysis,header = T)
+## Inputs must be the released files. A Path into interactive_analysis/ (a working copy)
+## while a file of the same name exists under analysis_result/ means the build would read
+## an outdated copy, so stop and name both files.
+.rel<-list.files(ROOTP('analysis_result'),recursive=TRUE)
+.base<-function(x) sub('\\.gz$','',basename(x))
+.stale<-mtd[grepl('^interactive_analysis/',Path)&.base(Path)%in%.base(.rel)]
+if(nrow(.stale)) stop('inputs point at working copies, but a released file of the same name exists:\n  ',
+  paste(.stale$Path,'->',file.path('analysis_result',.rel[match(.base(.stale$Path),.base(.rel))]),collapse='\n  '),
+  '\nPoint these rows of metadata_analysis.csv at the released file.',call.=FALSE)
 mtd <- .fix_registry_types(mtd)
 contexts<-fread(contexts_metadata)
 
@@ -635,7 +644,7 @@ fwrite(mtd,metadata_analysis)
 table(mtd$Method)
 # - xQTLxADs####
 res_c<-rbindlist(lapply(file.path(PROJECT_ROOT,mtd[Method=='ColocBoost'][Modality=='AD_xQTL_colocalization']$Path),
-                        function(f)fread(f)),fill=TRUE)
+                        function(f){d<-fread(f);message('AD-xQTL coloc input ',basename(f),': ',nrow(d),' rows, ',uniqueN(d$region_ID),' genes');d}),fill=TRUE)
 res_c[,gene_ID:=region_ID]
 res_c[,gwas_source:=str_extract(event_ID,'AD_[A-Za-z0-9_]+$')]
 res_c$gwas_source|>table()
@@ -673,7 +682,9 @@ res_c[is.na(context) & context_coloc %in% contexts$context, context:=context_col
 
 res_c[,chr:=seqid(variant_ID)]
 res_c[,pos:=pos(variant_ID)]
-res_c[is.na(context)]#ok
+## every colocalized xQTL event must map to a registered context, or its rows are lost later
+if(nrow(res_c[is.na(context)&!str_detect(event_ID,'^AD_')])) stop('AD-xQTL colocalization events with no matching context in contexts_metadata.csv: ',
+  paste(unique(res_c[is.na(context)&!str_detect(event_ID,'^AD_')]$context_coloc),collapse=', '),call.=FALSE)
 table(res_c[is.na(context)]$context_coloc)
 
 
@@ -1622,7 +1633,8 @@ toflip<-mismatches[(to_flip)]$variant_id
 mtd[file.exists(summary_file)&(variant_level_method),{
   message(Method[1])
   
-  if(!file.exists(summary_file_ad[1])|update_summary_ad){
+  ## rebuild the locus overlap whenever its source table is newer, so a rerun never reuses a stale overlap
+  if(!file.exists(summary_file_ad[1])||update_summary_ad||file.mtime(summary_file[1])>file.mtime(summary_file_ad[1])){
     res<-fread(summary_file[1],tmpdir = ROOTP('repro/tmp/'))
     res[,chr:=seqid(variant_ID,only_num = T)]
     res[,pos:=pos(variant_ID)]
