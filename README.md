@@ -237,6 +237,8 @@ follow one of the existing `Method ==` blocks.
 
 ## Running on another cluster
 
+To change the code and test the change against a baseline build, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 The build reads every input through one project folder (`AD_LOCI_ROOT`). On a cluster
 where the inputs sit in different places, make that folder out of links, using the
 location column of the input list (`columbia_path` for the Columbia cluster):
