@@ -6,8 +6,8 @@
 suppressPackageStartupMessages(library(data.table))
 a <- commandArgs(TRUE); A <- a[1]; B <- a[2]; tol <- if (length(a) > 2) as.numeric(a[3]) else 1e-8
 find <- function(d, stem) { f <- list.files(d, pattern = paste0('^', stem), full.names = TRUE); f[1] }
-stems <- c('AD_loci_unified_cs95orColocs_Pval1e5_variant_level', 'AD_loci_unified_cs95orColocs\\.', 'gene_tier_assignment',
-           'res_AD_variants_xQTL', 'xQTL_all_methods_overlap_with_AD_loci_unified_cs95orColocs_Pval1e5\\.')
+stems <- c('AD_loci_unified_cs95orColocs_Pval1e5_variant_level', 'AD_loci_unified_cs95orColocs(_[0-9]{8})?\\.csv', 'gene_tier_assignment',
+           'res_AD_variants_xQTL', 'xQTL_all_methods_overlap_with_AD_loci_unified_cs95orColocs_Pval1e5(_[0-9]{8})?\\.csv')
 norm <- function(x) { x <- copy(x); setcolorder(x, sort(names(x)))
   for (c in names(x)) if (is.character(x[[c]])) set(x, j = c, value = fifelse(x[[c]] == '', NA_character_, x[[c]]))
   setorderv(x, names(x), na.last = TRUE); x }
