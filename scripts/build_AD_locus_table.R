@@ -1599,7 +1599,13 @@ mtd[file.exists(summary_file),summary_file_ad:=paste0(tools::file_path_sans_ext(
 mtd[!file.exists(summary_file)&summary_file!='']
 
 #first check if need flipping to harmonize variant_ID
-mismatches<-unique(mtd,by='summary_file')[file.exists(summary_file)&(variant_level_method),{
+## allele-mismatch scan, one independent task per Method x Modality (first file of each,
+## exactly as the grouped loop did); tasks run in parallel and are combined in group order
+.mm_rows<-unique(mtd,by='summary_file')[file.exists(summary_file)&(variant_level_method)]
+.mm_grp<-.mm_rows[,.(summary_file=summary_file[1]),by=.(Method,Modality)]
+.mm_one<-function(i){
+setDTthreads(1L)
+Method<-.mm_grp$Method[i]; summary_file<-.mm_grp$summary_file[i]
   message(Method[1])
   
   res<-fread(summary_file[1],tmpdir = ROOTP('repro/tmp/'))
@@ -1611,7 +1617,12 @@ mismatches<-unique(mtd,by='summary_file')[file.exists(summary_file)&(variant_lev
              res_adfv[,.(variant_ID,chr,pos,ADlocus,locus_index,ADlocusID)],all.x=T,by=c('chr','pos'))
   print(table(res[!is.na(variant_ID)][variant_id!=variant_ID]$context))
   res[!is.na(variant_ID)][variant_id!=variant_ID][,.(variant_id,variant_ID,context)]
-},by=c('Method','Modality')]
+}
+.par_workers<-as.integer(Sys.getenv('AD_LOCI_OVERLAP_WORKERS',Sys.getenv('NSLOTS','1')))
+.mm_res<-if(.par_workers>1L) parallel::mclapply(seq_len(nrow(.mm_grp)),.mm_one,mc.cores=.par_workers,mc.preschedule=FALSE) else lapply(seq_len(nrow(.mm_grp)),.mm_one)
+if(any(vapply(.mm_res,inherits,logical(1),'try-error'))) stop('allele-mismatch scan failed: ',paste(unlist(.mm_res[vapply(.mm_res,inherits,logical(1),'try-error')]),collapse='\n'))
+mismatches<-rbindlist(lapply(seq_len(nrow(.mm_grp)),function(i) if(nrow(.mm_res[[i]])) cbind(.mm_grp[i,.(Method,Modality)],.mm_res[[i]])))
+setDTthreads(.ncores)
 mismatches<-unique(mismatches)
 unique(mismatches$variant_ID)#213/5318 variants mismatch
 unique(mismatches[,.(variant_id,variant_ID)])
@@ -1630,7 +1641,14 @@ toflip<-mismatches[(to_flip)]$variant_id
 
 #Annotate each variant level Methods table  with the AD Loci
 
-mtd[file.exists(summary_file)&(variant_level_method),{
+## locus overlap: each summary file is read, annotated and written by its own task;
+## tasks share no state (each writes only its own two files), so they run in parallel,
+## largest first. The registry is written once afterwards, as before.
+.ov_rows<-unique(mtd[file.exists(summary_file)&(variant_level_method)],by='summary_file')
+.ov_rows<-.ov_rows[order(-file.size(summary_file))]
+.ov_one<-function(i){
+setDTthreads(1L)
+Method<-.ov_rows$Method[i]; summary_file<-.ov_rows$summary_file[i]; summary_file_ad<-.ov_rows$summary_file_ad[i]
   message(Method[1])
   
   ## rebuild the locus overlap whenever its source table is newer, so a rerun never reuses a stale overlap
@@ -1686,7 +1704,11 @@ mtd[file.exists(summary_file)&(variant_level_method),{
   }
   
   summary_file_ad[1]
-},by=c('summary_file')]
+}
+.ov_res<-if(.par_workers>1L) parallel::mclapply(seq_len(nrow(.ov_rows)),.ov_one,mc.cores=.par_workers,mc.preschedule=FALSE) else lapply(seq_len(nrow(.ov_rows)),.ov_one)
+.ov_bad<-vapply(.ov_res,inherits,logical(1),'try-error')
+if(any(.ov_bad)) stop('locus overlap failed for: ',paste(.ov_rows$summary_file[.ov_bad],collapse=', '),'\n',paste(unlist(.ov_res[.ov_bad]),collapse='\n'))
+setDTthreads(.ncores)
 
 
 fwrite(mtd,metadata_analysis)
