@@ -22,11 +22,10 @@ cd "$REPO" || exit 1
 export OMP_NUM_THREADS=${NSLOTS:-1}
 RS=${AD_LOCI_RSCRIPT:-$HOME/.pixi/bin/Rscript}; [ -x "$RS" ] || RS=$(command -v Rscript)   # R used for every step
 export AD_LOCI_ROOT=${AD_LOCI_ROOT:-/restricted/projectnb/xqtl/jaempawi/xqtl/AD_loci_xQTL}
-## inputs are read in place and never written: the three precomputed tables from the
-## project's staging folder, the config from the repository (or AD_LOCI_CONFIG)
+## the three precomputed tables are read in place from the project's staging folder
 export AD_LOCI_STAGING=${AD_LOCI_STAGING:-$AD_LOCI_ROOT/staging_gene_prio}
-export AD_LOCI_CONFIG=${AD_LOCI_CONFIG:-$REPO/config}
-INPUTS=${AD_LOCI_INPUTS:?set AD_LOCI_INPUTS to the build input list, e.g. data/build_inputs/20261027.inputs.csv}
+CFG_SRC=${AD_LOCI_CONFIG:-$REPO/config}
+INPUTS_SRC=${AD_LOCI_INPUTS:?set AD_LOCI_INPUTS to the build input list, e.g. data/build_inputs/20261027.inputs.csv}
 OUT=${AD_LOCI_OUT:-$AD_LOCI_ROOT/out_e2e_$(date +%Y%m%d_%H%M)}
 export AD_LOCI_OUT=$OUT
 ## the code identity goes into the build record; a checkout with local changes is flagged
@@ -37,12 +36,19 @@ export AD_LOCI_DIRTY=$([ -n "$(git -C "$REPO" status --porcelain --untracked-fil
 if [ -e "$OUT" ] && [ -n "$(ls -A "$OUT" 2>/dev/null)" ] && [ "${AD_LOCI_ALLOW_EXISTING_OUT:-0}" != 1 ]; then
   echo "output folder already has files: $OUT (set AD_LOCI_ALLOW_EXISTING_OUT=1 to override)" >&2; exit 1
 fi
-mkdir -p "$OUT/_build_record"
+## snapshot the input list and config before anything runs; the check, the build and the
+## record all use these snapshots, so later edits to the originals cannot change this run
+REC=$OUT/_build_record
+mkdir -p "$REC/config" && cp "$CFG_SRC"/* "$REC/config/" && cp "$INPUTS_SRC" "$REC/inputs.csv" || { echo "cannot snapshot config/input list" >&2; exit 1; }
+(cd "$REC/config" && md5sum * > MD5SUMS)
+export AD_LOCI_CONFIG=$REC/config
+INPUTS=$REC/inputs.csv
+export AD_LOCI_CONFIG_SOURCE=$CFG_SRC AD_LOCI_INPUTS_SOURCE=$(realpath "$INPUTS_SRC")
 echo "repo $REPO commit $AD_LOCI_COMMIT (local changes: $AD_LOCI_DIRTY)"
-echo "config $AD_LOCI_CONFIG  staging $AD_LOCI_STAGING  inputs $INPUTS"
+echo "config $CFG_SRC  staging $AD_LOCI_STAGING  inputs $INPUTS_SRC  (snapshots in $REC)"
 
 ## stop before reading anything if an input differs from the build's input list
-"$RS" scripts/check_inputs.R "$INPUTS" "$AD_LOCI_ROOT" "$AD_LOCI_CONFIG" scripts/build_AD_locus_table.R 2>&1 | tee "$OUT/_build_record/check_inputs.txt"
+"$RS" scripts/check_inputs.R "$INPUTS" "$AD_LOCI_ROOT" "$AD_LOCI_CONFIG" scripts/build_AD_locus_table.R 2>&1 | tee "$REC/check_inputs.txt"
 [ ${PIPESTATUS[0]} -eq 0 ] || { echo "CHECK_INPUTS failed $(date)"; exit 1; }
 echo "START $(date) out=$OUT"
 "$RS" scripts/build_AD_locus_table.R
@@ -51,7 +57,7 @@ echo "BUILD_RC=$rc  $(date)"
 
 if [ $rc -eq 0 ]; then
   echo "---- validate ----"
-  "$RS" scripts/validate_outputs.R "$OUT" 2>&1 | tee "$OUT/_build_record/validation.txt"
+  "$RS" scripts/validate_outputs.R "$OUT" 2>&1 | tee "$REC/validation.txt"
   vrc=${PIPESTATUS[0]}; echo "VALIDATE_RC=$vrc"
   [ $vrc -ne 0 ] && rc=$vrc
   echo "---- build record ----"

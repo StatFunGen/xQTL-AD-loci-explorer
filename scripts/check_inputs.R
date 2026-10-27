@@ -31,8 +31,13 @@ miss <- x[kind == 'missing']
 unlisted <- character(0)
 if (nzchar(cfg)) {
   m <- fread(file.path(cfg, 'metadata_analysis.csv'), colClasses = 'character')
-  ## interaction rows are not read: the build uses the precomputed staging summaries for them
-  m <- m[!Method %in% c('msex interaction', 'APOE interaction')]
+  ## keep only the rows the build's loaders read (build_AD_locus_table.R):
+  ## - interaction rows are not read: the build uses the precomputed staging summaries
+  ## - LR rows are read only for sQTL
+  ## - ColocBoost rows are read only for AD x xQTL and AD meta colocalization
+  m <- m[!Method %in% c('msex interaction', 'APOE interaction') &
+         !(Method == 'LR' & `Data Type` != 'sQTL') &
+         !(Method == 'ColocBoost' & !Modality %in% c('AD_xQTL_colocalization', 'AD_meta_colocalization'))]
   need <- unique(unmask(m$Path[!is.na(m$Path) & m$Path != '']))
   if (nzchar(bscript)) {
     src <- readLines(bscript); src <- src[!grepl('^\\s*#', src)]
@@ -40,11 +45,12 @@ if (nzchar(cfg)) {
     qr <- regmatches(src, regexpr("Method=='QR',Path:='[^']+'", src))
     if (length(qr)) { need <- need[!need %in% m$Path[m$Method == 'QR']]; need <- c(need, sub(".*Path:='([^']+)'", '\\1', qr)) }
     ## fixed single-file inputs assigned at the top of the build (name=ROOTP('...'))
-    fx <- regmatches(src, regexpr("^[A-Za-z_.]+ *= *ROOTP\\('[^']+'\\)", src))
+    fx <- regmatches(src, regexpr("^[A-Za-z0-9_.]+ *= *ROOTP\\('[^']+'\\)", src))
     fx <- sub(".*ROOTP\\('([^']+)'\\).*", '\\1', fx)
     need <- c(need, fx[!grepl('/$', fx)])
     ## per-chromosome files the build lists from a folder
     cv <- fx[grepl('cv2f', fx) & grepl('/$', fx)]
+    if (!length(cv)) stop('check_inputs: could not find the cv2f folder in the build script; update this check')
     for (d in cv) need <- c(need, file.path(sub('/$', '', d), list.files(file.path(root, d), pattern = '\\.cv2f$')))
   }
   need <- need[file.exists(file.path(root, need)) | dir.exists(file.path(root, need))]

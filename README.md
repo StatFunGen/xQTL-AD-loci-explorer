@@ -73,15 +73,15 @@ The job:
 4. writes the build record (below);
 5. writes `_COMPLETE` only if the build, the validation and the build record all succeeded.
 
-Inputs are read in place and never written to: the config comes from `config/` (or `AD_LOCI_CONFIG`), the three precomputed tables from `$AD_LOCI_ROOT/staging_gene_prio` (or `AD_LOCI_STAGING`). Scratch files go to `<out>/_scratch`.
+Before anything runs, the job copies the input list and the config (`config/`, or `AD_LOCI_CONFIG`) into the build record; the input check, the build and the record all use those copies, so editing the originals during a run cannot change it. The three precomputed tables are read in place from `$AD_LOCI_ROOT/staging_gene_prio` (or `AD_LOCI_STAGING`) and are never written to. Scratch files go to `<out>/_scratch`.
 
 Each build has one record, `<out>/_build_record/`:
 
 | file | contents |
 |---|---|
 | `run.csv` | run id, code commit and whether the checkout had local changes, input list and its sha256, config sha256, R and package versions, host, user, time |
-| `inputs.csv` | the input list the build used |
-| `config/` | the config files the build read, with `MD5SUMS` |
+| `inputs.csv` | the input list the build used (copied before the build) |
+| `config/` | the config files the build read (copied before the build), with `MD5SUMS` |
 | `registry_runtime.csv` | the registry as the build filled it in (run-time paths of intermediate tables) |
 | `check_inputs.txt`, `validation.txt` | output of the input check and of the validation |
 | `outputs_md5.csv`, `summary.csv` | checksum of every output file; headline counts |

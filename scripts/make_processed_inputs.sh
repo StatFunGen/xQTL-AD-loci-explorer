@@ -35,12 +35,19 @@ x <- fread(a[1], colClasses = 'character'); out <- normalizePath(a[2]); root <- 
 fs <- list.files(out, recursive = TRUE); fs <- fs[!startsWith(fs, 'tmp/')]
 m <- data.table(file = fs, now = unname(tools::md5sum(file.path(out, fs))))
 m[, recorded := x$md5[match(file, x$Path)]]
-zmd5 <- function(p) system2('sh', c('-c', shQuote(paste('gzip -dc', shQuote(p), '| md5sum'))), stdout = TRUE)
+## md5 of the decompressed content; NA if the file does not decompress cleanly
+zmd5 <- function(p) { r <- suppressWarnings(system2('bash', c('-c', shQuote(paste('set -o pipefail; gzip -dc', shQuote(p), '| md5sum'))), stdout = TRUE))
+  if (!is.null(attr(r, 'status')) || !length(r)) NA_character_ else sub(' .*', '', r[1]) }
 m[, result := fifelse(is.na(recorded), 'not in input list', fifelse(now == recorded, 'same bytes', 'DIFFERENT'))]
-for (i in which(m$result == 'DIFFERENT' & grepl('\\.gz$', m$file)))
-  if (identical(zmd5(file.path(out, m$file[i])), zmd5(file.path(root, m$file[i])))) m$result[i] <- 'same content (gzip header differs)'
+## a gzip file may differ only in its header: compare content with the project copy, but only
+## after confirming that copy is the recorded version
+for (i in which(m$result == 'DIFFERENT' & grepl('\\.gz$', m$file))) {
+  ref <- file.path(root, m$file[i])
+  if (!file.exists(ref) || unname(tools::md5sum(ref)) != m$recorded[i]) { m$result[i] <- 'DIFFERENT (project copy is not the recorded version)'; next }
+  a1 <- zmd5(file.path(out, m$file[i])); a2 <- zmd5(ref)
+  if (!is.na(a1) && !is.na(a2) && a1 == a2) m$result[i] <- 'same content (gzip header differs)' }
 print(m[, .(file, result)], nrows = 200)
-if (any(m$result %in% c('DIFFERENT', 'not in input list'))) quit(status = 1)
+if (any(startsWith(m$result, 'DIFFERENT') | m$result == 'not in input list')) quit(status = 1)
 cat('MAKE-VERIFY: all', nrow(m), 'regenerated files match the files the build read\n')
 REOF
   "$RS" $OUT/tmp/verify.R "$INPUTS" "$OUT" "$ROOT" || { echo "MAKE-VERIFY failed"; exit 1; }

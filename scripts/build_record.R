@@ -3,8 +3,8 @@
 ##   run.csv                       run id, code commit (and whether the checkout had local
 ##                                 changes), input list and its sha256, config sha256, R and
 ##                                 package versions, host, user, time
-##   inputs.csv                    the input list this build used (copy)
-##   config/ + config/MD5SUMS      the config files the build read (copy)
+##   inputs.csv                    the input list this build used (snapshot taken before the build)
+##   config/ + config/MD5SUMS      the config files the build read (snapshot taken before the build)
 ##   environment.txt               R session information
 ##   outputs_md5.csv               checksum and size of every output file
 ##   summary.csv                   headline counts (loci, genes per tier)
@@ -19,9 +19,12 @@ if (!dir.exists(out) || !file.exists(inp)) stop('build_record: missing output fo
 rd <- file.path(out, '_build_record'); dir.create(rd, showWarnings = FALSE); if (!dir.exists(rd)) stop('build_record: cannot create ', rd)
 sha <- function(f) { r <- tryCatch(system2('sha256sum', shQuote(f), stdout = TRUE), error = function(e) NA_character_); sub(' .*', '', r[1]) }
 
-if (!file.copy(inp, file.path(rd, 'inputs.csv'), overwrite = TRUE)) stop('build_record: could not copy the input list')
+## the SCC job snapshots the input list and config into the record before the build and
+## runs on those snapshots; when run by hand, copy them now (a copy after the fact)
+same <- function(a, b) file.exists(a) && file.exists(b) && normalizePath(a) == normalizePath(b)
+if (!same(inp, file.path(rd, 'inputs.csv')) && !file.copy(inp, file.path(rd, 'inputs.csv'), overwrite = TRUE)) stop('build_record: could not copy the input list')
 cfg <- Sys.getenv('AD_LOCI_CONFIG'); cd <- file.path(rd, 'config')
-if (nzchar(cfg) && dir.exists(cfg)) {
+if (nzchar(cfg) && dir.exists(cfg) && !same(cfg, cd)) {
   dir.create(cd, showWarnings = FALSE); cf <- list.files(cfg, full.names = TRUE); cf <- cf[!dir.exists(cf)]
   if (!all(file.copy(cf, cd, overwrite = TRUE))) stop('build_record: could not copy the config')
   writeLines(paste(unname(tools::md5sum(file.path(cd, basename(cf)))), basename(cf), sep = '  '), file.path(cd, 'MD5SUMS'))
@@ -30,9 +33,9 @@ writeLines(capture.output(sessionInfo()), file.path(rd, 'environment.txt'))
 pk <- c('data.table', 'stringr', 'dplyr', 'tidyr', 'openxlsx', 'parallel')
 pv <- vapply(pk, function(p) tryCatch(as.character(packageVersion(p)), error = function(e) NA_character_), character(1))
 run <- data.table(field = c('run_id', 'code_commit', 'code_has_local_changes', 'input_list', 'input_list_sha256',
-                            'config_dir', 'config_sha256', 'R_version', paste0('pkg_', pk), 'host', 'user', 'recorded_at'),
+                            'config_source', 'config_sha256', 'R_version', paste0('pkg_', pk), 'host', 'user', 'recorded_at'),
   value = c(basename(normalizePath(out)), Sys.getenv('AD_LOCI_COMMIT', NA), Sys.getenv('AD_LOCI_DIRTY', NA),
-            normalizePath(inp), sha(inp), cfg, if (file.exists(file.path(cd, 'MD5SUMS'))) sha(file.path(cd, 'MD5SUMS')) else NA,
+            Sys.getenv('AD_LOCI_INPUTS_SOURCE', normalizePath(inp)), sha(file.path(rd, 'inputs.csv')), Sys.getenv('AD_LOCI_CONFIG_SOURCE', cfg), if (file.exists(file.path(cd, 'MD5SUMS'))) sha(file.path(cd, 'MD5SUMS')) else NA,
             R.version.string, pv, Sys.info()[['nodename']], Sys.info()[['user']], format(Sys.time(), '%Y-%m-%dT%H:%M:%S%z')))
 fwrite(run, file.path(rd, 'run.csv'))
 
