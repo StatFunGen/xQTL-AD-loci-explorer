@@ -113,6 +113,18 @@ the data.
 If all you want is the Explorer, neither option is needed: `app/data.csv` ships
 with the repository. See Running the app.
 
+## Versions
+
+Three things are versioned separately:
+
+| what | how |
+|---|---|
+| code, config, processing recipe | git commit (each build records its commit in `_build_record/run.csv`) |
+| accepted inputs | the dated input list in `data/build_inputs/` (path, md5, source, parents and recipe); files on project storage are not modified once listed |
+| published releases | git tag `release-YYYYMMDD` on the commit that added the release's tables to `data/`; corrections get a new tag |
+
+Work happens on short-lived branches that are merged and then deleted.
+
 ## Inputs
 
 `config/metadata_analysis.csv` is the registry of every input the build reads.
