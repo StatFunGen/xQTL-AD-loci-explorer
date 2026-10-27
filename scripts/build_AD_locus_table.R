@@ -84,7 +84,7 @@ metadata_analysis <- file.path(RECORD, 'registry_runtime.csv')
 ## read. The column has to be dropped and recreated as character -- assigning to
 ## it in place would just be coerced again. Column order is restored afterwards.
 .fix_registry_types <- function(d) {
-  .nm <- names(d)
+  .nm <- copy(names(d))  # a copy: names(d) changes in place when := adds a column
   for (.pc in c('summary_file', 'summary_file_ad')) {
     if (!.pc %in% .nm) { d[, (.pc) := NA_character_]; .nm <- c(.nm, .pc) }
     else if (!is.character(d[[.pc]])) {
