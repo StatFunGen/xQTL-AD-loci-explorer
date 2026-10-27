@@ -18,7 +18,7 @@ cl <- Sys.getenv('AD_LOCI_COLLABORATOR', unset = tryCatch(readLines('~/.ad_loci_
 unmask <- function(p) gsub('<collaborator>', cl, p, fixed = TRUE)
 stg <- grepl('^staging(_gene_prio)?/', x$Path)
 x[, dest := file.path(root, fifelse(stg, file.path('staging_gene_prio', basename(Path)), unmask(Path)))]
-x[, src := unmask(get(col))]
+x[, src := sub(' \\(.*\\)$', '', unmask(get(col)))]  # drop a trailing note such as '(not yet verified)'
 if (nzchar(pre)) x[, src := file.path(pre, fifelse(stg, file.path('staging_gene_prio', basename(Path)), src))]
 x[, src := sub('/$', '', src)]; x[, dest := sub('/$', '', dest)]
 x[, kind := fifelse(dir.exists(src), 'folder', fifelse(file.exists(src), 'file', 'missing'))]
