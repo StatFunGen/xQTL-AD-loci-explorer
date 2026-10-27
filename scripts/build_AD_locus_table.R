@@ -1620,8 +1620,12 @@ Method<-.mm_grp$Method[i]; summary_file<-.mm_grp$summary_file[i]
 }
 .par_workers<-as.integer(Sys.getenv('AD_LOCI_OVERLAP_WORKERS',Sys.getenv('NSLOTS','1')))
 .mm_res<-if(.par_workers>1L) parallel::mclapply(seq_len(nrow(.mm_grp)),.mm_one,mc.cores=.par_workers,mc.preschedule=FALSE) else lapply(seq_len(nrow(.mm_grp)),.mm_one)
-if(any(vapply(.mm_res,inherits,logical(1),'try-error'))) stop('allele-mismatch scan failed: ',paste(unlist(.mm_res[vapply(.mm_res,inherits,logical(1),'try-error')]),collapse='\n'))
+## a task counts as done only if it returned a table; a killed worker returns NULL
+.task_failed<-function(r) vapply(r,function(z) is.null(z)||inherits(z,'try-error')||!is.data.frame(z),logical(1))
+if(length(.mm_res)!=nrow(.mm_grp)||any(.task_failed(.mm_res))) stop('allele-mismatch scan failed for: ',paste(.mm_grp$summary_file[.task_failed(.mm_res)],collapse=', '),'\n',paste(unlist(.mm_res[vapply(.mm_res,inherits,logical(1),'try-error')]),collapse='\n'))
 mismatches<-rbindlist(lapply(seq_len(nrow(.mm_grp)),function(i) if(nrow(.mm_res[[i]])) cbind(.mm_grp[i,.(Method,Modality)],.mm_res[[i]])))
+## no mismatches at all: keep an empty table with the columns used below
+if(!nrow(mismatches)) mismatches<-data.table(Method=character(),Modality=character(),variant_id=character(),variant_ID=character(),context=character())
 setDTthreads(.ncores)
 mismatches<-unique(mismatches)
 unique(mismatches$variant_ID)#213/5318 variants mismatch
@@ -1636,7 +1640,8 @@ table(mismatches[(to_flip)]$context)
 table(mismatches[(to_flip)]$Method)
 table(mismatches[(to_flip)][,paste(Method,context)])
 fwrite(mismatches,'variants_to_flip.csv.gz')
-mismatches<-fread('variants_to_flip.csv.gz')
+mismatches<-fread('variants_to_flip.csv.gz',colClasses=c(variant_id='character',variant_ID='character'))
+if(!nrow(mismatches)) mismatches[,to_flip:=logical()]
 toflip<-mismatches[(to_flip)]$variant_id
 
 #Annotate each variant level Methods table  with the AD Loci
@@ -1706,8 +1711,9 @@ Method<-.ov_rows$Method[i]; summary_file<-.ov_rows$summary_file[i]; summary_file
   summary_file_ad[1]
 }
 .ov_res<-if(.par_workers>1L) parallel::mclapply(seq_len(nrow(.ov_rows)),.ov_one,mc.cores=.par_workers,mc.preschedule=FALSE) else lapply(seq_len(nrow(.ov_rows)),.ov_one)
-.ov_bad<-vapply(.ov_res,inherits,logical(1),'try-error')
-if(any(.ov_bad)) stop('locus overlap failed for: ',paste(.ov_rows$summary_file[.ov_bad],collapse=', '),'\n',paste(unlist(.ov_res[.ov_bad]),collapse='\n'))
+.ov_bad<-vapply(seq_len(nrow(.ov_rows)),function(i){z<-if(i<=length(.ov_res)) .ov_res[[i]] else NULL
+  is.null(z)||inherits(z,'try-error')||!identical(z,.ov_rows$summary_file_ad[i])||!file.exists(.ov_rows$summary_file_ad[i])},logical(1))
+if(any(.ov_bad)) stop('locus overlap failed for: ',paste(.ov_rows$summary_file[.ov_bad],collapse=', '),'\n',paste(unlist(.ov_res[vapply(.ov_res,inherits,logical(1),'try-error')]),collapse='\n'))
 setDTthreads(.ncores)
 
 

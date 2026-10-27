@@ -8,8 +8,9 @@
 ## Rscript build_record.R <out> <inputs.csv> [prev_out]
 suppressPackageStartupMessages(library(data.table))
 a <- commandArgs(TRUE); out <- a[1]; inp <- a[2]; prev <- if (length(a) > 2) a[3] else ''
-rd <- file.path(out, '_build_record'); dir.create(rd, showWarnings = FALSE)
-invisible(file.copy(inp, file.path(rd, "inputs.csv"), overwrite = TRUE))
+if (!dir.exists(out) || !file.exists(inp)) stop('build_record: missing output folder or input list')
+rd <- file.path(out, '_build_record'); dir.create(rd, showWarnings = FALSE); if (!dir.exists(rd)) stop('build_record: cannot create ', rd)
+if (!file.copy(inp, file.path(rd, "inputs.csv"), overwrite = TRUE)) stop("build_record: could not copy the input list")
 fs <- list.files(out, full.names = TRUE); fs <- fs[!dir.exists(fs)]
 o <- data.table(file = basename(fs), size_bytes = file.size(fs), md5 = unname(tools::md5sum(fs)))
 fwrite(o, file.path(rd, 'outputs_md5.csv'))

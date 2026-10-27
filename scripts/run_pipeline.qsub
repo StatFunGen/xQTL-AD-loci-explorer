@@ -46,8 +46,11 @@ cd "$REPO" || exit 1
 ## whenever AD_LOCI_CONFIG was set, which is how a config change could take
 ## effect while the provenance said otherwise.
 ## the build writes its registry back into the config folder, so it always runs on a
-## private copy; the repository config is never modified
-if [ -z "${AD_LOCI_CONFIG:-}" ]; then mkdir -p "$OUT/_config" && cp "$REPO"/config/* "$OUT/_config/"; export AD_LOCI_CONFIG=$OUT/_config; fi
+## private copy in the output folder; the source config (the repository's, or
+## AD_LOCI_CONFIG) is never modified, and concurrent jobs cannot interfere
+CFG_SRC=${AD_LOCI_CONFIG:-$REPO/config}
+mkdir -p "$OUT/_config" && cp "$CFG_SRC"/* "$OUT/_config/" || { echo "cannot copy config from $CFG_SRC" >&2; exit 1; }
+export AD_LOCI_CONFIG=$OUT/_config
 CFG=$AD_LOCI_CONFIG
 mkdir -p "$OUT/_used_config" && cp "$CFG"/* "$OUT/_used_config/" && (cd "$OUT/_used_config" && md5sum * > MD5SUMS)
 echo "config dir: $CFG"
@@ -59,6 +62,7 @@ cp "$CFG/contexts_metadata.csv" "$OUT/_used_contexts_metadata.csv"
   echo "repo_commit,$(git -C "$REPO" rev-parse --short HEAD 2>/dev/null)"
   echo "out,$OUT"
   echo "metadata_rows,$(tail -n +2 "$CFG/metadata_analysis.csv" | wc -l)"
+  echo "config_source,$CFG_SRC"
   echo "config_dir,$CFG"
 } > "$OUT/_provenance.csv"
 
@@ -67,7 +71,7 @@ cp "$CFG/contexts_metadata.csv" "$OUT/_used_contexts_metadata.csv"
 ## stop before reading anything if an input differs from the build's input list
 INPUTS=${AD_LOCI_INPUTS:?set AD_LOCI_INPUTS to the build input list, e.g. data/build_inputs/20261027.inputs.csv}
 cp "$INPUTS" "$OUT/_used_inputs.csv"
-"$RS" scripts/check_inputs.R "$INPUTS" "$AD_LOCI_ROOT" || { echo "CHECK_INPUTS failed $(date)"; exit 1; }
+"$RS" scripts/check_inputs.R "$INPUTS" "$AD_LOCI_ROOT" "$CFG" scripts/build_AD_locus_table.R || { echo "CHECK_INPUTS failed $(date)"; exit 1; }
 echo "START $(date) out=$OUT"
 "$RS" scripts/build_AD_locus_table.R
 rc=$?
@@ -78,10 +82,12 @@ if [ $rc -eq 0 ]; then
   "$RS" scripts/validate_outputs.R "$OUT"
   vrc=$?; echo "VALIDATE_RC=$vrc"
   [ $vrc -ne 0 ] && rc=$vrc
-echo "---- build record ----"
-"$RS" scripts/build_record.R "$OUT" "$INPUTS" "${AD_LOCI_PREV:-}"
+  echo "---- build record ----"
+  "$RS" scripts/build_record.R "$OUT" "$INPUTS" "${AD_LOCI_PREV:-}"
+  brc=$?; echo "RECORD_RC=$brc"
+  [ $brc -ne 0 ] && [ $rc -eq 0 ] && rc=$brc
 fi
-## a build counts as complete only if it ran and validated
+## a build counts as complete only if it ran, validated and has its build record
 [ $rc -eq 0 ] && date -Iseconds > "$OUT/_COMPLETE"
 echo "END $(date)"
 exit $rc

@@ -3,6 +3,7 @@
 ## Tables are compared after sorting rows and columns; numbers within a tolerance.
 ## Workbooks are not byte-compared (they carry metadata such as timestamps).
 ## Rscript compare_builds.R <out_a> <out_b> [tolerance=1e-8]
+## Exits with status 1 when any table differs or is missing.
 suppressPackageStartupMessages(library(data.table))
 a <- commandArgs(TRUE); A <- a[1]; B <- a[2]; tol <- if (length(a) > 2) as.numeric(a[3]) else 1e-8
 find <- function(d, stem) { f <- list.files(d, pattern = paste0('^', stem), full.names = TRUE); f[1] }
@@ -25,3 +26,4 @@ for (s in stems) {
 }
 for (d in c(A, B)) { t <- find(d, 'gene_tier_assignment'); if (!is.na(t)) { z <- fread(t); cat(basename(d), ': genes', uniqueN(z$gene_ID), ' by tier:', paste(names(table(z$tier)), table(z$tier), sep = '=', collapse = ' '), '\n') } }
 cat(if (ok_all) 'RESULT: all compared tables identical\n' else 'RESULT: differences found (see above)\n')
+if (!ok_all) quit(status = 1)

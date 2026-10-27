@@ -111,7 +111,9 @@ extend_ad_sets <- function(res_gwf, res_cosad, regions, variants_corsf,
     }
     res <- if (inner > 1L && nrow(g) > 1L) parallel::mclapply(seq_len(nrow(g)), step_j,
       mc.cores = inner, mc.preschedule = FALSE, mc.set.seed = FALSE) else lapply(seq_len(nrow(g)), step_j)
-    if (any(vapply(res, inherits, logical(1), 'try-error'))) stop('Set worker failed in region ', regions[k])
+    # a killed worker returns NULL rather than an error, so require a full result from every set
+    if (length(res) != nrow(g) || any(vapply(res, function(z) is.null(z) || inherits(z, 'try-error') || !is.list(z) || is.null(z$out), logical(1))))
+      stop('Set worker failed in region ', regions[k])
     out <- lapply(res, '[[', 'out')
     for (j in seq_along(res)) { cache$values[j, ] <- res[[j]]$vals; cache$valid[j, ] <- res[[j]]$vld }
     checks <- sum(vapply(res, function(r) r$checks, integer(1)))
@@ -135,7 +137,7 @@ extend_ad_sets <- function(res_gwf, res_cosad, regions, variants_corsf,
     values[light] <- if (workers == 1L) lapply(light, region_step, pass_id = pass) else
       parallel::mclapply(light, region_step, pass_id = pass,
         mc.cores = workers, mc.preschedule = TRUE, mc.set.seed = FALSE)
-    if (any(vapply(values, inherits, logical(1), 'try-error'))) stop('Region worker failed')
+    if (any(vapply(values, function(z) is.null(z) || inherits(z, 'try-error') || !is.list(z) || is.null(z$state), logical(1)))) stop('Region worker failed')
     states <- lapply(values, '[[', 'state'); caches <- lapply(values, '[[', 'cache')
     rt <- data.table::rbindlist(lapply(values, '[[', 'timing'))
     region_times[[pass]] <- rt
