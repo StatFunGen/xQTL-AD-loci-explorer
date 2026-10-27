@@ -410,19 +410,20 @@ WideTable<-function(res_adx,split.by=c('context_broad2','qtl_type')){
     
     
     
-    res[,max_finemap_pip:=PIP[Method%in%c('single_context_finemapping')][context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
-    res[,max_finemap_effect:=conditional_effect[Method%in%c('single_context_finemapping')][context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
+    ## method and dataset are filtered together (filtering one after the other mis-aligned the rows)
+    res[,max_finemap_pip:=PIP[Method%in%c('single_context_finemapping')&context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
+    res[,max_finemap_effect:=conditional_effect[Method%in%c('single_context_finemapping')&context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
     
     
-    res[,max_coloc_vcp:=vcp[Method=='AD_xQTL_colocalization'][context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
-    res[,max_coloc_effect:=coef[Method=='AD_xQTL_colocalization'][context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
+    res[,max_coloc_vcp:=vcp[Method=='AD_xQTL_colocalization'&context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
+    res[,max_coloc_effect:=coef[Method=='AD_xQTL_colocalization'&context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
     
     
-    res[,max_multicontext_pip:=PIP[Method=='multi_context_finemapping'][context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
+    res[,max_multicontext_pip:=PIP[Method=='multi_context_finemapping'&context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
     res[,max_multicontext_effect:=conditional_effect[Method=='multi_context_finemapping'&context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
     
     
-    res[,max_TWAS_Z:=twas_z[which.max(abs(twas_z[context==max_dataset[1]]))],by=c('gene_ID')]
+    res[,max_TWAS_Z:={.z<-twas_z[context==max_dataset[1]]; if(any(!is.na(.z))) .z[which.max(abs(.z))] else as.numeric(NA)},by=c('gene_ID')]
     
     res[,max_MR:=any(MR_signif[context==max_dataset[1]]),by=c('gene_ID')]
     
