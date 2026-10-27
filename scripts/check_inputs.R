@@ -28,7 +28,7 @@ bad <- f[!(is.na(md5) | md5 == '') & (is.na(now) | now != md5)]
 miss <- x[kind == 'missing']
 
 ## files the build will read that the input list does not name
-unlisted <- character(0)
+unlisted <- character(0); gone <- character(0)
 if (nzchar(cfg)) {
   m <- fread(file.path(cfg, 'metadata_analysis.csv'), colClasses = 'character')
   ## keep only the rows the build's loaders read (build_AD_locus_table.R):
@@ -53,9 +53,12 @@ if (nzchar(cfg)) {
     if (!length(cv)) stop('check_inputs: could not find the cv2f folder in the build script; update this check')
     for (d in cv) need <- c(need, file.path(sub('/$', '', d), list.files(file.path(root, d), pattern = '\\.cv2f$')))
   }
-  need <- need[file.exists(file.path(root, need)) | dir.exists(file.path(root, need))]
+  ## every dependency must be in the input list, whether or not it exists on disk
+  ondisk <- file.exists(file.path(root, need)) | dir.exists(file.path(root, need))
   listed <- unmask(x$Path)
-  unlisted <- need[!need %in% listed & !vapply(need, function(n) any(startsWith(n, paste0(sub('/$', '', listed[x$kind == 'folder']), '/'))), logical(1))]
+  inlist <- need %in% listed | vapply(need, function(n) any(startsWith(n, paste0(sub('/$', '', listed[x$kind == 'folder']), '/'))), logical(1))
+  unlisted <- need[!inlist]
+  gone <- need[!inlist & !ondisk]   # neither listed nor on disk (listed but missing files are reported under MISSING)
   ## the three staging tables the build reads
   if (nzchar(stg)) for (s in c('gwas_variants_cor0.5.csv.gz', 'res_APOE_interaction_summ.csv.gz', 'res_msex_interaction_summ.csv.gz'))
     if (!any(is_stg & basename(x$Path) == s)) unlisted <- c(unlisted, file.path('staging', s))
@@ -66,7 +69,7 @@ cat(sprintf('[check_inputs] %d rows: %d files checked, %d match, %d changed, %d 
 if (nrow(bad)) cat('CHANGED (recorded -> now):\n', paste0('  ', bad$Path, '  ', bad$md5, ' -> ', bad$now, collapse = '\n'), '\n')
 if (nrow(nomd5)) cat('NO RECORDED MD5:\n', paste0('  ', nomd5$Path, collapse = '\n'), '\n')
 if (nrow(miss)) cat('MISSING:\n', paste0('  ', miss$p, collapse = '\n'), '\n')
-if (length(unlisted)) cat('NOT IN THE INPUT LIST:\n', paste0('  ', unlisted, collapse = '\n'), '\n')
+if (length(unlisted)) cat('NOT IN THE INPUT LIST:\n', paste0('  ', unlisted, ifelse(unlisted %in% gone, '  (also missing on disk)', ''), collapse = '\n'), '\n')
 if (nrow(bad) || nrow(nomd5) || nrow(miss) || length(unlisted)) {
   cat('[check_inputs] STOP: inputs do not match the input list. Update the list (with the data owner\'s confirmation) or restore the file.\n'); quit(status = 1) }
 cat('[check_inputs] OK\n')
