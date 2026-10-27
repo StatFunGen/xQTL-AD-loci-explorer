@@ -1447,6 +1447,12 @@ res_ad<-rbindlist(list(res_gwf[,.(variant_ID,locuscontext_id,AD_method='single_g
 res_ad[,chr:=seqid(variant_ID)]
 
 
+## keep only sets that qualify on their own: AD GWAS 95% credible sets and colocalization sets.
+## A 70%/50% set that shares a variant with a qualifying set would otherwise join its locus and
+## bring all its variants along (hitchhikers). Each fine-mapping row carries the strongest set the
+## variant belongs to, so a variant shared with a 95% set is kept through that set.
+res_ad<-res_ad[AD_method!='single_gwas_finemapping'|str_detect(credibleset,'cs95')]
+message('AD sets kept (95% CS or colocalization): ',uniqueN(res_ad$locuscontext_id))
 res_ad<-UnifyLoci(res_ad,variant_col = 'variant_ID',locus_col = 'locuscontext_id',
                   group.by = 'chr')
 setnames(res_ad,'uni.locus_id','ADlocus')

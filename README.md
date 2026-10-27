@@ -316,9 +316,10 @@ an ordinal within a single build, so the same number does not denote the same
 locus in another build and cross-build comparisons have to be made on variant
 IDs.
 
-Three filters decide what survives. A locus is kept only if it carries a GWAS
-credible set at 95% coverage or GWAS colocalization, so a locus supported only
-by a cs70 or cs50 set is dropped. A locus is kept only if its best GWAS p-value
+Three filters decide what survives. Only sets that qualify on their own form loci: AD GWAS
+credible sets at 95% coverage and colocalization sets. cs70 and cs50 sets are
+dropped as whole sets before sets that share a variant are merged into loci, so
+a weaker set cannot join a locus by overlapping a qualifying one. A locus is kept only if its best GWAS p-value
 is below 1e-5. Each surviving locus is then represented by up to five variants
 whose GWAS PIP or VCP exceeds 0.1; where no variant clears 0.1, the single best
 one is shown, ranked on the GWAS probability first and the xQTL probability
