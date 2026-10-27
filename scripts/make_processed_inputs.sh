@@ -11,7 +11,7 @@ cd $ROOT
 # ROSMAP AD x xQTL: remove the two TMEM106B glyco signals not in Ru's Oct 16 rerun
 $RS $S/drop_events.R xuewei_slack/AD_xQTL_ROSMAP_colocboost_export_release_20260422.bed $OUT/xuewei_slack/AD_xQTL_ROSMAP_colocboost_export_release_20260422.TMEM106B_fix.bed ENSG00000106460 DLPFC_Klein_gpQTL_adjusted_gp_8491 DLPFC_Klein_gpQTL_unadjusted_gp_8492
 # tpQTL x AD: remove ROSMAP eQTL outcomes already in the main ROSMAP export
-$RS $S/dedup_against_export.R AD_UofCsQTL_colocboost_export_release.bed $OUT/AD_UofCsQTL_colocboost_export_release_dedup.bed xuewei_slack/AD_xQTL_ROSMAP_colocboost_export_release_20260422.bed
+$RS $S/dedup_against_export.R AD_UofCsQTL_colocboost_export_release.bed $OUT/AD_UofCsQTL_colocboost_export_release.ROSMAP_eQTL_dups_removed.bed xuewei_slack/AD_xQTL_ROSMAP_colocboost_export_release_20260422.bed
 # TransMap x AD: drop the TMEM106B-locus CoS, collapse to sets, split trans by context, keep AD + cis
 $RS $S/drop_cos.R xuewei_slack/AD_xQTL_transmap_export_release.bed $OUT/tmp/AD_xQTL_transmap_export_release.noTMEM106B.bed chr7 ENSG00000106460
 $RS $S/transmap_export_to_sets.R $OUT/tmp/AD_xQTL_transmap_export_release.noTMEM106B.bed $OUT/tmp/AD_xQTL_transmap_export_release.noTMEM106B.sets.tsv

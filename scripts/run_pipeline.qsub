@@ -20,11 +20,19 @@ if [ ! -f "$REPO/scripts/build_AD_locus_table.R" ]; then
 fi
 export OMP_NUM_THREADS=${NSLOTS:-1}
 export AD_LOCI_ROOT=${AD_LOCI_ROOT:-/restricted/projectnb/xqtl/jaempawi/xqtl/AD_loci_xQTL}
-export AD_LOCI_STAGING=${AD_LOCI_STAGING:-$AD_LOCI_ROOT/repro/main_text/5_AD_xQTL_genes_cis_trans/staging/gene_priorization_table}
+## the build writes scratch files into STAGING, so each run gets its own; the three
+## precomputed tables are copied in from the project's staging folder (checked by
+## check_inputs.R against the input list)
+export AD_LOCI_STAGING=${AD_LOCI_STAGING:-__OUT__/_scratch}
 OUT=${AD_LOCI_OUT:-$AD_LOCI_ROOT/out_e2e_$(date +%Y%m%d_%H%M)}
 export AD_LOCI_OUT=$OUT
 
 mkdir -p "$AD_LOCI_ROOT/logs" "$OUT"
+AD_LOCI_STAGING=${AD_LOCI_STAGING/__OUT__/$OUT}; export AD_LOCI_STAGING
+mkdir -p "$AD_LOCI_STAGING"
+for f in gwas_variants_cor0.5.csv.gz res_APOE_interaction_summ.csv.gz res_msex_interaction_summ.csv.gz; do
+  [ -f "$AD_LOCI_STAGING/$f" ] || cp -p "$AD_LOCI_ROOT/staging_gene_prio/$f" "$AD_LOCI_STAGING/"
+done
 cd "$REPO" || exit 1
 
 ## provenance: snapshot the exact config this build used

@@ -123,7 +123,7 @@ Mic_mega_eQTL,eQTL,ROSMAP,snuc_mega/Mic,APOE interaction,analysis_result/margina
 Multi,Multi,MSBB,All,multi_context_finemapping,analysis_result/multi_context/MSBB/export/summary/MSBB.exported.toploci.bed.gz,TRUE,,
 Multi,Multi,ROSMAP,All,multi_context_finemapping,analysis_result/multi_context/ROSMAP/export/summary/ROSMAP.exported.toploci.bed.gz,TRUE,,
 Multi,QTL & GWAS,ROSMAP & AD,AD_xQTL_colocalization,ColocBoost,xuewei_slack/AD_xQTL_ROSMAP_colocboost_export_release_20260422.TMEM106B_fix.bed,TRUE,,
-Multi,QTL & GWAS,ROSMAP & AD,AD_xQTL_colocalization,ColocBoost,AD_UofCsQTL_colocboost_export_release_dedup.bed,TRUE,,
+Multi,QTL & GWAS,ROSMAP & AD,AD_xQTL_colocalization,ColocBoost,AD_UofCsQTL_colocboost_export_release.ROSMAP_eQTL_dups_removed.bed,TRUE,,
 Multi,glycoQTL & pQTL & GWAS,ROSMAP & AD,AD_xQTL_colocalization,ColocBoost,ru_glyco_patch_20261016/AD_glycoQTL_colocboost_export_ru20261016.bed,TRUE,,
 Multi,QTL & GWAS,ROSMAP & AD,AD_xQTL_colocalization,ColocBoost,AD_transmapADtarget_colocboost_export_20261027.bed,TRUE,,
 Multi,QTL & GWAS,MSBB & AD,AD_xQTL_colocalization,ColocBoost,analysis_result/ColocBoost/export/summary/AD_xQTL_MSBB_colocboost_export_release_sorted.bed.gz,TRUE,,
