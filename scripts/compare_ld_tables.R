@@ -12,3 +12,5 @@ k <- merge(o[variant_id %in% vs & dist <= 1e6], n[variant_id %in% vs], by = c('v
 cat('pairs on shared variants: both', k[!is.na(r.old) & !is.na(r.new), .N], 'only old', k[is.na(r.new), .N], 'only new', k[is.na(r.old), .N],
     'max |r diff|', k[, max(abs(r.old - r.new), na.rm = TRUE)], '\n')
 if (k[is.na(r.new) | is.na(r.old), .N]) print(head(k[is.na(r.new) | is.na(r.old)], 10))
+## Pass only if every old pair within 1 Mb is reproduced with the same r (new pairs are allowed: the old windows cut some partners).
+if (k[is.na(r.new), .N] > 0 || k[, max(abs(r.old - r.new), na.rm = TRUE)] > 1e-8) { cat('[compare_ld] FAIL\n'); quit(status = 1) } else cat('[compare_ld] PASS\n')
