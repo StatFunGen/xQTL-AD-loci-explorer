@@ -31,6 +31,8 @@ miss <- x[kind == 'missing']
 unlisted <- character(0)
 if (nzchar(cfg)) {
   m <- fread(file.path(cfg, 'metadata_analysis.csv'), colClasses = 'character')
+  ## interaction rows are not read: the build uses the precomputed staging summaries for them
+  m <- m[!Method %in% c('msex interaction', 'APOE interaction')]
   need <- unique(unmask(m$Path[!is.na(m$Path) & m$Path != '']))
   if (nzchar(bscript)) {
     src <- readLines(bscript); src <- src[!grepl('^\\s*#', src)]
