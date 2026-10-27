@@ -13,6 +13,11 @@ scripts/
   gene_prio_utils.R        helper functions, including the T1-T6 tier rules
   convert_issac_coloc.R    keys single-nucleus sQTL (ISSAC) x AD colocalization exports to genes
   add_evidence_source.R    register a new evidence source (see 'Adding data')
+  check_inputs.R           checks every file in a build input list exists and matches its md5
+  build_record.R           writes _build_record/ (inputs, output md5s, counts, changes since previous build)
+  compare_builds.R         compares two builds table by table
+  make_processed_inputs.sh  regenerates the processed inputs from the raw exports
+  convert_*.R, drop_*.R, dedup_against_export.R  the processing steps make_processed_inputs.sh runs
   validate_outputs.R       check a release against the expectations of this build
   run_pipeline.qsub        end-to-end job script for the SCC scheduler
 config/                    metadata tables the build reads
@@ -50,18 +55,26 @@ export AD_LOCI_OUT=$AD_LOCI_ROOT/out_$(date +%Y%m%d)    # optional
 export AD_LOCI_CONFIG=/path/to/private/config          # optional, see Inputs
 
 Rscript scripts/build_AD_locus_table.R                 # -> $AD_LOCI_OUT
-Rscript scripts/validate_outputs.R  $AD_LOCI_OUT       # expected tables, 196 loci, 452 genes
+Rscript scripts/validate_outputs.R  $AD_LOCI_OUT       # optional count check: AD_LOCI_EXPECT_LOCI, AD_LOCI_EXPECT_GENES
 Rscript app/build_shiny_data.R $AD_LOCI_OUT app/data.csv
 ```
 
-On the SCC the same three steps run as one job. From the repository root:
+On the SCC the same steps run as one job. From the repository root:
 
 ```bash
-qsub scripts/run_pipeline.qsub
+qsub -v AD_LOCI_INPUTS=data/build_inputs/YYYYMMDD.inputs.csv,AD_LOCI_OUT=/path/to/out_YYYYMMDD scripts/run_pipeline.qsub
 ```
 
-The job records the commit, host, time and the config it used in
-`_provenance.csv` beside the outputs, then validates the release it produced.
+The job:
+
+1. refuses to write into an output folder that already has files (override with `AD_LOCI_ALLOW_EXISTING_OUT=1`);
+2. copies the config into the output folder and records it with md5s in `_used_config/`, plus the commit, host and time in `_provenance.csv`;
+3. runs `check_inputs.R` on the input list and stops if any file is missing or its md5 differs;
+4. builds and validates the tables;
+5. writes `_build_record/` (`build_record.R`; set `AD_LOCI_PREV` to a previous output folder to list what changed);
+6. writes `_COMPLETE` only if the build and validation both succeeded.
+
+The build uses `NSLOTS` threads. The per-file overlap step runs in parallel; set `AD_LOCI_OVERLAP_WORKERS` to change the number of workers.
 
 The build checks every required input before starting and stops with a list of
 whatever is missing, rather than failing part-way through a long run.
@@ -123,6 +136,22 @@ open an issue on this repository or email jaempawi@bu.edu.
 
 The correlation table drives the LD-based credible-set extension, so the
 released variant sets cannot be reproduced without it.
+
+### Build input lists
+
+Each build has an input list in `data/build_inputs/`, named by build date (`YYYYMMDD.inputs.csv`). One row per file the build reads, with its path, md5, size, who provided it and where it came from. Files that were processed before use (for example, with signals removed or duplicates dropped) also list their `parents` (path and md5) and the `recipe` that produced them; `scripts/make_processed_inputs.sh` reruns every recipe and reproduces those files exactly. Rows with `role` = `reference` are lookup files rather than evidence.
+
+To check a set of inputs before a run:
+
+```bash
+Rscript scripts/check_inputs.R data/build_inputs/YYYYMMDD.inputs.csv $AD_LOCI_ROOT
+```
+
+To see what changed between two builds:
+
+```bash
+Rscript scripts/compare_builds.R /path/to/out_A /path/to/out_B
+```
 
 ## Adding data
 
