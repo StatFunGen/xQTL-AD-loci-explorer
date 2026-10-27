@@ -19,6 +19,15 @@ ROOT=/your/path/ad_loci_root                   # a new, empty folder
 One input path contains a masked user name (`<collaborator>`). Ask the maintainer for the
 real name and put it in `~/.ad_loci_collaborator` (one line). It is kept out of the repository.
 
+Where the inputs are on the Columbia cluster (each file's exact path is in the `columbia_path`
+column of the input list, so nothing has to be looked up by hand):
+
+| location | what |
+|---|---|
+| `/mnt/lustre/lab/gwang/mmcloud_2026/` | the original analysis results and references, as released |
+| `/mnt/lustre/home/jae2200/AD_loci_inputs/` | the processed inputs (made by `scripts/make_processed_inputs.sh`) and the three staging tables |
+| `/mnt/lustre/lab/gwang/users/rf2872/` | two glycoQTL files kept by their owner |
+
 Make the project folder. It contains only links to each input's location on the cluster
 (the `columbia_path` column of the input list); nothing is copied:
 
