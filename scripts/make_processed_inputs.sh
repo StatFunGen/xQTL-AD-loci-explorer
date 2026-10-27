@@ -4,7 +4,7 @@
 ## compared byte for byte with the files the build used (see the input list).
 ## bash scripts/make_processed_inputs.sh <project_root> <outdir>
 set -euo pipefail
-ROOT=$1; OUT=$2; S=$(cd "$(dirname "$0")" && pwd); RS=~/.pixi/bin/Rscript
+ROOT=$1; OUT=$2; S=$(cd "$(dirname "$0")" && pwd); RS=${AD_LOCI_RSCRIPT:-$HOME/.pixi/bin/Rscript}; [ -x "$RS" ] || RS=$(command -v Rscript)
 COL=${AD_LOCI_COLLABORATOR:-$(cat ~/.ad_loci_collaborator)}
 mkdir -p $OUT/xuewei_slack $OUT/issac_coloc_gene $OUT/k5_transfer $OUT/ru_glyco_patch_20261016 $OUT/tmp
 cd $ROOT

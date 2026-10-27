@@ -74,7 +74,7 @@ The job:
 5. writes `_build_record/` (`build_record.R`; set `AD_LOCI_PREV` to a previous output folder to list what changed);
 6. writes `_COMPLETE` only if the build and validation both succeeded.
 
-The build uses `NSLOTS` threads. The per-file overlap step runs in parallel; set `AD_LOCI_OVERLAP_WORKERS` to change the number of workers.
+The build uses `NSLOTS` threads. The per-file overlap step runs in parallel; set `AD_LOCI_OVERLAP_WORKERS` to change the number of workers. Set `AD_LOCI_RSCRIPT` to choose which Rscript runs the steps (default: `~/.pixi/bin/Rscript`, otherwise the one on `PATH`).
 
 The build checks every required input before starting and stops with a list of
 whatever is missing, rather than failing part-way through a long run.

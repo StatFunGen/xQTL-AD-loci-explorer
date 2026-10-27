@@ -19,6 +19,7 @@ if [ ! -f "$REPO/scripts/build_AD_locus_table.R" ]; then
   echo "not a repository checkout: $REPO" >&2; exit 1
 fi
 export OMP_NUM_THREADS=${NSLOTS:-1}
+RS=${AD_LOCI_RSCRIPT:-$HOME/.pixi/bin/Rscript}; [ -x "$RS" ] || RS=$(command -v Rscript)   # R used for every step
 export AD_LOCI_ROOT=${AD_LOCI_ROOT:-/restricted/projectnb/xqtl/jaempawi/xqtl/AD_loci_xQTL}
 ## the build writes scratch files into STAGING, so each run gets its own; the three
 ## precomputed tables are copied in from the project's staging folder (checked by
@@ -66,19 +67,19 @@ cp "$CFG/contexts_metadata.csv" "$OUT/_used_contexts_metadata.csv"
 ## stop before reading anything if an input differs from the build's input list
 INPUTS=${AD_LOCI_INPUTS:?set AD_LOCI_INPUTS to the build input list, e.g. data/build_inputs/20261027.inputs.csv}
 cp "$INPUTS" "$OUT/_used_inputs.csv"
-~/.pixi/bin/Rscript scripts/check_inputs.R "$INPUTS" "$AD_LOCI_ROOT" || { echo "CHECK_INPUTS failed $(date)"; exit 1; }
+"$RS" scripts/check_inputs.R "$INPUTS" "$AD_LOCI_ROOT" || { echo "CHECK_INPUTS failed $(date)"; exit 1; }
 echo "START $(date) out=$OUT"
-~/.pixi/bin/Rscript scripts/build_AD_locus_table.R
+"$RS" scripts/build_AD_locus_table.R
 rc=$?
 echo "BUILD_RC=$rc  $(date)"
 
 if [ $rc -eq 0 ]; then
   echo "---- validate ----"
-  ~/.pixi/bin/Rscript scripts/validate_outputs.R "$OUT"
+  "$RS" scripts/validate_outputs.R "$OUT"
   vrc=$?; echo "VALIDATE_RC=$vrc"
   [ $vrc -ne 0 ] && rc=$vrc
 echo "---- build record ----"
-~/.pixi/bin/Rscript scripts/build_record.R "$OUT" "$INPUTS" "${AD_LOCI_PREV:-}"
+"$RS" scripts/build_record.R "$OUT" "$INPUTS" "${AD_LOCI_PREV:-}"
 fi
 ## a build counts as complete only if it ran and validated
 [ $rc -eq 0 ] && date -Iseconds > "$OUT/_COMPLETE"
