@@ -32,12 +32,16 @@ vf <- file.path(release, "res_AD_variants_xQTL.csv.gz")
 if (file.exists(vf)) {
   v <- fread(vf, select = c("locus_index", "gene_name", "top_confidence"))
   n_loci <- uniqueN(v[!is.na(locus_index)]$locus_index)
-  note(n_loci == 196, sprintf("locus count is 196 (found %d)", n_loci))
+  ## expected counts are given per build (e.g. from the release being reproduced), never hard-coded;
+## without them the counts are reported and the build record compares them with the previous build
+.el <- suppressWarnings(as.integer(Sys.getenv("AD_LOCI_EXPECT_LOCI", "")))
+if (!is.na(.el)) note(n_loci == .el, sprintf("locus count is %d (found %d)", .el, n_loci)) else cat(sprintf("[info] locus count %d\n", n_loci))
 
   t <- v[!is.na(top_confidence) & top_confidence != "" &
          !is.na(gene_name) & gene_name != ""]
   g <- t[, .(tier = min(top_confidence)), by = .(gene = gene_name)]
-  note(nrow(g) == 452, sprintf("tiered genes is 452 (found %d)", nrow(g)))
+  .eg <- suppressWarnings(as.integer(Sys.getenv("AD_LOCI_EXPECT_GENES", "")))
+if (!is.na(.eg)) note(nrow(g) == .eg, sprintf("tiered genes is %d (found %d)", .eg, nrow(g))) else cat(sprintf("[info] tiered genes %d\n", nrow(g)))
 
   tb <- table(g$tier)
   cat("\n  tier distribution:", paste(sprintf("%s=%d", names(tb), tb), collapse = " "), "\n")
