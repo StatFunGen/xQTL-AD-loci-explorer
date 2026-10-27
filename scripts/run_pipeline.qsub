@@ -18,6 +18,7 @@ REPO=${AD_LOCI_REPO:-${SGE_O_WORKDIR:-$PWD}}
 if [ ! -f "$REPO/scripts/build_AD_locus_table.R" ]; then
   echo "not a repository checkout: $REPO" >&2; exit 1
 fi
+export OMP_NUM_THREADS=${NSLOTS:-1}
 export AD_LOCI_ROOT=${AD_LOCI_ROOT:-/restricted/projectnb/xqtl/jaempawi/xqtl/AD_loci_xQTL}
 export AD_LOCI_STAGING=${AD_LOCI_STAGING:-$AD_LOCI_ROOT/repro/main_text/5_AD_xQTL_genes_cis_trans/staging/gene_priorization_table}
 OUT=${AD_LOCI_OUT:-$AD_LOCI_ROOT/out_e2e_$(date +%Y%m%d_%H%M)}

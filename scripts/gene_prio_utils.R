@@ -2,8 +2,11 @@
 fp<-function(...)file.path(...)
 ps<-function(...)paste0(...)
 library(data.table)
-setDTthreads(threads = 0)
-message(getDTthreads(),' threads available for data.table')
+## use the cores the job was given (SCC sets OMP_NUM_THREADS=1, which otherwise limits data.table to 1 thread)
+.ncores <- as.integer(Sys.getenv('NSLOTS', unset = '1'))
+stopifnot(!is.na(.ncores), .ncores >= 1L)
+setDTthreads(.ncores)
+message(getDTthreads(),' threads available for data.table (NSLOTS=', .ncores, ')')
 
 library(stringr)
 library(ggplot2)
