@@ -27,6 +27,10 @@ export AD_LOCI_STAGING=${AD_LOCI_STAGING:-__OUT__/_scratch}
 OUT=${AD_LOCI_OUT:-$AD_LOCI_ROOT/out_e2e_$(date +%Y%m%d_%H%M)}
 export AD_LOCI_OUT=$OUT
 
+## refuse to reuse an output folder: a rerun into an old folder can mix two builds' files
+if [ -e "$OUT" ] && [ -n "$(ls -A "$OUT" 2>/dev/null)" ] && [ "${AD_LOCI_ALLOW_EXISTING_OUT:-0}" != 1 ]; then
+  echo "output folder already has files: $OUT (set AD_LOCI_ALLOW_EXISTING_OUT=1 to override)" >&2; exit 1
+fi
 mkdir -p "$AD_LOCI_ROOT/logs" "$OUT"
 AD_LOCI_STAGING=${AD_LOCI_STAGING/__OUT__/$OUT}; export AD_LOCI_STAGING
 mkdir -p "$AD_LOCI_STAGING"
@@ -40,7 +44,11 @@ cd "$REPO" || exit 1
 ## Snapshotting config/ unconditionally recorded a file the build never opened
 ## whenever AD_LOCI_CONFIG was set, which is how a config change could take
 ## effect while the provenance said otherwise.
-CFG=${AD_LOCI_CONFIG:-config}
+## the build writes its registry back into the config folder, so it always runs on a
+## private copy; the repository config is never modified
+if [ -z "${AD_LOCI_CONFIG:-}" ]; then mkdir -p "$OUT/_config" && cp "$REPO"/config/* "$OUT/_config/"; export AD_LOCI_CONFIG=$OUT/_config; fi
+CFG=$AD_LOCI_CONFIG
+mkdir -p "$OUT/_used_config" && cp "$CFG"/* "$OUT/_used_config/" && (cd "$OUT/_used_config" && md5sum * > MD5SUMS)
 echo "config dir: $CFG"
 cp "$CFG/metadata_analysis.csv" "$OUT/_used_metadata_analysis.csv"
 cp "$CFG/contexts_metadata.csv" "$OUT/_used_contexts_metadata.csv"
@@ -67,9 +75,12 @@ echo "BUILD_RC=$rc  $(date)"
 if [ $rc -eq 0 ]; then
   echo "---- validate ----"
   ~/.pixi/bin/Rscript scripts/validate_outputs.R "$OUT"
-  echo "VALIDATE_RC=$?"
+  vrc=$?; echo "VALIDATE_RC=$vrc"
+  [ $vrc -ne 0 ] && rc=$vrc
 echo "---- build record ----"
 ~/.pixi/bin/Rscript scripts/build_record.R "$OUT" "$INPUTS" "${AD_LOCI_PREV:-}"
 fi
+## a build counts as complete only if it ran and validated
+[ $rc -eq 0 ] && date -Iseconds > "$OUT/_COMPLETE"
 echo "END $(date)"
 exit $rc
