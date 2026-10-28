@@ -380,6 +380,11 @@ every pair of loci, the strongest and weakest |r| between their variants
 are visible. `scripts/annotate_transmap_xqtl_only.R` overlaps the genome-wide
 TransMap trans-xQTL-only colocalization with the AD loci and records, per locus,
 whether xQTL support is cis only, trans only, or both.
+`scripts/locus_gene_report.R` summarizes how many genes and cell types have
+tiered support at each AD locus (T1-T4, and with T5 added; cell types counted with
+and without bulk brain tissue; myeloid support from microglia, monocytes or
+macrophages), and at how many loci each gene has tiered support, with and
+without the APOE region (`locus_gene_report.txt`, `locus_gene_support.csv.gz`).
 
 The output directory is deliberately created empty. The GWAS credible-set
 harmonization recomputes from its inputs rather than reusing a previous
