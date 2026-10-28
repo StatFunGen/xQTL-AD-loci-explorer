@@ -195,6 +195,7 @@ res_adx[,tier_causal_ctx:=FALSE]
 res_adx[,tier_twas_ctx:=FALSE]
 res_adx[,tier_causal_cos:=FALSE]
 res_adx[,tier_twas_cos:=FALSE]
+if(!'is.cs95.var'%in%names(res_adx)) stop('tier input lacks is.cs95.var (variant-level AD 95% CS flag)')  ## required tier column (review)
 res_adx[,tier_xcs95_locus:=FALSE]
 res_adx[.ok,tier_causal_ctx:=any(MR_signif,na.rm = T)|any(cTWAS_signif,na.rm = T),by=c('gene_ID',group.by)]
 res_adx[.ok,tier_twas_ctx:=any(TWAS_signif,na.rm = T),by=c('gene_ID',group.by)]

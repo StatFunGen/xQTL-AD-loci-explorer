@@ -873,6 +873,8 @@ cat('[LD] precomputed variant correlations:', nrow(variants_cors), 'pairs,',
   #per region, iterate in all CS of a GWAS finding if correlation with other GWAS CS meet this condition, if it meet,
   #extend the CS 
   variants_corsf<-variants_cors[variant_ID%in%all_variants&variant_ID2%in%all_variants]
+## both orientations of every pair, one row per pair (review Q4)
+variants_corsf<-unique(rbind(variants_corsf,copy(variants_corsf)[,c('variant_ID','variant_ID2'):=.(variant_ID2,variant_ID)]),by=c('variant_ID','variant_ID2'))
 ## LD extension. By default this runs scripts/extend_ad_sets.R, a faster,
 ## region-indexed version of the original loop below: same merge rule, same
 ## synchronous passes, identical output (checked row for row against the
@@ -919,7 +921,7 @@ if(Sys.getenv('AD_LOCI_LEGACY_EXTENSION')!='1'){
             #any 0.8 between those CS
             have_highLD<-mincorr50_vars[,any(abs(r)>0.8)]
             #all variants pairs have r>0.5
-            have_all50<-nrow(mincorr50_vars)==length(other_cs)*length(vars_cs)
+            have_all50<-nrow(mincorr50_vars)==length(unique(other_cs))*length(unique(vars_cs))
             rep(have_highLD&have_all50,.N) #rep is to return TRUE or FALSE for each Variants of thise CS
           }else{
             rep(FALSE,.N)
@@ -975,7 +977,7 @@ if(Sys.getenv('AD_LOCI_LEGACY_EXTENSION')!='1'){
               #any 0.8 between those CS
               have_highLD<-mincorr50_vars[,any(abs(r)>0.8)]
               #all variants pairs have r>0.5
-              have_all50<-nrow(mincorr50_vars)==length(other_cs)*length(vars_cs)
+              have_all50<-nrow(mincorr50_vars)==length(unique(other_cs))*length(unique(vars_cs))
               rep(have_highLD&have_all50,.N) #rep is to return TRUE or FALSE for each Variants of thise CS
             }else{
               rep(FALSE,.N)
@@ -1368,7 +1370,9 @@ table(res_mr$gwas_source)
 res_twas<-fread(fp(out,'res_AD_XWAS.csv.gz'))
 
 res_mrtwas<-merge(unique(res_mr[order(gene_ID,context,gwas_source,-num_CS,I2)],by=c('gene_ID','context','gwas_source')),
-                  unique(res_twas[!is.na(twas_pval)][order(gene_ID,context,gwas_source,twas_pval)],by=c('gene_ID','context','gwas_source')),all=TRUE)
+                  unique(res_twas[!is.na(twas_pval)][order(gene_ID,context,gwas_source,twas_pval)],by=c('gene_ID','context','gwas_source')),by=c('gene_ID','context','gwas_source'),all=TRUE)  ## explicit keys (review Q3)
+## other shared columns: keep one copy (MR value, else TWAS value)
+for(.s in sub('[.]x$','',grep('[.]x$',names(res_mrtwas),value=TRUE))) if(paste0(.s,'.y')%in%names(res_mrtwas)){ .vx<-res_mrtwas[[paste0(.s,'.x')]]; .vy<-res_mrtwas[[paste0(.s,'.y')]]; res_mrtwas[,(.s):=ifelse(is.na(.vx),.vy,.vx)]; res_mrtwas[,c(paste0(.s,'.x'),paste0(.s,'.y')):=NULL] }
 res_mrtwas[,MR_signif:=TWAS_signif&cpip>0.5&num_CS>=2&I2<0.5]
 
 res_mrtwas[(TWAS_signif)]
@@ -1682,9 +1686,7 @@ Method<-.ov_rows$Method[i]; summary_file<-.ov_rows$summary_file[i]; summary_file
       effect_colsf<-intersect(effect_cols,colnames(res))
       if(length(effect_colsf)>0){
 
-          res<-rbind(res[!variant_id%in%toflip],
-                     res[variant_id%in%toflip,(effect_colsf):=lapply(.SD,function(x)-x),.SDcols = effect_colsf]
-                     )
+          res[variant_id%in%toflip,(effect_colsf):=lapply(.SD,function(x)-x),.SDcols = effect_colsf]  ## flip in place (review Q2): rbind with := duplicated the non-flipped rows
         
         
       }

@@ -96,7 +96,7 @@ extend_ad_sets <- function(res_gwf, res_cosad, regions, variants_corsf,
           pairs <- ld[[k]][.(unique(vars_a)), on = 'variant_ID', nomatch = 0L][
             .(unique(b[[h]])), on = 'variant_ID2', nomatch = 0L]
           ok <- nrow(pairs) > 0L && isTRUE(any(abs(pairs$r) > 0.8) &&
-            nrow(pairs) == length(vars_a) * length(b[[h]]))
+            nrow(pairs) == length(unique(vars_a)) * length(unique(b[[h]])))  ## unique counts (review Q4)
           vals[h] <- ok; vld[h] <- TRUE; ch <- ch + 1L
         } else hi <- hi + 1L
         accept[h] <- vals[h]
