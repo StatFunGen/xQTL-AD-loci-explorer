@@ -5,6 +5,7 @@ a <- commandArgs(TRUE)
 rd <- function(f) { d <- unique(fread(f, select = c('variant_id','variant2','r')), by = c('variant_id','variant2'))
   d[, dist := abs(as.numeric(sub('^[^:]+:([0-9]+):.*','\\1',variant_id)) - as.numeric(sub('^[^:]+:([0-9]+):.*','\\1',variant2)))][] }
 o <- rd(a[1]); n <- rd(a[2])
+if (length(a) >= 3 && a[3] == 'listed') o <- o[variant2 %in% n$variant_id]   ## new table keeps only listed partners
 cat('old pairs', nrow(o), 'beyond 1Mb', o[dist > 1e6, .N], '| new pairs', nrow(n), '\n')
 vs <- intersect(unique(o$variant_id), unique(n$variant_id))
 cat('variants: old', uniqueN(o$variant_id), 'new', uniqueN(n$variant_id), 'both', length(vs), '\n')
