@@ -44,8 +44,8 @@ o <- data.table(file = basename(fs), size_bytes = file.size(fs), md5 = unname(to
 fwrite(o, file.path(rd, 'outputs_md5.csv'))
 s <- list()
 find1 <- function(stem) { f <- list.files(out, pattern = paste0('^', stem), full.names = TRUE); if (length(f)) f[1] else '' }
-lf <- find1('AD_loci_unified_cs95orColocs(_[0-9]{8})?\\.csv'); if (nzchar(lf)) { l <- fread(lf); s[['AD loci before p<1e-5 filter']] <- uniqueN(l$ADlocus) }
-vf <- find1('AD_loci_unified_cs95orColocs_Pval1e5_variant_level'); if (nzchar(vf)) { v <- fread(vf); s[['AD loci (final, p<1e-5)']] <- uniqueN(v$ADlocus); s[['AD loci variants (final)']] <- uniqueN(v$variant_ID) }
+lf <- find1('AD_loci_unified_cs95orColocs(_[0-9]{8})?\\.csv'); if (nzchar(lf)) { l <- fread(lf); s[['AD loci (unified)']] <- uniqueN(l$ADlocus) }
+vf <- find1('AD_loci_unified_cs95orColocs_Pval1e5_variant_level'); if (nzchar(vf)) { v <- fread(vf); s[['AD loci (final)']] <- uniqueN(v$ADlocus); s[['AD loci variants (final)']] <- uniqueN(v$variant_ID) }
 tf <- find1('gene_tier_assignment'); if (nzchar(tf)) { t <- fread(tf); s[['genes (any tier)']] <- uniqueN(t$gene_ID); for (k in sort(unique(t$tier))) s[[paste('genes', k)]] <- uniqueN(t[tier == k]$gene_ID) }
 S <- data.table(quantity = names(s), value = unlist(s)); fwrite(S, file.path(rd, 'summary.csv'))
 print(S)

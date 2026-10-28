@@ -310,7 +310,7 @@ counted twice under two labels.
 |---|---|
 | fine-mapping | membership in a credible set; the coverage level is recorded on each row as cs95, cs70 or cs50, and the strongest level available is kept per locus |
 | colocalization | a variant-level colocalization probability (VCP), or the SNP-level PPH4 where that is what the method reports |
-| TWAS | gene-level p < 2.5e-6, either in the selected best method or in more than half of the methods run, evaluated per gene, block, context and GWAS source |
+| TWAS | gene-level p < 2.5e-6, either in the selected best method or in at least half of the methods run, evaluated per gene, block, context and GWAS source |
 | MR | TWAS-significant, and cPIP > 0.5, and at least two credible sets, and I2 < 0.5 |
 | cTWAS | a non-empty credible set and SuSiE PIP > 0.75 |
 
