@@ -370,7 +370,9 @@ files.
 ## Confidence tiers
 
 Tiers T1–T5 need localized cis-xQTL support; genes implicated only by trans-xQTL
-are reported for reference. AD GWAS credible sets (CS) come from SuSiE-rss.
+are reported for reference. TransMap trans colocalization (TransMap × AD, and the genome-wide TransMap
+xQTL-only results overlapped with the AD loci) counts as trans xQTL support for a
+locus (discovery) but not toward gene tiers. AD GWAS credible sets (CS) come from SuSiE-rss.
 xQTL credible sets come from single-context SuSiE, regional fSuSiE, and
 multi-context or multi-gene mvSuSiE. A 95% CS overlap is at least one variant
 shared by an AD GWAS 95% CS and an xQTL 95% CS. CoS support is AD and a cis

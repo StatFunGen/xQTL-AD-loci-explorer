@@ -1,8 +1,9 @@
-## TransMap trans-xQTL-only colocalization (disease agnostic, Xuewei Cao) as annotation of the AD loci.
+## TransMap trans-xQTL-only colocalization (disease agnostic, Xuewei Cao) overlapped with the AD loci, for discovery.
 ## Reads the export as one file, keeps the TransMap CoS whose variants sit at an AD locus variant (same chr:pos,
 ## the overlap rule used for every xQTL method), and labels each outcome: TransMap-eGene (trans gene, ENSG),
 ## TransMap-eProgram (trans_local_program ... hotspot_module) or TransMap-biomarker (glyco, protein, metabolite).
-## Annotation only: it does not define loci or set tiers.
+## It counts as trans xQTL support for an AD locus (with the TransMap x AD colocalization), but does not define loci
+## or set gene tiers (Gao, Oct 28: TransMap is a discovery tool, it just does not count into the gene tiers).
 ## Usage: Rscript scripts/annotate_transmap_xqtl_only.R <trans_xQTL_only_colocalization_summary_table.bed> <build out dir>
 suppressPackageStartupMessages(library(data.table))
 a <- commandArgs(TRUE); if (length(a) != 2) stop('usage: annotate_transmap_xqtl_only.R <file> <out dir>')
@@ -32,7 +33,12 @@ k <- m[, .(TransMap_xQTLonly_variants = uniqueN(variant_ID), eGene_CoS = uniqueN
            contexts = paste(sort(unique(context)), collapse = ';')), by = ADlocusID]
 s <- merge(s, k, by = 'ADlocusID', all.x = TRUE)
 for (c in c('TransMap_xQTLonly_variants', 'eGene_CoS', 'eProgram_CoS', 'biomarker_CoS')) s[is.na(get(c)), (c) := 0L]
+## xQTL support per locus: cis (fine-mapping and colocalization) and trans (TransMap x AD colocalization or TransMap xQTL-only overlap)
+s[, trans_xQTL_support := TransMap_ADtarget | TransMap_xQTLonly_variants > 0]
+s[, xQTL_support := fcase(cis_xQTL_support & trans_xQTL_support, 'cis and trans', cis_xQTL_support, 'cis only', trans_xQTL_support, 'trans only', default = 'none')]
 fwrite(s[order(ADlocusID)], file.path(out, 'transmap_xQTL_only_locus_summary.csv'))
+cat('[xqtl_support] loci', nrow(s), '| with xQTL support', s[xQTL_support != 'none', .N], '| cis only', s[xQTL_support == 'cis only', .N],
+    '| trans only', s[xQTL_support == 'trans only', .N], '| cis and trans', s[xQTL_support == 'cis and trans', .N], '\n')
 cat('[transmap_xqtl_only] loci', nrow(s), '| with TransMap xQTL-only overlap', s[TransMap_xQTLonly_variants > 0, .N],
     '| no cis-xQTL support but TransMap xQTL-only', s[!cis_xQTL_support & TransMap_xQTLonly_variants > 0, .N], '\n')
 print(s[!cis_xQTL_support & TransMap_xQTLonly_variants > 0])
