@@ -6,7 +6,7 @@
 # gene region list); the data files do not carry a build column.
 GENOME_BUILD <- "GRCh38"
 # Stated, not derived: no data file carries a release or build column.
-DATA_RELEASE <- "2026-10-22"
+DATA_RELEASE <- "2026-10-28"
 
 .chr_norm <- function(v) paste0("chr", sub("^chr", "", as.character(v)))
 

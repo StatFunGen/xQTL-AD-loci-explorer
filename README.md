@@ -400,7 +400,9 @@ locus (discovery) but not toward gene tiers. AD GWAS credible sets (CS) come fro
 xQTL credible sets come from single-context SuSiE, regional fSuSiE, and
 multi-context or multi-gene mvSuSiE. A 95% CS overlap is at least one variant
 shared by an AD GWAS 95% CS and an xQTL 95% CS. CoS support is AD and a cis
-molecular trait of the gene in the same ColocBoost event with a 95% CoS.
+molecular trait of the gene in the same ColocBoost event with a 95% CoS. fSuSiE
+colocalization of AD with bulk methylation or histone QTL also counts as CoS
+support, for the genes its fSuSiE region is linked to.
 Gene-level TWAS, MR and cTWAS evidence follows the regulome-wide association
 companion study. Rules are checked in order.
 
