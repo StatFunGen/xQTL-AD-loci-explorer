@@ -175,6 +175,7 @@ SummarizeTable<-function(res_adx,
   ##  AD GWAS credible set (CS): SuSiE-rss, used at 95% coverage only.
   ##  xQTL CS: single-context, multi-context or multi-gene fine-mapping, or fSuSiE.
   ##  CoS: ColocBoost AD-xQTL colocalization, or SuSiE-coloc where ColocBoost did not run.
+##      Methylation and histone (mQTL/haQTL) fSuSiE colocalization is not a CoS for tiers: it supports the locus only.
 ## T1: AD 95% CS overlaps an xQTL 95% CS, and 95% CoS, with MR or causal TWAS.
 ## T2: AD 95% CS overlaps an xQTL 95% CS, or 95% CoS, with MR or causal TWAS.
 ## T3: AD 95% CS overlaps an xQTL 95% CS, or 95% CoS, with TWAS.
@@ -202,7 +203,10 @@ res_adx[,xc_var:=FALSE]
 res_adx[,tier_xcs95_cos:=FALSE]
 res_adx[.ok,tier_causal_ctx:=any(MR_signif,na.rm = T)|any(cTWAS_signif,na.rm = T),by=c('gene_ID',group.by)]
 res_adx[.ok,tier_twas_ctx:=any(TWAS_signif,na.rm = T),by=c('gene_ID',group.by)]
-.cosrow<-.ok&res_adx$Method%in%c('AD_xQTL_colocalization','Coloc')&!is.na(res_adx$locuscontext_id)&res_adx$locuscontext_id!=''
+## methylation/histone (epiQTL) fSuSiE colocalization supports the locus but sets no gene tier
+.epi<-res_adx$Method%in%'Coloc'&grepl('_(mQTL|haQTL)$',res_adx$context)
+message('[epiQTL] Coloc rows from mQTL/haQTL left out of tier CoS: ',sum(.epi))
+.cosrow<-.ok&res_adx$Method%in%c('AD_xQTL_colocalization','Coloc')&!is.na(res_adx$locuscontext_id)&res_adx$locuscontext_id!=''&!.epi
 res_adx[.cosrow,tier_causal_cos:=any(tier_causal_ctx),by=c('gene_ID','locuscontext_id')]
 res_adx[.cosrow,tier_twas_cos:=any(tier_twas_ctx),by=c('gene_ID','locuscontext_id')]
 ## T4 (review Q6): the CoS and an xQTL 95% CS (or fSuSiE CS) of the same gene and context group share at least one
@@ -215,7 +219,7 @@ message('[T4] CoS rows with a 95% CS of the same gene and ',group.by,' sharing a
     .xcs95<-(Method%in%.fm_methods&str_detect(credibleset,'^cs95'))|Method%in%'fSuSiE_finemapping'
     .ov95<-.xcs95&is.cs95.var%in%TRUE
     .ov70<-Method%in%.fm_methods&str_detect(credibleset,'^cs70')&is.cs95.var%in%TRUE
-    .cos95<-Method%in%c('AD_xQTL_colocalization','Coloc')&
+    .cos95<-Method%in%c('AD_xQTL_colocalization','Coloc')&!(Method%in%'Coloc'&grepl('_(mQTL|haQTL)$',context))&
       (is.na(credibleset)|credibleset==''|str_detect(credibleset,'^cs95'))
     .A<-any(.ov95,na.rm = T)
     .B<-any(.cos95,na.rm = T)
