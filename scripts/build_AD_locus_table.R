@@ -42,7 +42,7 @@ source(file.path(SCRIPTS, 'gene_prio_utils.R'))
 .need <- c(
   file.path(CONFIG, c('metadata_analysis.csv','contexts_metadata.csv',
                       'columns_metadata.tsv','excel_metadata.tsv','pattern_coloring.tsv')),
-  ld_sketch_meta_file,
+  ROOTP('ADSP_R4_ld_sketch/ld_meta_file.tsv'), ## LD sketch metadata (ld_sketch_meta_file below)
   file.path(STAGING, c(                       'res_APOE_interaction_summ.csv.gz',
                        'res_msex_interaction_summ.csv.gz')))
 .gone <- .need[!file.exists(.need)]
