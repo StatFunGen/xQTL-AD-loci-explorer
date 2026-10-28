@@ -16,8 +16,12 @@ extend_ad_sets <- function(res_gwf, res_cosad, regions, variants_corsf,
   data.table::setDTthreads(1L)
   on.exit(data.table::setDTthreads(previous_threads), add = TRUE)
 
+  ## GWAS sets are assigned to LD blocks by variant position, like the colocalization sets below. Matching the
+  ## fine-mapping block name to the LD block name skipped every GWAS set whose fine-mapping block differs from the
+  ## LD reference block (most blocks since the Sep 2026 GWAS export), so those sets were never extended.
+  gchr <- seqid(res_gwf$variant_ID); gpos <- pos(res_gwf$variant_ID)
   initial <- lapply(regions, function(region_id) {
-    x <- data.table::melt(res_gwf[region == region_id],
+    x <- data.table::melt(res_gwf[gchr == seqid(region_id) & gpos >= start(region_id) & gpos <= end(region_id)],
       measure.vars = c('cs_coverage_0.95', 'cs_coverage_0.7', 'cs_coverage_0.5'),
       variable.name = 'coverage', value.name = 'cs_num')[cs_num != 0]
     y <- res_cosad[chr == seqid(region_id) & pos >= start(region_id) & pos <= end(region_id)]

@@ -59,6 +59,8 @@ if [ $rc -eq 0 ]; then
   ## TransMap trans-xQTL-only colocalization: annotation of the AD loci (no loci, no tiers)
   TMF=$(grep -o '[^,]*trans_xQTL_only_colocalization_summary_table\.bed' "$INPUTS" | head -1)
   if [ -n "$TMF" ]; then echo "---- TransMap xQTL-only annotation ----"; "$RS" scripts/annotate_transmap_xqtl_only.R "$AD_LOCI_ROOT/$TMF" "$OUT" 2>&1 | tee "$REC/transmap_xqtl_only.txt"; trc=${PIPESTATUS[0]}; [ $trc -ne 0 ] && rc=$trc; fi
+  ## |r| between loci (review): flags loci pairs with |r| > 0.8 that the merge rule could have joined
+  "$RS" scripts/locus_pair_ld.R "$OUT" 2>&1 | tee "$REC/locus_pair_ld.txt"
 fi
 if [ $rc -eq 0 ]; then
   echo "---- validate ----"

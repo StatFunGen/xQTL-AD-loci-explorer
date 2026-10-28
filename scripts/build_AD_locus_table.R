@@ -891,7 +891,7 @@ if(Sys.getenv('AD_LOCI_LEGACY_EXTENSION')!='1'){
   i<-1
   gwas_new<-rbindlist(lapply(regions,function(r){
     message(r)
-    res_gwff<-res_gwf[region==r]
+    res_gwff<-res_gwf[seqid(variant_ID)==seqid(r)&pos(variant_ID)>=start(r)&pos(variant_ID)<=end(r)]  ## by position (see extend_ad_sets.R)
     #get long table of the CS
     res_gwff_cs<-melt(res_gwff,measure.vars=c('cs_coverage_0.95',
                                               'cs_coverage_0.7',
@@ -1024,6 +1024,10 @@ if(Sys.getenv('AD_LOCI_LEGACY_EXTENSION')!='1'){
                               ifelse(str_detect(locuscontext_id,'cs70'),'cs_coverage_0.7',
                                      'cs_coverage_0.5'))]
   gwas_newf[,cs_num:=as.numeric(str_extract(locuscontext_id,'[0-9]+$'))]
+## GWAS sets now enter the extension by LD block position, so a set spanning two LD blocks comes back as two
+## region-scoped copies; key them by their own fine-mapping block (part of locuscontext_id) so the copies rejoin.
+gwas_newf[,region:=str_extract(locuscontext_id,'chr[0-9XY]+_[0-9]+_[0-9]+(?=_cs[0-9]+_[0-9]+$)')]
+stopifnot(!anyNA(gwas_newf$region))
   
   resfp<-dcast(gwas_newf,
                study+region+variant_ID~coverage,
