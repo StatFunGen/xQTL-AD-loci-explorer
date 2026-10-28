@@ -68,13 +68,13 @@ if (nzchar(root) && nzchar(cfg) && file.exists(cf)) {
 of <- file.path(release, "xQTL_all_methods_overlap_with_AD_loci_unified_cs95orColocs_Pval1e5.csv.gz")
 if (file.exists(of)) {
   x <- fread(of, select = c("ADlocus", "gene_ID", "Method", "context", "context_short",
-                            "credibleset", "susie_coverage", "MR_signif", "cTWAS_signif",
+                            "credibleset", intersect(c("susie_coverage", "is.cs95.var"), names(fread(of, nrows = 0))), "MR_signif", "cTWAS_signif",
                             "TWAS_signif", "confidence_lvl"))
   x <- x[!grepl("^AD", context) & !grepl("trans", Method) & !grepl("^tmAD_", gene_ID)]
   fm <- c("single_context_finemapping", "multi_context_finemapping",
           "multi_gene_finemapping", "fSuSiE_finemapping")
   x[, ov95 := ((Method %in% fm & grepl("^cs95", credibleset)) | Method == "fSuSiE_finemapping") &
-              susie_coverage %in% "cs95"]
+              (if ("is.cs95.var" %in% names(x)) is.cs95.var %in% TRUE else susie_coverage %in% "cs95")]
   x[, causal := MR_signif %in% TRUE | cTWAS_signif %in% TRUE]
   x[, twas := TWAS_signif %in% TRUE]
   ## gene has a 95% CS overlap and MR/cTWAS in the same context -> at most T2
