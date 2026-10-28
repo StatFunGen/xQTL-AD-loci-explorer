@@ -1487,6 +1487,8 @@ res_ad$ADlocus|>unique()|>length()#249
 
 #add more meaningful ADLocus name: chr-[start]-[end]
 res_ad[,is.cs95:=any(str_detect(credibleset,'cs95'),na.rm = T),by='ADlocus']
+## variant-level: the variant itself is in an AD GWAS 95% CS (incl. LD-extended members of the CS/CoS merge)
+res_ad[,is.cs95.var:=any(AD_method=='single_gwas_finemapping'&str_detect(credibleset,'cs95'),na.rm = T),by='variant_ID']
 res_ad[,ADlocusID:=paste(seqid(ADlocus),min(pos(variant_ID)),max(pos(variant_ID)),sep = '_'),by='ADlocus']
 
 res_ad[,ADlocus.n.variant.union:=length(unique(variant_ID)),by='ADlocus']
@@ -1547,6 +1549,7 @@ res_adfv<-unique(res_adf[order(variant_ID,-abs(gwas_zscore),-variant_inclusion_p
                                                                                                 gwas_sources,
                                                                                                 gwas_sources_effects,
                                                                                                 is.cs95,
+                                                                                                is.cs95.var,
                                                                                                 max_zscore,
                                                                                                 min_pval,
                                                                                                 susie_coverage,

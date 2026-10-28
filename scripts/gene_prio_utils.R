@@ -205,8 +205,8 @@ res_adx[.ok,tier_xcs95_locus:=any((Method%in%.fm_methods&str_detect(credibleset,
 ## trans evidence (trans fine-mapping, transmap targets) is reference only and gets no tier
   res_adx[!str_detect(context,'^AD')&!grepl('trans',Method)&!grepl('^tmAD_',gene_ID),confidence_lvl:={
     .xcs95<-(Method%in%.fm_methods&str_detect(credibleset,'^cs95'))|Method%in%'fSuSiE_finemapping'
-    .ov95<-.xcs95&susie_coverage%in%'cs95'
-    .ov70<-Method%in%.fm_methods&str_detect(credibleset,'^cs70')&susie_coverage%in%'cs95'
+    .ov95<-.xcs95&is.cs95.var%in%TRUE
+    .ov70<-Method%in%.fm_methods&str_detect(credibleset,'^cs70')&is.cs95.var%in%TRUE
     .cos95<-Method%in%c('AD_xQTL_colocalization','Coloc')&
       (is.na(credibleset)|credibleset==''|str_detect(credibleset,'^cs95'))
     .A<-any(.ov95,na.rm = T)
@@ -217,7 +217,7 @@ res_adx[.ok,tier_xcs95_locus:=any((Method%in%.fm_methods&str_detect(credibleset,
 .tB<-any((tier_twas_cos|tier_twas_ctx)[.cos95],na.rm = T)
 .causal<-(.A&.cC)|(.B&.cB)
 .twas<-(.A&.tC)|(.B&.tB)
-    .q95<-any(Method%in%c('QR','APOE interaction','msex interaction')&susie_coverage%in%'cs95',na.rm = T)
+    .q95<-any(Method%in%c('QR','APOE interaction','msex interaction')&is.cs95.var%in%TRUE,na.rm = T)
     if(.A&.B&.causal){
       'T1'
     }else if((.A|.B)&.causal){
