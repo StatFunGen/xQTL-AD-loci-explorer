@@ -59,8 +59,8 @@ if (nzchar(cfg)) {
   inlist <- need %in% listed | vapply(need, function(n) any(startsWith(n, paste0(sub('/$', '', listed[x$kind == 'folder']), '/'))), logical(1))
   unlisted <- need[!inlist]
   gone <- need[!inlist & !ondisk]   # neither listed nor on disk (listed but missing files are reported under MISSING)
-  ## the three staging tables the build reads
-  if (nzchar(stg)) for (s in c('gwas_variants_cor0.5.csv.gz', 'res_APOE_interaction_summ.csv.gz', 'res_msex_interaction_summ.csv.gz'))
+  ## the two staging tables the build reads
+  if (nzchar(stg)) for (s in c('res_APOE_interaction_summ.csv.gz', 'res_msex_interaction_summ.csv.gz'))
     if (!any(is_stg & basename(x$Path) == s)) unlisted <- c(unlisted, file.path('staging', s))
 }
 

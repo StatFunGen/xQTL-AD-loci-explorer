@@ -42,8 +42,8 @@ source(file.path(SCRIPTS, 'gene_prio_utils.R'))
 .need <- c(
   file.path(CONFIG, c('metadata_analysis.csv','contexts_metadata.csv',
                       'columns_metadata.tsv','excel_metadata.tsv','pattern_coloring.tsv')),
-  file.path(STAGING, c('gwas_variants_cor0.5.csv.gz',
-                       'res_APOE_interaction_summ.csv.gz',
+  ld_sketch_meta_file,
+  file.path(STAGING, c(                       'res_APOE_interaction_summ.csv.gz',
                        'res_msex_interaction_summ.csv.gz')))
 .gone <- .need[!file.exists(.need)]
 if (length(.gone)) {
@@ -62,6 +62,7 @@ gp_coordinates_clean=ROOTP('gpQTL/gp_coordinates_clean.txt')
 cv2f_score_dir=ROOTP('analysis_result/cv2f/score/xqtl_feature_max_allcv2f/')
 gene_names=ROOTP('resource/references/Homo_sapiens.GRCh38.103.chr.reformatted.collapse_only.gene.region_list')
 ld_meta_file=ROOTP('resource/ADSP_R4_EUR_LD/ld_meta_file.tsv')
+ld_sketch_meta_file=ROOTP('ADSP_R4_ld_sketch/ld_meta_file.tsv') ## ADSP R4 EUR LD sketch: LD for the set extension is computed from it during the build
 gene_gtf=ROOTP('resource/references/Homo_sapiens.GRCh38.103.chr.reformatted.collapse_only.gene.gtf')
 
 
@@ -863,12 +864,19 @@ message('[LD] extension regions (variant clusters, gap > 3 Mb): ',length(regions
   
   
 ## LD-based variant correlations ------------------------------------------
-## load_LD_matrix() is absent from the installed pecotmr, so the compute block
-## (load_LD_matrix over each region -> pairwise |r| > 0.5) is disabled and the
-## precomputed correlation table shipped in staging is used instead.
-variants_cors<-fread(file.path(STAGING,'gwas_variants_cor0.5.csv.gz'))
-fwrite(variants_cors,fp(out,'gwas_variants_cor0.5.csv.gz'))  ## copy into out/ for provenance
-cat('[LD] precomputed variant correlations:', nrow(variants_cors), 'pairs,',
+## Computed here, on the fly, from the ADSP R4 EUR LD sketch with pecotmr (scripts/ld_sketch.R): every pair of AD variants
+## within the same extension region with |r| > 0.5. No precomputed LD table is read. AD_LOCI_LD_TABLE=<csv.gz> reads a
+## precomputed table instead (for cross-checks only). The pairs are written to out/ for provenance and the |r| review.
+.ldt<-Sys.getenv('AD_LOCI_LD_TABLE')
+if(nzchar(.ldt)){
+  variants_cors<-fread(.ldt); cat('[LD] precomputed table (cross-check mode):',.ldt,'\n')
+}else{
+  source(file.path(SCRIPTS,'ld_sketch.R'))
+  variants_cors<-ld_pairs_sketch(all_variants,ld_sketch_meta_file,regions,workers=as.integer(Sys.getenv('NSLOTS','1')))
+  writeLines(attr(variants_cors,'not_in_panel'),fp(out,'gwas_variants_not_in_ld_sketch.txt'))
+}
+fwrite(variants_cors,fp(out,'gwas_variants_cor0.5.csv.gz'))
+cat('[LD] variant correlations:', nrow(variants_cors), 'pairs,',
     uniqueN(c(variants_cors$variant_ID, variants_cors$variant_ID2)), 'variants\n')
   
   #if r > 0.8, AND the union of the two CS have min abs(r) > 0.5
