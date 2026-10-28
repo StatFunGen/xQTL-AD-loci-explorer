@@ -271,8 +271,8 @@ by two neighbouring ones.
 
 The locus set is imported, not derived here: GWAS fine-mapping is run upstream
 and is not repeated by this pipeline. The credible sets behind the current
-build come from eight AD GWAS studies fine-mapped with SuSiE-RSS EB-mix; the
-earlier 20260514 release used SuSiE-RSS version 1 on the same studies, which is
+build come from eight AD GWAS studies fine-mapped with SuSiE-RSS EB-mix (the
+final R4_L10 run); the earlier 20260514 release used SuSiE-RSS version 1 on the same studies, which is
 why the two are not nested (see `data/README.md`).
 At startup the build scans the registry
 for the analysis methods that point at per-context top-loci files and reports
@@ -330,7 +330,7 @@ builds therefore means the inputs or the filtering changed, not merely that
 something was added. The GWAS methods, sources and effect directions behind each
 variant are collapsed into parallel `|`-separated fields on the same row.
 
-### Step 5: assembling and filtering loci
+### Step 5: assembling loci
 
 A locus identifier is built from its chromosome and the first and last positions
 of its member variants, and the loci are then numbered in order. That number is
@@ -338,14 +338,26 @@ an ordinal within a single build, so the same number does not denote the same
 locus in another build and cross-build comparisons have to be made on variant
 IDs.
 
-Three filters decide what survives. Only sets that qualify on their own form loci: AD GWAS
-credible sets at 95% coverage and colocalization sets. cs70 and cs50 sets are
-dropped as whole sets before sets that share a variant are merged into loci, so
-a weaker set cannot join a locus by overlapping a qualifying one. A locus is kept only if its best GWAS p-value
-is below 1e-5. Each surviving locus is then represented by up to five variants
-whose GWAS PIP or VCP exceeds 0.1; where no variant clears 0.1, the single best
-one is shown, ranked on the GWAS probability first and the xQTL probability
-second. GWAS significance is reported in bands: p < 1e-5, p < 1e-6, p < 5e-8.
+Only sets that qualify on their own form loci: AD GWAS credible sets at 95%
+coverage and colocalization sets. cs70 and cs50 sets are dropped as whole sets
+before sets are merged into loci, so a weaker set cannot join a locus by
+overlapping a qualifying one.
+
+Sets are then merged by linkage disequilibrium. There are no fixed LD blocks:
+AD variants with no gap larger than 1 Mb form one window (2 Mb, ±1 Mb). Within
+each window, LD between AD variants up to 1 Mb apart is computed during the build
+from the ADSP R4 EUR LD sketch with pecotmr (`scripts/ld_sketch.R`); only the AD
+variants are read from the sketch, and no precomputed LD table is used. Two sets
+are merged when some variant pair between them has |r| > 0.8 and every pair in
+their union has |r| > 0.5, and merging repeats until no further sets join. Sets
+that share a variant end up in the same locus.
+
+There is no GWAS p-value filter: every locus built from a qualifying set is
+kept, because a locus with a marginal p-value above 1e-5 can still have a small
+joint p-value. Each locus is represented by up to five variants whose GWAS PIP
+or VCP exceeds 0.1; where no variant clears 0.1, the single best one is shown,
+ranked on the GWAS probability first and the xQTL probability second. GWAS
+significance is reported in bands: p < 5e-8, p < 1e-6, and p ≥ 1e-6.
 
 Two flags are carried per locus: whether it is supported only by proxy-based
 GWAS, and whether it falls in the APOE region (chr19:43,905,790-45,905,791),
@@ -361,6 +373,13 @@ the unified workbook to `$AD_LOCI_OUT`; what the run used (code commit, inputs,
 config, environment) goes into the build record, `_build_record/`. `scripts/validate_outputs.R` then
 checks that release: the expected tables are present, and the locus and gene
 counts match `AD_LOCI_EXPECT_LOCI` / `AD_LOCI_EXPECT_GENES` when those are set.
+
+Two further steps run after the build. `scripts/locus_pair_ld.R` reports, for
+every pair of loci, the strongest and weakest |r| between their variants
+(`locus_pair_min_abs_ld.csv.gz`), so loci that the merge rule could have joined
+are visible. `scripts/annotate_transmap_xqtl_only.R` overlaps the genome-wide
+TransMap trans-xQTL-only colocalization with the AD loci and records, per locus,
+whether xQTL support is cis only, trans only, or both.
 
 The output directory is deliberately created empty. The GWAS credible-set
 harmonization recomputes from its inputs rather than reusing a previous
