@@ -854,25 +854,25 @@ if(nzchar(Sys.getenv('AD_LOCI_DUMP_VARIANTS'))){writeLines(all_variants,Sys.gete
   #for all block
   ldmeta<-fread(ld_meta_file)
   
-  ## Regions for the LD extension (no fixed LD blocks): clusters of the AD variants with no gap > 3 Mb (Gao: comparable to the old ~3 Mb blocks). The LD table
-## holds every |r| > 0.5 pair within 3 Mb computed from the ADSP R4 EUR LD sketch with pecotmr, so sets in different
-## clusters cannot meet the merge rule and every pair of sets that can is compared.
+  ## Regions for the LD extension (no fixed LD blocks): 2 Mb windows (+-1 Mb; Gao, Oct 28): AD variants with no gap > 1 Mb
+## are grouped. LD is computed on the fly for AD variant pairs within 1 Mb in the same window, so every pair of sets
+## that can meet the merge rule is in one window and the iterative merge is unchanged.
 .av<-unique(data.table(chr=seqid(all_variants),pos=pos(all_variants)))[!is.na(pos)][order(chr,pos)]
-.av[,cl:=cumsum(c(TRUE,diff(pos)>3e6)),by=chr]
+.av[,cl:=cumsum(c(TRUE,diff(pos)>1e6)),by=chr]
 regions<-.av[,.(r=paste(chr[1],min(pos)-1,max(pos)+1,sep='_')),by=.(chr,cl)]$r
-message('[LD] extension regions (variant clusters, gap > 3 Mb): ',length(regions))
+message('[LD] extension windows (AD variants, gap > 1 Mb): ',length(regions))
   
   
 ## LD-based variant correlations ------------------------------------------
 ## Computed here, on the fly, from the ADSP R4 EUR LD sketch with pecotmr (scripts/ld_sketch.R): every pair of AD variants
-## within the same extension region with |r| > 0.5. No precomputed LD table is read. AD_LOCI_LD_TABLE=<csv.gz> reads a
+## within 1 Mb in the same extension window with |r| > 0.5. No precomputed LD table is read. AD_LOCI_LD_TABLE=<csv.gz> reads a
 ## precomputed table instead (for cross-checks only). The pairs are written to out/ for provenance and the |r| review.
 .ldt<-Sys.getenv('AD_LOCI_LD_TABLE')
 if(nzchar(.ldt)){
   variants_cors<-fread(.ldt); cat('[LD] precomputed table (cross-check mode):',.ldt,'\n')
 }else{
   source(file.path(SCRIPTS,'ld_sketch.R'))
-  variants_cors<-ld_pairs_sketch(all_variants,ld_sketch_meta_file,regions,workers=as.integer(Sys.getenv('NSLOTS','1')))
+  variants_cors<-ld_pairs_sketch(all_variants,ld_sketch_meta_file,regions,workers=as.integer(Sys.getenv('NSLOTS','1')),max_dist=1e6)
   writeLines(attr(variants_cors,'not_in_panel'),fp(out,'gwas_variants_not_in_ld_sketch.txt'))
 }
 fwrite(variants_cors,fp(out,'gwas_variants_cor0.5.csv.gz'))

@@ -383,7 +383,7 @@ companion study. Rules are checked in order.
 | T1 | 95% CS overlap and CoS support, with MR or cTWAS |
 | T2 | 95% CS overlap or CoS support, with MR or cTWAS |
 | T3 | 95% CS overlap or CoS support, with TWAS |
-| T4 | CoS support and a matching xQTL 95% CS; no separate AD GWAS CS needed |
+| T4 | CoS support, and an xQTL 95% CS for the gene in a colocalized context (same context, any dataset) that shares a variant with the CoS; no separate AD GWAS CS needed |
 | T5 | other localized evidence: CoS alone, or an AD GWAS 95% CS overlapping an xQTL CS at 95% or 70% |
 | T6 | gene-level evidence only: TWAS, MR, or cis quantile/interaction QTL at variants in an AD GWAS 95% CS |
 
