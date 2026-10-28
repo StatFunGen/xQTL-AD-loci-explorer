@@ -181,7 +181,7 @@ SummarizeTable<-function(res_adx,
 ## MR, causal TWAS and TWAS are gene-level tests. They support an overlap when they are
 ## significant for the same gene in the same context, and support a CoS when they are
 ## significant for the same gene in any one of the contexts that the CoS links.
-## T4: 95% CoS with xQTL support of its own: an xQTL 95% CS for the same gene, in one of the contexts the CoS
+## T4 (review Q6): 95% CoS with xQTL support of its own: an xQTL 95% CS for the same gene, in one of the context groups the CoS
 ##     colocalizes (same context, any dataset), that shares at least one variant with the CoS (Oct 28 2026; was: any xQTL 95% CS for the gene
 ##     at the AD locus, in any context).
   ## T5: other localized evidence: 95% CoS alone, or AD 95% CS overlapping an xQTL CS at 95% or 70%.
@@ -198,21 +198,18 @@ res_adx[,tier_twas_ctx:=FALSE]
 res_adx[,tier_causal_cos:=FALSE]
 res_adx[,tier_twas_cos:=FALSE]
 if(!'is.cs95.var'%in%names(res_adx)) stop('tier input lacks is.cs95.var (variant-level AD 95% CS flag)')  ## required tier column (review)
-res_adx[,tier_cos_xcs95:=FALSE]
+res_adx[,xc_var:=FALSE]
+res_adx[,tier_xcs95_cos:=FALSE]
 res_adx[.ok,tier_causal_ctx:=any(MR_signif,na.rm = T)|any(cTWAS_signif,na.rm = T),by=c('gene_ID',group.by)]
 res_adx[.ok,tier_twas_ctx:=any(TWAS_signif,na.rm = T),by=c('gene_ID',group.by)]
 .cosrow<-.ok&res_adx$Method%in%c('AD_xQTL_colocalization','Coloc')&!is.na(res_adx$locuscontext_id)&res_adx$locuscontext_id!=''
 res_adx[.cosrow,tier_causal_cos:=any(tier_causal_ctx),by=c('gene_ID','locuscontext_id')]
 res_adx[.cosrow,tier_twas_cos:=any(tier_twas_ctx),by=c('gene_ID','locuscontext_id')]
-## T4 support per CoS: a 95% CS (or fSuSiE CS) for the same gene in a context the CoS colocalizes, sharing a variant with
-## the CoS. Contexts match on the short context (cell type and modality), across datasets (Gao, Oct 28: same context,
-## across datasets is fine); AD_LOCI_T4_MATCH=context matches on the dataset context instead, for comparison.
-.t4by<-Sys.getenv('AD_LOCI_T4_MATCH','context_short'); stopifnot(.t4by%in%c('context','context_short'))
-.xcs<-unique(res_adx[.ok&((Method%in%.fm_methods&str_detect(credibleset,'^cs95'))|Method%in%'fSuSiE_finemapping'),c('gene_ID',.t4by,'variant_ID'),with=FALSE])
-.cosv<-unique(res_adx[.cosrow&(is.na(credibleset)|credibleset==''|str_detect(credibleset,'^cs95')),c('gene_ID',.t4by,'variant_ID','locuscontext_id'),with=FALSE])
-.supp<-unique(merge(.cosv,.xcs,by=c('gene_ID',.t4by,'variant_ID'))[,.(gene_ID,locuscontext_id)])
-res_adx[.cosrow,tier_cos_xcs95:=paste(gene_ID,locuscontext_id)%in%paste(.supp$gene_ID,.supp$locuscontext_id)]
-message('[T4] CoS (gene x CoS) with a 95% CS in a colocalized ',.t4by,' sharing a variant: ',nrow(.supp),' of ',uniqueN(.cosv[,.(gene_ID,locuscontext_id)]))
+## T4 (review Q6): the CoS and an xQTL 95% CS (or fSuSiE CS) of the same gene and context group share at least one
+## variant; context groups match across datasets.
+res_adx[.ok,xc_var:=any((Method%in%.fm_methods&str_detect(credibleset,'^cs95'))|Method%in%'fSuSiE_finemapping',na.rm = T),by=c('variant_ID','gene_ID',group.by)]
+res_adx[.cosrow,tier_xcs95_cos:=any(xc_var),by=c('gene_ID',group.by,'locuscontext_id')]
+message('[T4] CoS rows with a 95% CS of the same gene and ',group.by,' sharing a variant: ',res_adx[.cosrow&tier_xcs95_cos,.N],' of ',sum(.cosrow))
 ## trans evidence (trans fine-mapping, transmap targets) is reference only and gets no tier
   res_adx[!str_detect(context,'^AD')&!grepl('trans',Method)&!grepl('^tmAD_',gene_ID),confidence_lvl:={
     .xcs95<-(Method%in%.fm_methods&str_detect(credibleset,'^cs95'))|Method%in%'fSuSiE_finemapping'
@@ -235,7 +232,7 @@ message('[T4] CoS (gene x CoS) with a 95% CS in a colocalized ',.t4by,' sharing 
       'T2'
     }else if((.A|.B)&.twas){
       'T3'
-}else if(any(.cos95&tier_cos_xcs95,na.rm = T)){
+}else if(.B&any(tier_xcs95_cos[.cos95],na.rm = T)){ #Q6
       'T4'
     }else if(.A|.B|any(.ov70,na.rm = T)){
       'T5'
@@ -247,7 +244,7 @@ message('[T4] CoS (gene x CoS) with a 95% CS in a colocalized ',.t4by,' sharing 
   },
   by=c('variant_ID','gene_ID',group.by)]
   
-res_adx[,c('tier_causal_ctx','tier_twas_ctx','tier_causal_cos','tier_twas_cos','tier_cos_xcs95'):=NULL]
+res_adx[,c('tier_causal_ctx','tier_twas_ctx','tier_causal_cos','tier_twas_cos','xc_var','tier_xcs95_cos'):=NULL]
 res_adx[,confidence_lvl:=factor(confidence_lvl,levels = paste0('T',1:6))]
   
   if('xQTL_effect'%in%colnames(res_adx)){
