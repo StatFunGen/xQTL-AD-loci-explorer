@@ -217,12 +217,12 @@ trans_pairs <- local({
   ## genes, so they have no position on the genome to draw an arc to.
   .tc  <- intersect(c("trans_genes", "trans_snRNA_genes", "trans_pQTL_genes",
                       "trans_glycoQTL_genes"), names(dat))
-  .has <- Reduce(`|`, lapply(.tc, function(k)
+  .has <- if (!length(.tc)) rep(FALSE, nrow(dat)) else Reduce(`|`, lapply(.tc, function(k)
             !is.na(dat[[k]]) & nzchar(trimws(as.character(dat[[k]])))))
   ## An arc starts at the variant position, so a cis gene was only ever the
   ## label for its start. Rows without one are labelled by the locus instead.
+  ## no early return without trans fine-mapping rows: transmap pairs are added below
   d <- dat[.has & !is.na(dat$pos), , drop = FALSE]
-  if (!nrow(d)) return(NULL)
   mods <- c(snRNA = "trans_snRNA_n_genes", pQTL = "trans_pQTL_n_genes",
             glycoQTL = "trans_glycoQTL_n_genes", Hotspot = "trans_hotspot_n_genes")
   gsets <- c(`Trans genes` = "trans_genes", snRNA = "trans_snRNA_genes",
@@ -249,8 +249,8 @@ trans_pairs <- local({
                       src_pos = as.numeric(d$pos[i]),
                       tgt = L$tgt, modality = L$mod, stringsAsFactors = FALSE)
   }
-  if (is.null(out) || !nrow(out)) return(NULL)
-  out <- unique(out)
+  if (!is.null(out) && !nrow(out)) out <- NULL
+  if (!is.null(out)) out <- unique(out)
   ## transmap pairs, written by build_shiny_data.R from the release. Same
   ## shape as the rows above. Transmap has no cis gene, so the source is
   ## labelled by the locus; the arc still starts at the variant position.
@@ -266,9 +266,10 @@ trans_pairs <- local({
                          tgt      = as.character(.tm$gene),
                          modality = "Transmap",
                          stringsAsFactors = FALSE)
-      out <- rbind(out, .tmo[, names(out)])
+      out <- if (is.null(out)) .tmo else rbind(out, .tmo[, names(out)])
     }
   }
+  if (is.null(out) || !nrow(out)) return(NULL)
   i <- match(out$tgt, gene_pos$gene)
   out$tgt_chr <- gene_pos$chr[i]
   out$tgt_pos <- (as.numeric(gene_pos$start[i]) + as.numeric(gene_pos$end[i])) / 2
