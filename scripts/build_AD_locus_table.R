@@ -726,6 +726,13 @@ fwrite(res_cad2,fp(out,'res_coloc_meta_AD.csv.gz'))
 # - fsusie Coloc####
 res_cfs<-rbindlist(lapply(file.path(PROJECT_ROOT,mtd[Method=='Coloc']$Path),function(f)fread(f)),fill=TRUE,use.names = T)
 
+# The bulk mQTL/haQTL fSuSiE export names its columns variant_id, TADB and context
+# (the snATAC export uses variant_ID, TADB_region and event_ID). Fill the shared names
+# so these rows keep their variant, region and context instead of forming an NA locus.
+for (.p in list(c('variant_ID','variant_id'),c('TADB_region','TADB'),c('event_ID','context'))) {
+  if (!.p[1] %in% names(res_cfs)) res_cfs[,(.p[1]):=NA_character_]
+  if (.p[2] %in% names(res_cfs)) res_cfs[is.na(get(.p[1]))|get(.p[1])=='',(.p[1]):=as.character(get(.p[2]))]
+}
 res_cfs[event_ID=='ROSMAP_mQTL',event_ID:='ROSMAP_DLPFC_mQTL']
 res_cfs[event_ID=='ROSMAP_haQTL',event_ID:='ROSMAP_DLPFC_haQTL']
 res_cfs[,context:=event_ID]
@@ -753,6 +760,7 @@ res_cfsf[!str_detect(variant_ID,'^chr'),variant_ID:=paste0('chr',variant_ID)]
 
 res_cfsf[,chr:=seqid(variant_ID)]
 
+stopifnot(!anyNA(res_cfsf$variant_ID), all(res_cfsf$variant_ID!='chrNA'), !anyNA(res_cfsf$chr), !anyNA(res_cfsf$context), !anyNA(res_cfsf$TADB_region))
 fwrite(res_cfsf,fp(out,'res_coloc_AD_epiQTL.csv.gz'))
 
 
