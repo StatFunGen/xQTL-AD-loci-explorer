@@ -27,7 +27,7 @@ column of the input list, so nothing has to be looked up by hand):
 | location | what |
 |---|---|
 | `/mnt/lustre/lab/gwang/mmcloud_2026/` | the original analysis results and references, as released |
-| `/mnt/lustre/home/jae2200/AD_loci_inputs/` | the processed inputs (made by `scripts/make_processed_inputs.sh`) and the three staging tables |
+| `/mnt/lustre/lab/gwang/users/jae2200/AD_loci_inputs/` | the processed inputs (made by `scripts/make_processed_inputs.sh`), the two staging tables, and the ADSP R4 EUR LD sketch (`ADSP_R4_ld_sketch/`, downloaded from Synapse syn75082260) |
 | `/mnt/lustre/lab/gwang/users/rf2872/` | two glycoQTL files kept by their owner |
 
 Make the project folder. It contains only links to each input's location on the cluster
