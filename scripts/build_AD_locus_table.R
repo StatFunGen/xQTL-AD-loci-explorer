@@ -1286,8 +1286,8 @@ res_twas<-res_twas[,-'gwas_study']
 res_twas<-unique(res_twas[order(gene_ID,context,gwas_source,twas_pval)],by=c('gene_ID','context','gwas_source','method'))
 
 #TWAS sig: (pvalue<2.5e-6 for >50% methods OR (pvalue<2.5e-6 AND the best method))
-nmethods<-unique(res_twas$method)|>length()
-res_twas[!is.na(twas_pval),TWAS_signif:=(twas_pval<2.5e-6&(is_selected_method))|(sum(twas_pval<2.5e-6)>=nmethods/2),
+## TWAS majority counts the methods run for that gene/context/GWAS (review Q5; was the number of methods in the whole file)
+res_twas[!is.na(twas_pval),TWAS_signif:=(twas_pval<2.5e-6&(is_selected_method))|(sum(twas_pval<2.5e-6)>=uniqueN(method)/2),
          by=c('gene_ID','block','context','gwas_source')]
 res_twas[(TWAS_signif)]$gene_ID|>unique()|>length()#598 genes
 
