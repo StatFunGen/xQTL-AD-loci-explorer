@@ -72,8 +72,8 @@ if (file.exists(of)) {
                             "TWAS_signif", "confidence_lvl"))
   x <- x[!grepl("^AD", context) & !grepl("trans", Method) & !grepl("^tmAD_", gene_ID)]
   fm <- c("single_context_finemapping", "multi_context_finemapping",
-          "multi_gene_finemapping", "fSuSiE_finemapping")
-  x[, ov95 := ((Method %in% fm & grepl("^cs95", credibleset)) | Method == "fSuSiE_finemapping") &
+          "multi_gene_finemapping") ## epigenomic (fSuSiE) sets do not count at gene level
+  x[, ov95 := ((Method %in% fm & grepl("^cs95", credibleset))) &
               (if ("is.cs95.var" %in% names(x)) is.cs95.var %in% TRUE else susie_coverage %in% "cs95")]
   x[, causal := MR_signif %in% TRUE | cTWAS_signif %in% TRUE]
   x[, twas := TWAS_signif %in% TRUE]

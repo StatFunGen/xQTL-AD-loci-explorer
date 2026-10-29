@@ -175,7 +175,8 @@ SummarizeTable<-function(res_adx,
   ##  AD GWAS credible set (CS): SuSiE-rss, used at 95% coverage only.
   ##  xQTL CS: single-context, multi-context or multi-gene fine-mapping, or fSuSiE.
   ##  CoS: ColocBoost AD-xQTL colocalization, or SuSiE-coloc where ColocBoost did not run.
-##      Methylation and histone (mQTL/haQTL) fSuSiE colocalization is not a CoS for tiers: it supports the locus only.
+##      Epigenomic evidence (fSuSiE credible sets and colocalization: methylation, histone, snATAC) supports the locus only
+##      and counts at gene level in no capacity, until epigenomic targets are linked to genes in a principled way.
 ## T1: AD 95% CS overlaps an xQTL 95% CS, and 95% CoS, with MR or causal TWAS.
 ## T2: AD 95% CS overlaps an xQTL 95% CS, or 95% CoS, with MR or causal TWAS.
 ## T3: AD 95% CS overlaps an xQTL 95% CS, or 95% CoS, with TWAS.
@@ -191,7 +192,7 @@ SummarizeTable<-function(res_adx,
   ## Single-nucleus sQTL and 50% credible sets give no tier (NA).
   message('summarizing per ',group.by,' the xQTL evidence for each variant')
   .fm_methods<-c('single_context_finemapping','multi_context_finemapping',
-                'multi_gene_finemapping','fSuSiE_finemapping')
+                'multi_gene_finemapping') ## fSuSiE (epigenomic) credible sets do not count at gene level
 ## gene-level support, spread from the TWAS/MR/cTWAS rows to every row of the gene
 .ok<-!str_detect(res_adx$context,'^AD')&!grepl('trans',res_adx$Method)&!grepl('^tmAD_',res_adx$gene_ID)
 res_adx[,tier_causal_ctx:=FALSE]
@@ -203,23 +204,23 @@ res_adx[,xc_var:=FALSE]
 res_adx[,tier_xcs95_cos:=FALSE]
 res_adx[.ok,tier_causal_ctx:=any(MR_signif,na.rm = T)|any(cTWAS_signif,na.rm = T),by=c('gene_ID',group.by)]
 res_adx[.ok,tier_twas_ctx:=any(TWAS_signif,na.rm = T),by=c('gene_ID',group.by)]
-## methylation/histone (epiQTL) fSuSiE colocalization supports the locus but sets no gene tier
-.epi<-res_adx$Method%in%'Coloc'&grepl('_(mQTL|haQTL)$',res_adx$context)
-message('[epiQTL] Coloc rows from mQTL/haQTL left out of tier CoS: ',sum(.epi))
+## epigenomic fSuSiE colocalization (methylation, histone, snATAC) supports the locus but sets no gene tier
+.epi<-res_adx$Method%in%'Coloc'
+message('[epigenomic] fSuSiE Coloc rows left out of tier CoS: ',sum(.epi))
 .cosrow<-.ok&res_adx$Method%in%c('AD_xQTL_colocalization','Coloc')&!is.na(res_adx$locuscontext_id)&res_adx$locuscontext_id!=''&!.epi
 res_adx[.cosrow,tier_causal_cos:=any(tier_causal_ctx),by=c('gene_ID','locuscontext_id')]
 res_adx[.cosrow,tier_twas_cos:=any(tier_twas_ctx),by=c('gene_ID','locuscontext_id')]
 ## T4 (review Q6): the CoS and an xQTL 95% CS (or fSuSiE CS) of the same gene and context group share at least one
 ## variant; context groups match across datasets.
-res_adx[.ok,xc_var:=any((Method%in%.fm_methods&str_detect(credibleset,'^cs95'))|Method%in%'fSuSiE_finemapping',na.rm = T),by=c('variant_ID','gene_ID',group.by)]
+res_adx[.ok,xc_var:=any((Method%in%.fm_methods&str_detect(credibleset,'^cs95')),na.rm = T),by=c('variant_ID','gene_ID',group.by)]
 res_adx[.cosrow,tier_xcs95_cos:=any(xc_var),by=c('gene_ID',group.by,'locuscontext_id')]
 message('[T4] CoS rows with a 95% CS of the same gene and ',group.by,' sharing a variant: ',res_adx[.cosrow&tier_xcs95_cos,.N],' of ',sum(.cosrow))
 ## trans evidence (trans fine-mapping, transmap targets) is reference only and gets no tier
   res_adx[!str_detect(context,'^AD')&!grepl('trans',Method)&!grepl('^tmAD_',gene_ID),confidence_lvl:={
-    .xcs95<-(Method%in%.fm_methods&str_detect(credibleset,'^cs95'))|Method%in%'fSuSiE_finemapping'
+    .xcs95<-(Method%in%.fm_methods&str_detect(credibleset,'^cs95'))
     .ov95<-.xcs95&is.cs95.var%in%TRUE
     .ov70<-Method%in%.fm_methods&str_detect(credibleset,'^cs70')&is.cs95.var%in%TRUE
-    .cos95<-Method%in%c('AD_xQTL_colocalization','Coloc')&!(Method%in%'Coloc'&grepl('_(mQTL|haQTL)$',context))&
+    .cos95<-Method%in%c('AD_xQTL_colocalization','Coloc')&!Method%in%'Coloc'&
       (is.na(credibleset)|credibleset==''|str_detect(credibleset,'^cs95'))
     .A<-any(.ov95,na.rm = T)
     .B<-any(.cos95,na.rm = T)
