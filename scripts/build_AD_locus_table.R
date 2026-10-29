@@ -604,6 +604,10 @@ mtd[Method=='APOE interaction',summary_file:=fp(out,'res_APOE_interaction_summ.c
 
 
 #the sn_sQTL ####
+## Marginal sn-sQTL association results (LR) are not used (Gao, 2026-10-29): sn-sQTL enters only through the
+## ISSAC sn-sQTL x AD ColocBoost colocalization (AD_xQTL_colocalization). The association table is kept only as
+## the splice-site-to-gene map for that colocalization (scripts/convert_issac_coloc.R).
+if(nrow(mtd[Method=='LR'&`Data Type`=='sQTL'])){
 ressqtl<-mtd[Method=='LR'&`Data Type`=='sQTL',fread(file.path(PROJECT_ROOT,Path),col.names = c('splice_site', 'variant_ID', 'pval', 'beta', 'se', 'FDR', 'if_significant', 'spliced_genes', 'gene_type', 'splice_type', 'cell_type'))]
 
 ressqtl
@@ -636,6 +640,7 @@ fwrite(ressqtlf,fp(out,'res_sn_sqtl_summ.csv.gz'))
 ressqtlf<-fread(fp(out,'res_sn_sqtl_summ.csv.gz'))
 
 mtd[Method=='LR'&`Data Type`=='sQTL',summary_file:=fp(out,'res_sn_sqtl_summ.csv.gz')]
+}
 
 fwrite(mtd,metadata_analysis)
 

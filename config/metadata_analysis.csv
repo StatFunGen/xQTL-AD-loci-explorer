@@ -185,7 +185,6 @@ monocyte_ROSMAP_eQTL,eQTL,ROSMAP,monocyte,msex interaction,analysis_result/margi
 monocyte_ROSMAP_eQTL,eQTL,ROSMAP,monocyte,APOE interaction,analysis_result/marginal_significant_qtl/cis_association/ROSMAP/eQTL/monocyte/interaction/APOE/,TRUE
 Multi,snATAC & AD,ROSMAP & AD,Kelis Celltypes,Coloc,analysis_result/coloc/fsusie_AD_coloc/snATAC_Kelis_AD_coloc_export_filtered.bed.gz,TRUE
 Multi,Bulk mQTL and haQTL & AD,ROSMAP & AD,Brain,Coloc,analysis_result/coloc/fsusie_AD_coloc/bulk_fsusie_AD_coloc_export_filtered.bed.gz,TRUE
-Multi,sQTL,ROSMAP,snuc_mega,LR,interactive_analysis/adpelle1/data/sn-sQTL/major_cell_FDR_0_05.txt.gz,TRUE
 Multi,Gene & GWAS,ROSMAP & AD,-,cTWAS,analysis_result/ctwas/export/summary/FunGen_ctwas.exported.bed.gz,FALSE
 Multi,Gene & GWAS,ROSMAP & MSBB & AD,,MR,interactive_analysis/adpelle1/export/FunGen_mr.exported.bed.gz,FALSE
 AD_Bellenguez_2022,AD_Bellenguez_2022,AD_Bellenguez_2022,AD,AD_GWAS_finemapping,gwas_toploci_r4_L10_conformed/AD_Bellenguez_2022.gwas.top_loci.bed.gz,TRUE
