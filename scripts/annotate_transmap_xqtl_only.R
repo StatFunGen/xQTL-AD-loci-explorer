@@ -27,8 +27,9 @@ x <- fread(file.path(out, 'xQTL_all_methods_overlap_with_AD_loci_unified_cs95orC
 cisM <- c('AD_xQTL_colocalization', 'Coloc', 'fSuSiE_finemapping', 'multi_context_finemapping', 'multi_gene_finemapping', 'single_context_finemapping')
 s <- data.table(ADlocusID = unique(v$ADlocusID))
 ## TransMap x AD sets with no cis gene are written as AD-only rows (gene_ID tmAD_<region>, convert_transmap_AD_target.R);
-## their xQTL partner is trans, so they are trans support (TransMap_ADtarget), not cis
-s[, cis_xQTL_support := ADlocusID %in% x[Method %in% cisM & !grepl('^tmAD_', gene_ID)]$ADlocusID]
+## their xQTL partner is trans, so they are trans support (TransMap_ADtarget), not cis. Only these colocalization rows are
+## left out: epigenomic fSuSiE rows can carry a borrowed tmAD_ gene ID and remain cis locus support
+s[, cis_xQTL_support := ADlocusID %in% x[Method %in% cisM & !(Method == 'AD_xQTL_colocalization' & grepl('^tmAD_', gene_ID))]$ADlocusID]
 s[, TransMap_ADtarget := ADlocusID %in% x[Method == 'transmap']$ADlocusID]
 k <- m[, .(TransMap_xQTLonly_variants = uniqueN(variant_ID), eGene_CoS = uniqueN(cos_ID[type == 'TransMap-eGene']),
            eProgram_CoS = uniqueN(cos_ID[type == 'TransMap-eProgram']), biomarker_CoS = uniqueN(cos_ID[type == 'TransMap-biomarker']),
