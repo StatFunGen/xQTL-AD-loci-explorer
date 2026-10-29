@@ -1,6 +1,6 @@
-# Released tables - 188-loci build
+# Released tables - 20260917 build
 
-Superseded by `../195_loci`, the release shown in the Explorer.
+Superseded by `../20261002`, the release shown in the Explorer.
 
 Locus-level results for the 188 candidate Alzheimer's disease loci in this
 release, produced by build_AD_locus_table.R. See the repository README for how

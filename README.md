@@ -13,10 +13,15 @@ scripts/
   gene_prio_utils.R        helper functions, including the T1-T6 tier rules
   convert_issac_coloc.R    keys single-nucleus sQTL (ISSAC) x AD colocalization exports to genes
   add_evidence_source.R    register a new evidence source (see 'Adding data')
+  check_inputs.R           checks every file in a build input list exists and matches its md5
+  build_record.R           writes the build record, <out>/_build_record/ (see Running it)
+  compare_builds.R         compares two builds table by table
+  make_processed_inputs.sh  regenerates the processed inputs from the raw exports
+  convert_*.R, drop_*.R, dedup_against_export.R  the processing steps make_processed_inputs.sh runs
   validate_outputs.R       check a release against the expectations of this build
   run_pipeline.qsub        end-to-end job script for the SCC scheduler
 config/                    metadata tables the build reads
-data/                      released tables, one directory per build
+data/                      released tables, one directory per build date
 app/                       Shiny application, runnable from a clone
 DEPENDENCIES.md            R version and package versions
 ```
@@ -50,18 +55,40 @@ export AD_LOCI_OUT=$AD_LOCI_ROOT/out_$(date +%Y%m%d)    # optional
 export AD_LOCI_CONFIG=/path/to/private/config          # optional, see Inputs
 
 Rscript scripts/build_AD_locus_table.R                 # -> $AD_LOCI_OUT
-Rscript scripts/validate_outputs.R  $AD_LOCI_OUT       # expected tables, 196 loci, 452 genes
+Rscript scripts/validate_outputs.R  $AD_LOCI_OUT       # optional count check: AD_LOCI_EXPECT_LOCI, AD_LOCI_EXPECT_GENES
 Rscript app/build_shiny_data.R $AD_LOCI_OUT app/data.csv
 ```
 
-On the SCC the same three steps run as one job. From the repository root:
+On the SCC the same steps run as one job. From the root of a clean checkout of the commit you want to build:
 
 ```bash
-qsub scripts/run_pipeline.qsub
+qsub -v AD_LOCI_INPUTS=data/build_inputs/YYYYMMDD.inputs.csv,AD_LOCI_OUT=/path/to/out_YYYYMMDD scripts/run_pipeline.qsub
 ```
 
-The job records the commit, host, time and the config it used in
-`_provenance.csv` beside the outputs, then validates the release it produced.
+The job:
+
+1. refuses to write into an output folder that already has files (override with `AD_LOCI_ALLOW_EXISTING_OUT=1`);
+2. runs `check_inputs.R`, which stops the job if any file the build will read is missing, has changed, or is not in the input list;
+3. builds and validates the tables;
+4. writes the build record (below);
+5. writes `_COMPLETE` only if the build, the validation and the build record all succeeded.
+
+Before anything runs, the job copies the input list and the config (`config/`, or `AD_LOCI_CONFIG`) into the build record; the input check, the build and the record all use those copies, so editing the originals during a run cannot change it. The three precomputed tables are read in place from `$AD_LOCI_ROOT/staging_gene_prio` (or `AD_LOCI_STAGING`) and are never written to. Scratch files go to `<out>/_scratch`.
+
+Each build has one record, `<out>/_build_record/`:
+
+| file | contents |
+|---|---|
+| `run.csv` | run id, code commit and whether the checkout had local changes, input list and its sha256, config sha256, R and package versions, host, user, time |
+| `inputs.csv` | the input list the build used (copied before the build) |
+| `config/` | the config files the build read (copied before the build), with `MD5SUMS` |
+| `registry_runtime.csv` | the registry as the build filled it in (run-time paths of intermediate tables) |
+| `check_inputs.txt`, `validation.txt` | output of the input check and of the validation |
+| `outputs_md5.csv`, `summary.csv` | checksum of every output file; headline counts |
+| `changes_since_previous.txt` | inputs, counts and outputs that differ from the build in `AD_LOCI_PREV`, when set |
+| `environment.txt` | R session information |
+
+The build uses `NSLOTS` threads. The per-file overlap step runs in parallel; set `AD_LOCI_OVERLAP_WORKERS` to change the number of workers. Set `AD_LOCI_RSCRIPT` to choose which Rscript runs the steps (default: `~/.pixi/bin/Rscript`, otherwise the one on `PATH`).
 
 The build checks every required input before starting and stops with a list of
 whatever is missing, rather than failing part-way through a long run.
@@ -86,6 +113,18 @@ the data.
 If all you want is the Explorer, neither option is needed: `app/data.csv` ships
 with the repository. See Running the app.
 
+## Versions
+
+Three things are versioned separately:
+
+| what | how |
+|---|---|
+| code, config, processing recipe | git commit (each build records its commit in `_build_record/run.csv`) |
+| accepted inputs | the dated input list in `data/build_inputs/` (path, md5, source, parents and recipe); files on project storage are not modified once listed |
+| published releases | git tag `release-YYYYMMDD` on the commit that added the release's tables to `data/`; corrections get a new tag |
+
+Work happens on short-lived branches that are merged and then deleted.
+
 ## Inputs
 
 `config/metadata_analysis.csv` is the registry of every input the build reads.
@@ -99,7 +138,6 @@ One row per exported analysis table:
 | Modality | assay or analysis modality |
 | Method | how the table was produced; selects the loader in the build |
 | Path | location of the table, relative to `$AD_LOCI_ROOT` |
-| summary_file, summary_file_ad | written by the build at run time; leave blank |
 | variant_level_method | whether the method contributes variant-level evidence |
 
 Paths under `$AD_LOCI_ROOT` refer to the FunGen-xQTL release, Synapse
@@ -123,6 +161,35 @@ open an issue on this repository or email jaempawi@bu.edu.
 
 The correlation table drives the LD-based credible-set extension, so the
 released variant sets cannot be reproduced without it.
+
+### Build input lists
+
+Each build has an input list in `data/build_inputs/`, named by build date (`YYYYMMDD.inputs.csv`). One row per file the build reads, with its path, md5, size, who provided it and where it came from. Files that were processed before use (for example, with signals removed or duplicates dropped) also list their `parents` (path and md5) and the `recipe` that produced them; `scripts/make_processed_inputs.sh` reruns every recipe and reproduces those files exactly. Rows with `role` = `reference` are lookup files rather than evidence.
+
+#### Processed inputs
+
+A few delivered files are changed before the build reads them. The original file is kept and listed as the parent; every step below is run by `scripts/make_processed_inputs.sh`.
+
+| input | what is done | why | script |
+|---|---|---|---|
+| ROSMAP AD x xQTL colocalization | remove the two TMEM106B glycoprotein (DLPFC_Klein gpQTL) signals | they are not in Ru's Oct 16 glycoQTL rerun | `drop_events.R` |
+| tpQTL x AD colocalization | remove ROSMAP eQTL outcomes that are already in the main ROSMAP export | avoid counting the same colocalization twice | `dedup_against_export.R` |
+| TransMap x AD colocalization | remove the CoS at the TMEM106B locus, group rows into colocalization sets, then write the trans part as one file per context and the AD + cis part as one ColocBoost-style file | the build reads trans evidence one context at a time, and reads cis colocalization with the other AD x xQTL files; trans is shown as annotation only and does not set tiers | `drop_cos.R`, `transmap_export_to_sets.R`, `convert_transmap_AD_target_trans.R`, `convert_transmap_AD_target.R` |
+| single-nucleus sQTL (ISSAC) x AD colocalization | map each splice site to its gene (GENCODE v32 genes and the sn-sQTL association table) | the build links colocalization to genes, and these exports carry splice sites | `convert_issac_coloc.R` |
+| glycoQTL x AD colocalization | reshape to one row per variant per colocalization set | match the format of the other AD x xQTL files | `convert_glyco_AD_coloc.R` |
+| tpQTL fine-mapping (genome-wide table) | split by context (AC, DLPFC, PCC); rows unchanged | the build reads fine-mapping one context at a time | in `make_processed_inputs.sh` |
+
+To check a set of inputs before a run:
+
+```bash
+Rscript scripts/check_inputs.R data/build_inputs/YYYYMMDD.inputs.csv $AD_LOCI_ROOT
+```
+
+To see what changed between two builds:
+
+```bash
+Rscript scripts/compare_builds.R /path/to/out_A /path/to/out_B
+```
 
 ## Adding data
 
@@ -168,6 +235,28 @@ It emits one toploci file per context with the columns the build expects:
 A source in any other format needs its own loader in `scripts/build_AD_locus_table.R`;
 follow one of the existing `Method ==` blocks.
 
+## Running on another cluster
+
+To change the code and test the change against a baseline build, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+The build reads every input through one project folder (`AD_LOCI_ROOT`). On a cluster
+where the inputs sit in different places, make that folder out of links, using the
+location column of the input list (`columbia_path` for the Columbia cluster):
+
+```bash
+pixi install                                  # R and packages at the pinned versions (pixi.toml, pixi.lock)
+Rscript scripts/make_input_root.R data/build_inputs/YYYYMMDD.inputs.csv /path/to/input_root
+AD_LOCI_STAGING=/path/to/input_root/staging_gene_prio \
+  Rscript scripts/check_inputs.R data/build_inputs/YYYYMMDD.inputs.csv /path/to/input_root config scripts/build_AD_locus_table.R
+sbatch --export=ALL,AD_LOCI_ROOT=/path/to/input_root,AD_LOCI_INPUTS=data/build_inputs/YYYYMMDD.inputs.csv,AD_LOCI_OUT=/path/to/out_YYYYMMDD,AD_LOCI_RSCRIPT=$PWD/.pixi/envs/default/bin/Rscript scripts/run_pipeline.slurm
+```
+
+`make_input_root.R` only makes links; it stops if any input is missing on that cluster.
+The input check then confirms every file is byte-identical to the input list, and
+`scripts/compare_builds.R <release> <new build>` shows whether the result matches a
+release exactly. `run_pipeline.slurm` runs the same steps as `run_pipeline.qsub` and
+needs about 64 GB of memory.
+
 ## Methodology
 
 This section describes what the build does, step by step, and the thresholds it
@@ -182,8 +271,8 @@ by two neighbouring ones.
 
 The locus set is imported, not derived here: GWAS fine-mapping is run upstream
 and is not repeated by this pipeline. The credible sets behind the current
-build come from eight AD GWAS studies fine-mapped with SuSiE-RSS EB-mix; the
-earlier 183-loci release used SuSiE-RSS version 1 on the same studies, which is
+build come from eight AD GWAS studies fine-mapped with SuSiE-RSS EB-mix (the
+final R4_L10 run); the earlier 20260514 release used SuSiE-RSS version 1 on the same studies, which is
 why the two are not nested (see `data/README.md`).
 At startup the build scans the registry
 for the analysis methods that point at per-context top-loci files and reports
@@ -221,7 +310,7 @@ counted twice under two labels.
 |---|---|
 | fine-mapping | membership in a credible set; the coverage level is recorded on each row as cs95, cs70 or cs50, and the strongest level available is kept per locus |
 | colocalization | a variant-level colocalization probability (VCP), or the SNP-level PPH4 where that is what the method reports |
-| TWAS | gene-level p < 2.5e-6, either in the selected best method or in more than half of the methods run, evaluated per gene, block, context and GWAS source |
+| TWAS | gene-level p < 2.5e-6, either in the selected best method or in at least half of the methods run, evaluated per gene, block, context and GWAS source |
 | MR | TWAS-significant, and cPIP > 0.5, and at least two credible sets, and I2 < 0.5 |
 | cTWAS | a non-empty credible set and SuSiE PIP > 0.75 |
 
@@ -241,7 +330,7 @@ builds therefore means the inputs or the filtering changed, not merely that
 something was added. The GWAS methods, sources and effect directions behind each
 variant are collapsed into parallel `|`-separated fields on the same row.
 
-### Step 5: assembling and filtering loci
+### Step 5: assembling loci
 
 A locus identifier is built from its chromosome and the first and last positions
 of its member variants, and the loci are then numbered in order. That number is
@@ -249,13 +338,26 @@ an ordinal within a single build, so the same number does not denote the same
 locus in another build and cross-build comparisons have to be made on variant
 IDs.
 
-Three filters decide what survives. A locus is kept only if it carries a GWAS
-credible set at 95% coverage or GWAS colocalization, so a locus supported only
-by a cs70 or cs50 set is dropped. A locus is kept only if its best GWAS p-value
-is below 1e-5. Each surviving locus is then represented by up to five variants
-whose GWAS PIP or VCP exceeds 0.1; where no variant clears 0.1, the single best
-one is shown, ranked on the GWAS probability first and the xQTL probability
-second. GWAS significance is reported in bands: p < 1e-5, p < 1e-6, p < 5e-8.
+Only sets that qualify on their own form loci: AD GWAS credible sets at 95%
+coverage and colocalization sets. cs70 and cs50 sets are dropped as whole sets
+before sets are merged into loci, so a weaker set cannot join a locus by
+overlapping a qualifying one.
+
+Sets are then merged by linkage disequilibrium. There are no fixed LD blocks:
+AD variants with no gap larger than 1 Mb form one window (2 Mb, ±1 Mb). Within
+each window, LD between AD variants up to 1 Mb apart is computed during the build
+from the ADSP R4 EUR LD sketch with pecotmr (`scripts/ld_sketch.R`); only the AD
+variants are read from the sketch, and no precomputed LD table is used. Two sets
+are merged when some variant pair between them has |r| > 0.8 and every pair in
+their union has |r| > 0.5, and merging repeats until no further sets join. Sets
+that share a variant end up in the same locus.
+
+There is no GWAS p-value filter: every locus built from a qualifying set is
+kept, because a locus with a marginal p-value above 1e-5 can still have a small
+joint p-value. Each locus is represented by up to five variants whose GWAS PIP
+or VCP exceeds 0.1; where no variant clears 0.1, the single best one is shown,
+ranked on the GWAS probability first and the xQTL probability second. GWAS
+significance is reported in bands: p < 5e-8, p < 1e-6, and p ≥ 1e-6.
 
 Two flags are carried per locus: whether it is supported only by proxy-based
 GWAS, and whether it falls in the APOE region (chr19:43,905,790-45,905,791),
@@ -267,11 +369,22 @@ makes fine-mapping and colocalization hard to read.
 Tiers are assigned per variant, gene and context group by the rules in the next
 section, and each gene is reported at the strongest tier it reaches anywhere.
 The build writes the locus-level summary, the variant-level membership table and
-the unified workbook to `$AD_LOCI_OUT`, together with a `_provenance.csv`
-recording the commit, host, time and the exact configuration the run used, and a
-copy of the two config tables as they stood. `scripts/validate_outputs.R` then
-checks that release: the expected tables are present, 196 loci, 452 genes, and
-the published tier distribution.
+the unified workbook to `$AD_LOCI_OUT`; what the run used (code commit, inputs,
+config, environment) goes into the build record, `_build_record/`. `scripts/validate_outputs.R` then
+checks that release: the expected tables are present, and the locus and gene
+counts match `AD_LOCI_EXPECT_LOCI` / `AD_LOCI_EXPECT_GENES` when those are set.
+
+Two further steps run after the build. `scripts/locus_pair_ld.R` reports, for
+every pair of loci, the strongest and weakest |r| between their variants
+(`locus_pair_min_abs_ld.csv.gz`), so loci that the merge rule could have joined
+are visible. `scripts/annotate_transmap_xqtl_only.R` overlaps the genome-wide
+TransMap trans-xQTL-only colocalization with the AD loci and records, per locus,
+whether xQTL support is cis only, trans only, or both.
+`scripts/locus_gene_report.R` summarizes how many genes and cell types have
+tiered support at each AD locus (T1-T4, and with T5 added; cell types counted with
+and without bulk brain tissue; myeloid support from microglia, monocytes or
+macrophages), and at how many loci each gene has tiered support, with and
+without the APOE region (`locus_gene_report.txt`, `locus_gene_support.csv.gz`).
 
 The output directory is deliberately created empty. The GWAS credible-set
 harmonization recomputes from its inputs rather than reusing a previous
@@ -281,11 +394,16 @@ files.
 ## Confidence tiers
 
 Tiers T1–T5 need localized cis-xQTL support; genes implicated only by trans-xQTL
-are reported for reference. AD GWAS credible sets (CS) come from SuSiE-rss.
-xQTL credible sets come from single-context SuSiE, regional fSuSiE, and
+are reported for reference. TransMap trans colocalization (TransMap × AD, and the genome-wide TransMap
+xQTL-only results overlapped with the AD loci) counts as trans xQTL support for a
+locus (discovery) but not toward gene tiers. AD GWAS credible sets (CS) come from SuSiE-rss.
+Gene-level xQTL credible sets come from single-context SuSiE and
 multi-context or multi-gene mvSuSiE. A 95% CS overlap is at least one variant
 shared by an AD GWAS 95% CS and an xQTL 95% CS. CoS support is AD and a cis
-molecular trait of the gene in the same ColocBoost event with a 95% CoS.
+molecular trait of the gene in the same ColocBoost event with a 95% CoS. Epigenomic
+evidence (regional fSuSiE credible sets, and fSuSiE colocalization of AD with
+methylation, histone and snATAC QTL) supports a locus but does not count toward
+gene tiers, until epigenomic targets are linked to genes in a principled way.
 Gene-level TWAS, MR and cTWAS evidence follows the regulome-wide association
 companion study. Rules are checked in order.
 
@@ -294,7 +412,7 @@ companion study. Rules are checked in order.
 | T1 | 95% CS overlap and CoS support, with MR or cTWAS |
 | T2 | 95% CS overlap or CoS support, with MR or cTWAS |
 | T3 | 95% CS overlap or CoS support, with TWAS |
-| T4 | CoS support and a matching xQTL 95% CS; no separate AD GWAS CS needed |
+| T4 | CoS support and an xQTL 95% CS of the same gene and context sharing at least one variant with the CoS; no separate AD GWAS CS needed |
 | T5 | other localized evidence: CoS alone, or an AD GWAS 95% CS overlapping an xQTL CS at 95% or 70% |
 | T6 | gene-level evidence only: TWAS, MR, or cis quantile/interaction QTL at variants in an AD GWAS 95% CS |
 

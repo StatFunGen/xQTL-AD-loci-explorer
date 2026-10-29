@@ -8,8 +8,10 @@
 ## - cis outcomes become gene evidence, renamed to the registry context of their tissue.
 ## - trans outcomes are not gene evidence here; they already reach the table as transmap
 ##   annotation. A trans-only set is written with the AD outcome alone.
-## - cis gene x context pairs already present in an existing ColocBoost export are dropped,
-##   so no colocalization is counted twice.
+## - cis gene x tissue pairs already present in an existing ColocBoost export are dropped,
+##   so no colocalization is counted twice. The two files name tissues differently, so both
+##   are reduced to gene + tissue: existing ROSMAP_<T>_<gene> / DeJager_<T>_<gene>, incoming
+##   <T>_cis_..._<gene> (T = AC, DLPFC, PCC, Exc, Inh, ...), as in dedup_against_export.R.
 ## - sets repeated across overlapping regions are written once.
 ##
 ## Rscript convert_transmap_AD_target.R <in.tsv> <out.bed> <existing_export.bed> [...]
@@ -20,7 +22,9 @@ ctx_of <- c(AC='AC_DeJager_eQTL', DLPFC='DLPFC_DeJager_eQTL', PCC='PCC_DeJager_e
             Exc='Exc_DeJager_eQTL', Inh='Inh_DeJager_eQTL', Oli='Oli_DeJager_eQTL',
             OPC='OPC_DeJager_eQTL', Ast='Ast_DeJager_eQTL', Mic='Mic_DeJager_eQTL')
 seen <- character(0)
-for (f in prev) { p <- fread(f); for (i in seq_len(nrow(p))) { e <- trimws(strsplit(p$event_ID[i], ';')[[1]]); c <- sub('_ENSG.*$', '', e); seen <- c(seen, paste(p$region_ID[i], c[!grepl('^AD_', c)])) } }
+for (f in prev) { e <- unique(trimws(unlist(strsplit(fread(f)$event_ID, ';'))))
+  e <- grep('^(ROSMAP_(AC|DLPFC|PCC)|DeJager_[A-Za-z]+)_ENSG[0-9]+$', e, value = TRUE)
+  seen <- c(seen, sub('^(ROSMAP|DeJager)_([A-Za-z]+)_(ENSG[0-9]+)$', '\\3 \\2', e)) }
 seen <- unique(seen)
 rows <- list(); n_drop <- 0L; keys <- character(0)
 for (r in seq_len(nrow(x))) {
@@ -33,7 +37,7 @@ for (r in seq_len(nrow(x))) {
   if (key %in% keys) next; keys <- c(keys, key)
   tis <- sub('_cis_.*$', '', cis); g <- regmatches(cis, regexpr('ENSG[0-9]+', cis)); cx <- unname(ctx_of[tis])
   stopifnot(!anyNA(cx))
-  ok <- !(paste(g, cx) %in% seen); n_drop <- n_drop + sum(!ok); g <- g[ok]; cx <- cx[ok]
+  ok <- !(paste(g, tis) %in% seen); n_drop <- n_drop + sum(!ok); g <- g[ok]; cx <- cx[ok]
   base <- data.table(variant_ID=v, vcp=as.numeric(w), cos_npc=x$cos_npc[r], min_npc_outcome=x$min_npc_outcome[r])
   sid <- gsub('[^A-Za-z0-9]', '_', x$cos_id[r])
   if (length(g)) {

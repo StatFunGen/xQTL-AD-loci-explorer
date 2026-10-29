@@ -42,8 +42,8 @@ source(file.path(SCRIPTS, 'gene_prio_utils.R'))
 .need <- c(
   file.path(CONFIG, c('metadata_analysis.csv','contexts_metadata.csv',
                       'columns_metadata.tsv','excel_metadata.tsv','pattern_coloring.tsv')),
-  file.path(STAGING, c('gwas_variants_cor0.5.csv.gz',
-                       'res_APOE_interaction_summ.csv.gz',
+  ROOTP('ADSP_R4_ld_sketch/ld_meta_file.tsv'), ## LD sketch metadata (ld_sketch_meta_file below)
+  file.path(STAGING, c(                       'res_APOE_interaction_summ.csv.gz',
                        'res_msex_interaction_summ.csv.gz')))
 .gone <- .need[!file.exists(.need)]
 if (length(.gone)) {
@@ -52,7 +52,6 @@ if (length(.gone)) {
        'available separately: the LD table from Synapse syn75082260, the two interaction\n       summaries on request. Point AD_LOCI_STAGING at the directory holding them.',
        call. = FALSE)
 }
-if (dir.exists(STAGING)) setwd(STAGING)
 #INPUT FILES
 metadata_analysis <- file.path(CONFIG, 'metadata_analysis.csv')
 contexts_metadata <- file.path(CONFIG, 'contexts_metadata.csv')
@@ -63,24 +62,33 @@ gp_coordinates_clean=ROOTP('gpQTL/gp_coordinates_clean.txt')
 cv2f_score_dir=ROOTP('analysis_result/cv2f/score/xqtl_feature_max_allcv2f/')
 gene_names=ROOTP('resource/references/Homo_sapiens.GRCh38.103.chr.reformatted.collapse_only.gene.region_list')
 ld_meta_file=ROOTP('resource/ADSP_R4_EUR_LD/ld_meta_file.tsv')
+ld_sketch_meta_file=ROOTP('ADSP_R4_ld_sketch/ld_meta_file.tsv') ## ADSP R4 EUR LD sketch: LD for the set extension is computed from it during the build
 gene_gtf=ROOTP('resource/references/Homo_sapiens.GRCh38.103.chr.reformatted.collapse_only.gene.gtf')
 
 
 
 out <- Sys.getenv('AD_LOCI_OUT', unset = file.path(PROJECT_ROOT, paste0('out_', format(Sys.Date(), '%Y%m%d'))))
 STAMP <- sub('^out_', '', basename(out))   # version stamp used in output filenames
-dir.create(out)
+dir.create(out, showWarnings = FALSE)
+## Inputs are read-only. Scratch files go to <out>/_scratch, and the registry the build
+## fills in as it runs (summary_file paths) is a copy in <out>/_build_record, so neither
+## the config folder nor the staging folder is ever written to.
+SCRATCH <- file.path(out, '_scratch'); dir.create(SCRATCH, showWarnings = FALSE); setwd(SCRATCH)
+RECORD <- file.path(out, '_build_record'); dir.create(RECORD, showWarnings = FALSE)
+if (!file.copy(metadata_analysis, file.path(RECORD, 'registry_runtime.csv'), overwrite = TRUE)) stop('cannot copy the registry into ', RECORD)
+metadata_analysis <- file.path(RECORD, 'registry_runtime.csv')
 
 
-## The shipped registry declares summary_file / summary_file_ad but leaves them
-## empty, so fread types them logical. A later 'summary_file := <path>' is then
+## The registry does not carry summary_file / summary_file_ad (they are run-time paths);
+## they are added here as empty character columns. If present but empty, fread types them logical. A later 'summary_file := <path>' is then
 ## coerced back to logical (NA) and the per-method overlap loop finds nothing to
 ## read. The column has to be dropped and recreated as character -- assigning to
 ## it in place would just be coerced again. Column order is restored afterwards.
 .fix_registry_types <- function(d) {
-  .nm <- names(d)
+  .nm <- copy(names(d))  # a copy: names(d) changes in place when := adds a column
   for (.pc in c('summary_file', 'summary_file_ad')) {
-    if (.pc %in% .nm && !is.character(d[[.pc]])) {
+    if (!.pc %in% .nm) { d[, (.pc) := NA_character_]; .nm <- c(.nm, .pc) }
+    else if (!is.character(d[[.pc]])) {
       d[, (.pc) := NULL]
       d[, (.pc) := NA_character_]
     }
@@ -89,6 +97,8 @@ dir.create(out)
   d[]
 }
 mtd<-fread(metadata_analysis,header = T)
+## Which file each input is (path and md5) is fixed by the build's input list and checked
+## by check_inputs.R before the build; no folder is assumed to hold the newer version.
 mtd <- .fix_registry_types(mtd)
 contexts<-fread(contexts_metadata)
 
@@ -635,7 +645,7 @@ fwrite(mtd,metadata_analysis)
 table(mtd$Method)
 # - xQTLxADs####
 res_c<-rbindlist(lapply(file.path(PROJECT_ROOT,mtd[Method=='ColocBoost'][Modality=='AD_xQTL_colocalization']$Path),
-                        function(f)fread(f)),fill=TRUE)
+                        function(f){d<-fread(f);message('AD-xQTL coloc input ',basename(f),': ',nrow(d),' rows, ',uniqueN(d$region_ID),' genes');d}),fill=TRUE)
 res_c[,gene_ID:=region_ID]
 res_c[,gwas_source:=str_extract(event_ID,'AD_[A-Za-z0-9_]+$')]
 res_c$gwas_source|>table()
@@ -673,7 +683,9 @@ res_c[is.na(context) & context_coloc %in% contexts$context, context:=context_col
 
 res_c[,chr:=seqid(variant_ID)]
 res_c[,pos:=pos(variant_ID)]
-res_c[is.na(context)]#ok
+## every colocalized xQTL event must map to a registered context, or its rows are lost later
+if(nrow(res_c[is.na(context)&!str_detect(event_ID,'^AD_')])) stop('AD-xQTL colocalization events with no matching context in contexts_metadata.csv: ',
+  paste(unique(res_c[is.na(context)&!str_detect(event_ID,'^AD_')]$context_coloc),collapse=', '),call.=FALSE)
 table(res_c[is.na(context)]$context_coloc)
 
 
@@ -714,6 +726,13 @@ fwrite(res_cad2,fp(out,'res_coloc_meta_AD.csv.gz'))
 # - fsusie Coloc####
 res_cfs<-rbindlist(lapply(file.path(PROJECT_ROOT,mtd[Method=='Coloc']$Path),function(f)fread(f)),fill=TRUE,use.names = T)
 
+# The bulk mQTL/haQTL fSuSiE export names its columns variant_id, TADB and context
+# (the snATAC export uses variant_ID, TADB_region and event_ID). Fill the shared names
+# so these rows keep their variant, region and context instead of forming an NA locus.
+for (.p in list(c('variant_ID','variant_id'),c('TADB_region','TADB'),c('event_ID','context'))) {
+  if (!.p[1] %in% names(res_cfs)) res_cfs[,(.p[1]):=NA_character_]
+  if (.p[2] %in% names(res_cfs)) res_cfs[is.na(get(.p[1]))|get(.p[1])=='',(.p[1]):=as.character(get(.p[2]))]
+}
 res_cfs[event_ID=='ROSMAP_mQTL',event_ID:='ROSMAP_DLPFC_mQTL']
 res_cfs[event_ID=='ROSMAP_haQTL',event_ID:='ROSMAP_DLPFC_haQTL']
 res_cfs[,context:=event_ID]
@@ -741,6 +760,7 @@ res_cfsf[!str_detect(variant_ID,'^chr'),variant_ID:=paste0('chr',variant_ID)]
 
 res_cfsf[,chr:=seqid(variant_ID)]
 
+stopifnot(!anyNA(res_cfsf$variant_ID), all(res_cfsf$variant_ID!='chrNA'), !anyNA(res_cfsf$chr), !anyNA(res_cfsf$context), !anyNA(res_cfsf$TADB_region))
 fwrite(res_cfsf,fp(out,'res_coloc_AD_epiQTL.csv.gz'))
 
 
@@ -818,6 +838,8 @@ if(update_gwas_cs_harmo|!file.exists(fp(out,'res_all_single_gwas_finemapping_cs5
                             res_cad[,source:='AD_meta_colocalization'],
                             res_cfsf[,source:='AD_epiQTL_colocalization']),fill=TRUE)
   all_variants<-Reduce(union,list(res_gwf$variant_ID,res_c$variant_ID,res_cad$variant_ID,res_cfsf$variant_ID))
+## AD_LOCI_DUMP_VARIANTS=<file>: write the variant set used for the LD table and stop (to build the LD table for a new input list)
+if(nzchar(Sys.getenv('AD_LOCI_DUMP_VARIANTS'))){writeLines(all_variants,Sys.getenv('AD_LOCI_DUMP_VARIANTS'));quit(save='no')}
   sum(duplicated(seqid(all_variants))&duplicated(pos(all_variants)))#ok
   
   #for 1 block
@@ -840,31 +862,54 @@ if(update_gwas_cs_harmo|!file.exists(fp(out,'res_all_single_gwas_finemapping_cs5
   #for all block
   ldmeta<-fread(ld_meta_file)
   
-  regions=bed_inter(data.table(chr=seqid(all_variants),
-                               start=pos(all_variants)-1,
-                               end=pos(all_variants),
-                               variant_ID=all_variants)[!is.na(start)],
-                    ldmeta[,.(`#chrom`,start,end,block=paste(`#chrom`,start,end,sep='_'))])[[8]]|>unique()
+  ## Regions for the LD extension (no fixed LD blocks): 2 Mb windows (+-1 Mb; Gao, Oct 28): AD variants with no gap > 1 Mb
+## are grouped. LD is computed on the fly for AD variant pairs within 1 Mb in the same window, so every pair of sets
+## that can meet the merge rule is in one window and the iterative merge is unchanged.
+.av<-unique(data.table(chr=seqid(all_variants),pos=pos(all_variants)))[!is.na(pos)][order(chr,pos)]
+.av[,cl:=cumsum(c(TRUE,diff(pos)>1e6)),by=chr]
+regions<-.av[,.(r=paste(chr[1],min(pos)-1,max(pos)+1,sep='_')),by=.(chr,cl)]$r
+message('[LD] extension windows (AD variants, gap > 1 Mb): ',length(regions))
   
   
 ## LD-based variant correlations ------------------------------------------
-## load_LD_matrix() is absent from the installed pecotmr, so the compute block
-## (load_LD_matrix over each region -> pairwise |r| > 0.5) is disabled and the
-## precomputed correlation table shipped in staging is used instead.
-variants_cors<-fread(file.path(STAGING,'gwas_variants_cor0.5.csv.gz'))
-fwrite(variants_cors,fp(out,'gwas_variants_cor0.5.csv.gz'))  ## copy into out/ for provenance
-cat('[LD] precomputed variant correlations:', nrow(variants_cors), 'pairs,',
+## Computed here, on the fly, from the ADSP R4 EUR LD sketch with pecotmr (scripts/ld_sketch.R): every pair of AD variants
+## within 1 Mb in the same extension window with |r| > 0.5. No precomputed LD table is read. AD_LOCI_LD_TABLE=<csv.gz> reads a
+## precomputed table instead (for cross-checks only). The pairs are written to out/ for provenance and the |r| review.
+.ldt<-Sys.getenv('AD_LOCI_LD_TABLE')
+if(nzchar(.ldt)){
+  variants_cors<-fread(.ldt); cat('[LD] precomputed table (cross-check mode):',.ldt,'\n')
+}else{
+  source(file.path(SCRIPTS,'ld_sketch.R'))
+  variants_cors<-ld_pairs_sketch(all_variants,ld_sketch_meta_file,regions,workers=as.integer(Sys.getenv('NSLOTS','1')),max_dist=1e6)
+  writeLines(attr(variants_cors,'not_in_panel'),fp(out,'gwas_variants_not_in_ld_sketch.txt'))
+}
+fwrite(variants_cors,fp(out,'gwas_variants_cor0.5.csv.gz'))
+cat('[LD] variant correlations:', nrow(variants_cors), 'pairs,',
     uniqueN(c(variants_cors$variant_ID, variants_cors$variant_ID2)), 'variants\n')
   
   #if r > 0.8, AND the union of the two CS have min abs(r) > 0.5
   #per region, iterate in all CS of a GWAS finding if correlation with other GWAS CS meet this condition, if it meet,
   #extend the CS 
   variants_corsf<-variants_cors[variant_ID%in%all_variants&variant_ID2%in%all_variants]
+## both orientations of every pair, one row per pair (review Q4)
+variants_corsf<-unique(rbind(variants_corsf,copy(variants_corsf)[,c('variant_ID','variant_ID2'):=.(variant_ID2,variant_ID)]),by=c('variant_ID','variant_ID2'))
+## LD extension. By default this runs scripts/extend_ad_sets.R, a faster,
+## region-indexed version of the original loop below: same merge rule, same
+## synchronous passes, identical output (checked row for row against the
+## original on the Oct 23 inputs). AD_LOCI_LEGACY_EXTENSION=1 runs the original.
+if(Sys.getenv('AD_LOCI_LEGACY_EXTENSION')!='1'){
+  source(file.path(SCRIPTS,'extend_ad_sets.R'))
+  .ext<-extend_ad_sets(res_gwf,res_cosad,regions,variants_corsf,
+                       timing_dir=fp(out,'extension_timing'))
+  gwas_new<-.ext$result
+  i<-.ext$passes
+  rm(.ext)
+}else{
   #iteration 1
   i<-1
   gwas_new<-rbindlist(lapply(regions,function(r){
     message(r)
-    res_gwff<-res_gwf[region==r]
+    res_gwff<-res_gwf[seqid(variant_ID)==seqid(r)&pos(variant_ID)>=start(r)&pos(variant_ID)<=end(r)]  ## by position (see extend_ad_sets.R)
     #get long table of the CS
     res_gwff_cs<-melt(res_gwff,measure.vars=c('cs_coverage_0.95',
                                               'cs_coverage_0.7',
@@ -894,7 +939,7 @@ cat('[LD] precomputed variant correlations:', nrow(variants_cors), 'pairs,',
             #any 0.8 between those CS
             have_highLD<-mincorr50_vars[,any(abs(r)>0.8)]
             #all variants pairs have r>0.5
-            have_all50<-nrow(mincorr50_vars)==length(other_cs)*length(vars_cs)
+            have_all50<-nrow(mincorr50_vars)==length(unique(other_cs))*length(unique(vars_cs))
             rep(have_highLD&have_all50,.N) #rep is to return TRUE or FALSE for each Variants of thise CS
           }else{
             rep(FALSE,.N)
@@ -950,7 +995,7 @@ cat('[LD] precomputed variant correlations:', nrow(variants_cors), 'pairs,',
               #any 0.8 between those CS
               have_highLD<-mincorr50_vars[,any(abs(r)>0.8)]
               #all variants pairs have r>0.5
-              have_all50<-nrow(mincorr50_vars)==length(other_cs)*length(vars_cs)
+              have_all50<-nrow(mincorr50_vars)==length(unique(other_cs))*length(unique(vars_cs))
               rep(have_highLD&have_all50,.N) #rep is to return TRUE or FALSE for each Variants of thise CS
             }else{
               rep(FALSE,.N)
@@ -981,6 +1026,7 @@ cat('[LD] precomputed variant correlations:', nrow(variants_cors), 'pairs,',
   }
   
   
+}
   message('converged after ',i,' iteration')
   gwas_new
   #recreate top_loci table
@@ -996,6 +1042,10 @@ cat('[LD] precomputed variant correlations:', nrow(variants_cors), 'pairs,',
                               ifelse(str_detect(locuscontext_id,'cs70'),'cs_coverage_0.7',
                                      'cs_coverage_0.5'))]
   gwas_newf[,cs_num:=as.numeric(str_extract(locuscontext_id,'[0-9]+$'))]
+## GWAS sets now enter the extension by LD block position, so a set spanning two LD blocks comes back as two
+## region-scoped copies; key them by their own fine-mapping block (part of locuscontext_id) so the copies rejoin.
+gwas_newf[,region:=str_extract(locuscontext_id,'chr[0-9XY]+_[0-9]+_[0-9]+(?=_cs[0-9]+_[0-9]+$)')]
+stopifnot(!anyNA(gwas_newf$region))
   
   resfp<-dcast(gwas_newf,
                study+region+variant_ID~coverage,
@@ -1258,8 +1308,8 @@ res_twas<-res_twas[,-'gwas_study']
 res_twas<-unique(res_twas[order(gene_ID,context,gwas_source,twas_pval)],by=c('gene_ID','context','gwas_source','method'))
 
 #TWAS sig: (pvalue<2.5e-6 for >50% methods OR (pvalue<2.5e-6 AND the best method))
-nmethods<-unique(res_twas$method)|>length()
-res_twas[!is.na(twas_pval),TWAS_signif:=(twas_pval<2.5e-6&(is_selected_method))|(sum(twas_pval<2.5e-6)>=nmethods/2),
+## TWAS majority counts the methods run for that gene/context/GWAS (review Q5; was the number of methods in the whole file)
+res_twas[!is.na(twas_pval),TWAS_signif:=(twas_pval<2.5e-6&(is_selected_method))|(sum(twas_pval<2.5e-6)>=uniqueN(method)/2),
          by=c('gene_ID','block','context','gwas_source')]
 res_twas[(TWAS_signif)]$gene_ID|>unique()|>length()#598 genes
 
@@ -1342,7 +1392,9 @@ table(res_mr$gwas_source)
 res_twas<-fread(fp(out,'res_AD_XWAS.csv.gz'))
 
 res_mrtwas<-merge(unique(res_mr[order(gene_ID,context,gwas_source,-num_CS,I2)],by=c('gene_ID','context','gwas_source')),
-                  unique(res_twas[!is.na(twas_pval)][order(gene_ID,context,gwas_source,twas_pval)],by=c('gene_ID','context','gwas_source')),all=TRUE)
+                  unique(res_twas[!is.na(twas_pval)][order(gene_ID,context,gwas_source,twas_pval)],by=c('gene_ID','context','gwas_source')),by=c('gene_ID','context','gwas_source'),all=TRUE)  ## explicit keys (review Q3)
+## other shared columns: keep one copy (MR value, else TWAS value)
+for(.s in sub('[.]x$','',grep('[.]x$',names(res_mrtwas),value=TRUE))) if(paste0(.s,'.y')%in%names(res_mrtwas)){ .vx<-res_mrtwas[[paste0(.s,'.x')]]; .vy<-res_mrtwas[[paste0(.s,'.y')]]; res_mrtwas[,(.s):=ifelse(is.na(.vx),.vy,.vx)]; res_mrtwas[,c(paste0(.s,'.x'),paste0(.s,'.y')):=NULL] }
 res_mrtwas[,MR_signif:=TWAS_signif&cpip>0.5&num_CS>=2&I2<0.5]
 
 res_mrtwas[(TWAS_signif)]
@@ -1423,6 +1475,12 @@ res_ad<-rbindlist(list(res_gwf[,.(variant_ID,locuscontext_id,AD_method='single_g
 res_ad[,chr:=seqid(variant_ID)]
 
 
+## keep only sets that qualify on their own: AD GWAS 95% credible sets and colocalization sets.
+## A 70%/50% set that shares a variant with a qualifying set would otherwise join its locus and
+## bring all its variants along (hitchhikers). Each fine-mapping row carries the strongest set the
+## variant belongs to, so a variant shared with a 95% set is kept through that set.
+res_ad<-res_ad[AD_method!='single_gwas_finemapping'|str_detect(credibleset,'cs95')]
+message('AD sets kept (95% CS or colocalization): ',uniqueN(res_ad$locuscontext_id))
 res_ad<-UnifyLoci(res_ad,variant_col = 'variant_ID',locus_col = 'locuscontext_id',
                   group.by = 'chr')
 setnames(res_ad,'uni.locus_id','ADlocus')
@@ -1455,6 +1513,8 @@ res_ad$ADlocus|>unique()|>length()#249
 
 #add more meaningful ADLocus name: chr-[start]-[end]
 res_ad[,is.cs95:=any(str_detect(credibleset,'cs95'),na.rm = T),by='ADlocus']
+## variant-level: the variant itself is in an AD GWAS 95% CS (incl. LD-extended members of the CS/CoS merge)
+res_ad[,is.cs95.var:=any(AD_method=='single_gwas_finemapping'&str_detect(credibleset,'cs95'),na.rm = T),by='variant_ID']
 res_ad[,ADlocusID:=paste(seqid(ADlocus),min(pos(variant_ID)),max(pos(variant_ID)),sep = '_'),by='ADlocus']
 
 res_ad[,ADlocus.n.variant.union:=length(unique(variant_ID)),by='ADlocus']
@@ -1493,8 +1553,8 @@ res_ad[is.na(gwas_zscore),gwas_source_effect:=str_extract(gwas_source,'[BWJK]')]
 res_ad[order(variant_ID,-variant_inclusion_probability),gwas_sources_effects:=paste(gwas_source_effect[!is.na(gwas_source_effect)&!duplicated(str_extract(gwas_source_effect,'[BWJK]'))],collapse =  '|'),by='variant_ID']
 
 
-# remove variants with min_pval>1e-5 or in cs70 or cs50 only
-res_adf<-res_ad[ADlocus%in%ADlocus[min_pval<1e-5]]
+## Locus p<1e-5 filter removed (2026-10-27): marginal p>1e-5 loci can still have small joint p-values, so every 95% CS / colocalization locus is kept.
+res_adf<-res_ad
 unique(res_adf$ADlocusID) #183
 #only cs95 or coloc
 res_adf<-res_adf[ADlocusID%in%ADlocusID[susie_coverage=='cs95'|str_detect(GWAS_methods,'coloc')]]
@@ -1515,6 +1575,7 @@ res_adfv<-unique(res_adf[order(variant_ID,-abs(gwas_zscore),-variant_inclusion_p
                                                                                                 gwas_sources,
                                                                                                 gwas_sources_effects,
                                                                                                 is.cs95,
+                                                                                                is.cs95.var,
                                                                                                 max_zscore,
                                                                                                 min_pval,
                                                                                                 susie_coverage,
@@ -1575,7 +1636,13 @@ mtd[file.exists(summary_file),summary_file_ad:=paste0(tools::file_path_sans_ext(
 mtd[!file.exists(summary_file)&summary_file!='']
 
 #first check if need flipping to harmonize variant_ID
-mismatches<-unique(mtd,by='summary_file')[file.exists(summary_file)&(variant_level_method),{
+## allele-mismatch scan, one independent task per Method x Modality (first file of each,
+## exactly as the grouped loop did); tasks run in parallel and are combined in group order
+.mm_rows<-unique(mtd,by='summary_file')[file.exists(summary_file)&(variant_level_method)]
+.mm_grp<-.mm_rows[,.(summary_file=summary_file[1]),by=.(Method,Modality)]
+.mm_one<-function(i){
+setDTthreads(1L)
+Method<-.mm_grp$Method[i]; summary_file<-.mm_grp$summary_file[i]
   message(Method[1])
   
   res<-fread(summary_file[1],tmpdir = ROOTP('repro/tmp/'))
@@ -1587,7 +1654,16 @@ mismatches<-unique(mtd,by='summary_file')[file.exists(summary_file)&(variant_lev
              res_adfv[,.(variant_ID,chr,pos,ADlocus,locus_index,ADlocusID)],all.x=T,by=c('chr','pos'))
   print(table(res[!is.na(variant_ID)][variant_id!=variant_ID]$context))
   res[!is.na(variant_ID)][variant_id!=variant_ID][,.(variant_id,variant_ID,context)]
-},by=c('Method','Modality')]
+}
+.par_workers<-as.integer(Sys.getenv('AD_LOCI_OVERLAP_WORKERS',Sys.getenv('NSLOTS','1')))
+.mm_res<-if(.par_workers>1L) parallel::mclapply(seq_len(nrow(.mm_grp)),.mm_one,mc.cores=.par_workers,mc.preschedule=FALSE) else lapply(seq_len(nrow(.mm_grp)),.mm_one)
+## a task counts as done only if it returned a table; a killed worker returns NULL
+.task_failed<-function(r) vapply(r,function(z) is.null(z)||inherits(z,'try-error')||!is.data.frame(z),logical(1))
+if(length(.mm_res)!=nrow(.mm_grp)||any(.task_failed(.mm_res))) stop('allele-mismatch scan failed for: ',paste(.mm_grp$summary_file[.task_failed(.mm_res)],collapse=', '),'\n',paste(unlist(.mm_res[vapply(.mm_res,inherits,logical(1),'try-error')]),collapse='\n'))
+mismatches<-rbindlist(lapply(seq_len(nrow(.mm_grp)),function(i) if(nrow(.mm_res[[i]])) cbind(.mm_grp[i,.(Method,Modality)],.mm_res[[i]])))
+## no mismatches at all: keep an empty table with the columns used below
+if(!nrow(mismatches)) mismatches<-data.table(Method=character(),Modality=character(),variant_id=character(),variant_ID=character(),context=character())
+setDTthreads(.ncores)
 mismatches<-unique(mismatches)
 unique(mismatches$variant_ID)#213/5318 variants mismatch
 unique(mismatches[,.(variant_id,variant_ID)])
@@ -1601,15 +1677,24 @@ table(mismatches[(to_flip)]$context)
 table(mismatches[(to_flip)]$Method)
 table(mismatches[(to_flip)][,paste(Method,context)])
 fwrite(mismatches,'variants_to_flip.csv.gz')
-mismatches<-fread('variants_to_flip.csv.gz')
+mismatches<-fread('variants_to_flip.csv.gz',colClasses=c(variant_id='character',variant_ID='character'))
+if(!nrow(mismatches)) mismatches[,to_flip:=logical()]
 toflip<-mismatches[(to_flip)]$variant_id
 
 #Annotate each variant level Methods table  with the AD Loci
 
-mtd[file.exists(summary_file)&(variant_level_method),{
+## locus overlap: each summary file is read, annotated and written by its own task;
+## tasks share no state (each writes only its own two files), so they run in parallel,
+## largest first. The registry is written once afterwards, as before.
+.ov_rows<-unique(mtd[file.exists(summary_file)&(variant_level_method)],by='summary_file')
+.ov_rows<-.ov_rows[order(-file.size(summary_file))]
+.ov_one<-function(i){
+setDTthreads(1L)
+Method<-.ov_rows$Method[i]; summary_file<-.ov_rows$summary_file[i]; summary_file_ad<-.ov_rows$summary_file_ad[i]
   message(Method[1])
   
-  if(!file.exists(summary_file_ad[1])|update_summary_ad){
+  ## rebuild the locus overlap whenever its source table is newer, so a rerun never reuses a stale overlap
+  if(!file.exists(summary_file_ad[1])||update_summary_ad||file.mtime(summary_file[1])>file.mtime(summary_file_ad[1])){
     res<-fread(summary_file[1],tmpdir = ROOTP('repro/tmp/'))
     res[,chr:=seqid(variant_ID,only_num = T)]
     res[,pos:=pos(variant_ID)]
@@ -1623,9 +1708,7 @@ mtd[file.exists(summary_file)&(variant_level_method),{
       effect_colsf<-intersect(effect_cols,colnames(res))
       if(length(effect_colsf)>0){
 
-          res<-rbind(res[!variant_id%in%toflip],
-                     res[variant_id%in%toflip,(effect_colsf):=lapply(.SD,function(x)-x),.SDcols = effect_colsf]
-                     )
+          res[variant_id%in%toflip,(effect_colsf):=lapply(.SD,function(x)-x),.SDcols = effect_colsf]  ## flip in place (review Q2): rbind with := duplicated the non-flipped rows
         
         
       }
@@ -1661,7 +1744,12 @@ mtd[file.exists(summary_file)&(variant_level_method),{
   }
   
   summary_file_ad[1]
-},by=c('summary_file')]
+}
+.ov_res<-if(.par_workers>1L) parallel::mclapply(seq_len(nrow(.ov_rows)),.ov_one,mc.cores=.par_workers,mc.preschedule=FALSE) else lapply(seq_len(nrow(.ov_rows)),.ov_one)
+.ov_bad<-vapply(seq_len(nrow(.ov_rows)),function(i){z<-if(i<=length(.ov_res)) .ov_res[[i]] else NULL
+  is.null(z)||inherits(z,'try-error')||!identical(z,.ov_rows$summary_file_ad[i])||!file.exists(.ov_rows$summary_file_ad[i])},logical(1))
+if(any(.ov_bad)) stop('locus overlap failed for: ',paste(.ov_rows$summary_file[.ov_bad],collapse=', '),'\n',paste(unlist(.ov_res[vapply(.ov_res,inherits,logical(1),'try-error')]),collapse='\n'))
+setDTthreads(.ncores)
 
 
 fwrite(mtd,metadata_analysis)
@@ -2109,7 +2197,7 @@ unique(res_adxubf[gwas_significance=='genome wide'][order(locus_index,top_confid
 
 res_loc<-unique(res_adxubf[!is.na(locus_index)][order(locus_index,top_confidence)],
                 by='locus_index')
-res_loc[,gwas_significance:=ifelse(gwas_significance=='ns','p<1e-5',ifelse(gwas_significance=='suggestive','p<1e-6','p<5e-8'))]
+res_loc[,gwas_significance:=ifelse(gwas_significance=='ns','p>=1e-6',ifelse(gwas_significance=='suggestive','p<1e-6','p<5e-8'))]
 ggplot(res_loc)+geom_bar(aes(x=top_confidence,fill=gwas_significance))+theme_bw()
 
 res_loc[gwas_significance=='p<5e-8']|>nrow()

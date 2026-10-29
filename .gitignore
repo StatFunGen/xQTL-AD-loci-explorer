@@ -24,3 +24,5 @@ downloads/
 # os
 .DS_Store
 app/sass-cache/
+_to_delete/
+.pixi/

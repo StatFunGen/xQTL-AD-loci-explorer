@@ -2,8 +2,11 @@
 fp<-function(...)file.path(...)
 ps<-function(...)paste0(...)
 library(data.table)
-setDTthreads(threads = 0)
-message(getDTthreads(),' threads available for data.table')
+## use the cores the job was given (SCC sets OMP_NUM_THREADS=1, which otherwise limits data.table to 1 thread)
+.ncores <- as.integer(Sys.getenv('NSLOTS', unset = '1'))
+stopifnot(!is.na(.ncores), .ncores >= 1L)
+setDTthreads(.ncores)
+message(getDTthreads(),' threads available for data.table (NSLOTS=', .ncores, ')')
 
 library(stringr)
 library(ggplot2)
@@ -172,40 +175,73 @@ SummarizeTable<-function(res_adx,
   ##  AD GWAS credible set (CS): SuSiE-rss, used at 95% coverage only.
   ##  xQTL CS: single-context, multi-context or multi-gene fine-mapping, or fSuSiE.
   ##  CoS: ColocBoost AD-xQTL colocalization, or SuSiE-coloc where ColocBoost did not run.
-  ## T1: AD 95% CS overlaps an xQTL 95% CS, and 95% CoS, with MR or causal TWAS.
-  ## T2: AD 95% CS overlaps an xQTL 95% CS, or 95% CoS, with MR or causal TWAS.
-  ## T3: AD 95% CS overlaps an xQTL 95% CS, or 95% CoS, with TWAS.
-  ## T4: 95% CoS with a matching xQTL 95% CS; no AD GWAS CS needed.
+##      Epigenomic evidence (fSuSiE credible sets and colocalization: methylation, histone, snATAC) supports the locus only
+##      and counts at gene level in no capacity, until epigenomic targets are linked to genes in a principled way.
+## T1: AD 95% CS overlaps an xQTL 95% CS, and 95% CoS, with MR or causal TWAS.
+## T2: AD 95% CS overlaps an xQTL 95% CS, or 95% CoS, with MR or causal TWAS.
+## T3: AD 95% CS overlaps an xQTL 95% CS, or 95% CoS, with TWAS.
+## MR, causal TWAS and TWAS are gene-level tests. They support an overlap when they are
+## significant for the same gene in the same context, and support a CoS when they are
+## significant for the same gene in any one of the contexts that the CoS links.
+## T4 (review Q6): 95% CoS with xQTL support of its own: an xQTL 95% CS for the same gene, in one of the context groups the CoS
+##     colocalizes (same context, any dataset), that shares at least one variant with the CoS (Oct 28 2026; was: any xQTL 95% CS for the gene
+##     at the AD locus, in any context).
   ## T5: other localized evidence: 95% CoS alone, or AD 95% CS overlapping an xQTL CS at 95% or 70%.
   ## T6: gene-level evidence only: TWAS, MR or causal TWAS, or cis quantile/interaction QTL
   ##     at a locus with an AD 95% CS.
   ## Single-nucleus sQTL and 50% credible sets give no tier (NA).
   message('summarizing per ',group.by,' the xQTL evidence for each variant')
   .fm_methods<-c('single_context_finemapping','multi_context_finemapping',
-                'multi_gene_finemapping','fSuSiE_finemapping')
-  ## trans evidence (trans fine-mapping, transmap targets) is reference only and gets no tier
+                'multi_gene_finemapping') ## fSuSiE (epigenomic) credible sets do not count at gene level
+## gene-level support, spread from the TWAS/MR/cTWAS rows to every row of the gene
+.ok<-!str_detect(res_adx$context,'^AD')&!grepl('trans',res_adx$Method)&!grepl('^tmAD_',res_adx$gene_ID)
+res_adx[,tier_causal_ctx:=FALSE]
+res_adx[,tier_twas_ctx:=FALSE]
+res_adx[,tier_causal_cos:=FALSE]
+res_adx[,tier_twas_cos:=FALSE]
+if(!'is.cs95.var'%in%names(res_adx)) stop('tier input lacks is.cs95.var (variant-level AD 95% CS flag)')  ## required tier column (review)
+res_adx[,xc_var:=FALSE]
+res_adx[,tier_xcs95_cos:=FALSE]
+res_adx[.ok,tier_causal_ctx:=any(MR_signif,na.rm = T)|any(cTWAS_signif,na.rm = T),by=c('gene_ID',group.by)]
+res_adx[.ok,tier_twas_ctx:=any(TWAS_signif,na.rm = T),by=c('gene_ID',group.by)]
+## epigenomic fSuSiE colocalization (methylation, histone, snATAC) supports the locus but sets no gene tier
+.epi<-res_adx$Method%in%'Coloc'
+message('[epigenomic] fSuSiE Coloc rows left out of tier CoS: ',sum(.epi))
+.cosrow<-.ok&res_adx$Method%in%c('AD_xQTL_colocalization','Coloc')&!is.na(res_adx$locuscontext_id)&res_adx$locuscontext_id!=''&!.epi
+res_adx[.cosrow,tier_causal_cos:=any(tier_causal_ctx),by=c('gene_ID','locuscontext_id')]
+res_adx[.cosrow,tier_twas_cos:=any(tier_twas_ctx),by=c('gene_ID','locuscontext_id')]
+## T4 (review Q6): the CoS and an xQTL 95% CS (or fSuSiE CS) of the same gene and context group share at least one
+## variant; context groups match across datasets.
+res_adx[.ok,xc_var:=any((Method%in%.fm_methods&str_detect(credibleset,'^cs95')),na.rm = T),by=c('variant_ID','gene_ID',group.by)]
+res_adx[.cosrow,tier_xcs95_cos:=any(xc_var),by=c('gene_ID',group.by,'locuscontext_id')]
+message('[T4] CoS rows with a 95% CS of the same gene and ',group.by,' sharing a variant: ',res_adx[.cosrow&tier_xcs95_cos,.N],' of ',sum(.cosrow))
+## trans evidence (trans fine-mapping, transmap targets) is reference only and gets no tier
   res_adx[!str_detect(context,'^AD')&!grepl('trans',Method)&!grepl('^tmAD_',gene_ID),confidence_lvl:={
-    .xcs95<-(Method%in%.fm_methods&str_detect(credibleset,'^cs95'))|Method%in%'fSuSiE_finemapping'
-    .ov95<-.xcs95&susie_coverage%in%'cs95'
-    .ov70<-Method%in%.fm_methods&str_detect(credibleset,'^cs70')&susie_coverage%in%'cs95'
-    .cos95<-Method%in%c('AD_xQTL_colocalization','Coloc')&
+    .xcs95<-(Method%in%.fm_methods&str_detect(credibleset,'^cs95'))
+    .ov95<-.xcs95&is.cs95.var%in%TRUE
+    .ov70<-Method%in%.fm_methods&str_detect(credibleset,'^cs70')&is.cs95.var%in%TRUE
+    .cos95<-Method%in%c('AD_xQTL_colocalization','Coloc')&!Method%in%'Coloc'&
       (is.na(credibleset)|credibleset==''|str_detect(credibleset,'^cs95'))
     .A<-any(.ov95,na.rm = T)
     .B<-any(.cos95,na.rm = T)
-    .causal<-any(MR_signif,na.rm = T)|any(cTWAS_signif,na.rm = T)
-    .twas<-any(TWAS_signif,na.rm = T)
-    .q95<-any(Method%in%c('QR','APOE interaction','msex interaction')&susie_coverage%in%'cs95',na.rm = T)
+.cC<-any(tier_causal_ctx,na.rm = T)
+.tC<-any(tier_twas_ctx,na.rm = T)
+.cB<-any((tier_causal_cos|tier_causal_ctx)[.cos95],na.rm = T)
+.tB<-any((tier_twas_cos|tier_twas_ctx)[.cos95],na.rm = T)
+.causal<-(.A&.cC)|(.B&.cB)
+.twas<-(.A&.tC)|(.B&.tB)
+    .q95<-any(Method%in%c('QR','APOE interaction','msex interaction')&is.cs95.var%in%TRUE,na.rm = T)
     if(.A&.B&.causal){
       'T1'
     }else if((.A|.B)&.causal){
       'T2'
     }else if((.A|.B)&.twas){
       'T3'
-    }else if(.B&any(.xcs95,na.rm = T)){
+}else if(.B&any(tier_xcs95_cos[.cos95],na.rm = T)){ #Q6
       'T4'
     }else if(.A|.B|any(.ov70,na.rm = T)){
       'T5'
-    }else if(.twas|.causal|.q95){
+}else if(.tC|.cC|.q95){
       'T6'
     }else{
       NA_character_
@@ -213,7 +249,8 @@ SummarizeTable<-function(res_adx,
   },
   by=c('variant_ID','gene_ID',group.by)]
   
-  res_adx[,confidence_lvl:=factor(confidence_lvl,levels = paste0('T',1:6))]
+res_adx[,c('tier_causal_ctx','tier_twas_ctx','tier_causal_cos','tier_twas_cos','xc_var','tier_xcs95_cos'):=NULL]
+res_adx[,confidence_lvl:=factor(confidence_lvl,levels = paste0('T',1:6))]
   
   if('xQTL_effect'%in%colnames(res_adx)){
     res_adx[,xQTL_effect:=NULL]
@@ -386,19 +423,20 @@ WideTable<-function(res_adx,split.by=c('context_broad2','qtl_type')){
     
     
     
-    res[,max_finemap_pip:=PIP[Method%in%c('single_context_finemapping')][context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
-    res[,max_finemap_effect:=conditional_effect[Method%in%c('single_context_finemapping')][context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
+    ## method and dataset are filtered together (filtering one after the other mis-aligned the rows)
+    res[,max_finemap_pip:=PIP[Method%in%c('single_context_finemapping')&context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
+    res[,max_finemap_effect:=conditional_effect[Method%in%c('single_context_finemapping')&context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
     
     
-    res[,max_coloc_vcp:=vcp[Method=='AD_xQTL_colocalization'][context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
-    res[,max_coloc_effect:=coef[Method=='AD_xQTL_colocalization'][context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
+    res[,max_coloc_vcp:=vcp[Method=='AD_xQTL_colocalization'&context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
+    res[,max_coloc_effect:=coef[Method=='AD_xQTL_colocalization'&context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
     
     
-    res[,max_multicontext_pip:=PIP[Method=='multi_context_finemapping'][context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
+    res[,max_multicontext_pip:=PIP[Method=='multi_context_finemapping'&context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
     res[,max_multicontext_effect:=conditional_effect[Method=='multi_context_finemapping'&context==max_dataset[1]][1],by=c('variant_ID','gene_ID')]
     
     
-    res[,max_TWAS_Z:=twas_z[which.max(abs(twas_z[context==max_dataset[1]]))],by=c('gene_ID')]
+    res[,max_TWAS_Z:={.z<-twas_z[context==max_dataset[1]]; if(any(!is.na(.z))) .z[which.max(abs(.z))] else as.numeric(NA)},by=c('gene_ID')]
     
     res[,max_MR:=any(MR_signif[context==max_dataset[1]]),by=c('gene_ID')]
     
