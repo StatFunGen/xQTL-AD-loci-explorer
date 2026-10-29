@@ -397,12 +397,13 @@ Tiers T1–T5 need localized cis-xQTL support; genes implicated only by trans-xQ
 are reported for reference. TransMap trans colocalization (TransMap × AD, and the genome-wide TransMap
 xQTL-only results overlapped with the AD loci) counts as trans xQTL support for a
 locus (discovery) but not toward gene tiers. AD GWAS credible sets (CS) come from SuSiE-rss.
-xQTL credible sets come from single-context SuSiE, regional fSuSiE, and
+Gene-level xQTL credible sets come from single-context SuSiE and
 multi-context or multi-gene mvSuSiE. A 95% CS overlap is at least one variant
 shared by an AD GWAS 95% CS and an xQTL 95% CS. CoS support is AD and a cis
-molecular trait of the gene in the same ColocBoost event with a 95% CoS. fSuSiE
-colocalization of AD with bulk methylation or histone QTL also counts as CoS
-support, for the genes its fSuSiE region is linked to.
+molecular trait of the gene in the same ColocBoost event with a 95% CoS. Epigenomic
+evidence (regional fSuSiE credible sets, and fSuSiE colocalization of AD with
+methylation, histone and snATAC QTL) supports a locus but does not count toward
+gene tiers, until epigenomic targets are linked to genes in a principled way.
 Gene-level TWAS, MR and cTWAS evidence follows the regulome-wide association
 companion study. Rules are checked in order.
 
