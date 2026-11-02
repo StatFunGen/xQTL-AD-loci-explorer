@@ -1980,11 +1980,15 @@ res_adx<-rbind(res_adx[!Method%in%epi_methods|is.na(Method)],
                res_adx[Method%in%epi_methods]|>split(by=c('locus_index','context'))|>lapply(function(epi){
                  epivars<-epi$variant_ID
                  genes_overlapping_epi<-res_adx[Method%in%geneqtl_methods][variant_ID%in%epivars]$gene_name|>unique()
-                 
+                 genes_overlapping_epi<-genes_overlapping_epi[!is.na(genes_overlapping_epi)&genes_overlapping_epi!='']
+                 ## epigenomic evidence supports the locus without a gene (Gao, 2026-10-29): with no gene to borrow,
+                 ## keep the rows with an empty gene instead of dropping them (fSuSiE-only loci lost their evidence)
+                 if(!length(genes_overlapping_epi)) return(unique(epi[,gene_name:=NA_character_]))
                  epi_genes<-rbindlist(lapply(genes_overlapping_epi,function(g)epi[,gene_name:=g]|>unique()))
                  return(epi_genes)
                })|>rbindlist())
-res_adx[,gene_ID:=gene_ID[!is.na(gene_ID)][1],by='gene_name']
+## fill gene_ID within a named gene only: rows with no gene name must not share one gene_ID (it was a TransMap tmAD_ placeholder)
+res_adx[!is.na(gene_name),gene_ID:=gene_ID[!is.na(gene_ID)][1],by='gene_name']
 
 res_adx[locus_index==1]
 table(res_adx$context_broad)
