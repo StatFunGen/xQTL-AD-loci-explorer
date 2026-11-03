@@ -1,6 +1,6 @@
 # Released tables
 
-Six builds are published here. They are kept in separate directories because the
+Seven builds are published here. They are kept in separate directories because the
 same workbook filename has been used across builds, and the `202605` / `202609`
 suffix is the build version of the summary script, not the number of loci.
 
@@ -11,7 +11,8 @@ suffix is the build version of the summary script, not the number of loci.
 | 20261002/ | earlier release | unified_AD_loci_xQTL_summary_20261002.xlsx | 5,016 | 195 |
 | 20261022/ | earlier release | unified_AD_loci_xQTL_summary_20261022.xlsx | 5,874 | 196 |
 | 20261028/ | earlier release | unified_AD_loci_xQTL_summary_20261028.xlsx | - | - |
-| 20261029/ | current release, shown in the Explorer | unified_AD_loci_xQTL_summary_20261029.xlsx | - | - |
+| 20261029/ | earlier release | unified_AD_loci_xQTL_summary_20261029.xlsx | - | - |
+| 20261102/ | current release, shown in the Explorer | unified_AD_loci_xQTL_summary_20261102.xlsx | - | - |
 
 Counts are measured from the `Gene Locus table` sheet of each workbook and agree
 on both `locus index` and `ADlocus`.
@@ -92,6 +93,18 @@ Same inputs (`build_inputs/20261028.2.inputs.csv`) and the same loci; only gene 
 | epigenomic evidence (fSuSiE methylation, histone and snATAC credible sets and colocalization) | counts toward gene tiers, through genes borrowed from overlapping eQTL/sQTL signals | supports loci only; no gene-level contribution |
 
 The 20261028 build also fixed the bulk methylation/histone fSuSiE colocalization rows, which earlier builds had grouped into an empty `NA_NA_NA` locus. `20261029/ADlocus_name_map_20261022_to_20261029.csv` maps each locus to its 20261022 name.
+
+## What differs between 20261029 and 20261102
+
+Same inputs (`build_inputs/20261028.2.inputs.csv`) and the same loci.
+
+| | 20261029 | 20261102 |
+|---|---|---|
+| marginal sn-sQTL association results | included in the xQTL table (no tier) | removed; sn-sQTL enters only through the sn-sQTL x AD colocalization |
+| epigenomic rows with no overlapping gene-level xQTL | dropped by the gene-borrowing step | kept with an empty gene, so loci found only by fSuSiE colocalization keep that evidence |
+| TransMap x AD colocalization with no cis gene | counted as cis xQTL support | counted as trans xQTL support only |
+
+Genes whose only support was marginal sn-sQTL no longer appear. `20261102/ADlocus_name_map_20261022_to_20261102.csv` maps each locus to its 20261022 name.
 
 Derived from ADSP/NIAGADS study data. Use of the underlying controlled-access
 resources is governed by their own data use terms.
