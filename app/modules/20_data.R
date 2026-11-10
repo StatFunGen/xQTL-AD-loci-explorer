@@ -67,6 +67,11 @@ genes <- sort(unique(na.omit(dat$gene)))
 # the 221-locus release. Derive them from `dat` for the same reason the build
 # stamp is derived: the narrative must not be able to contradict the table.
 .gt      <- unique(dat[!is.na(dat$gene) & dat$gene != "", c("gene","top_confidence")])
+# one row per gene: keep its best tier, so a gene listed under two tiers is counted once
+.gt      <- .gt[order(match(as.character(.gt$top_confidence), c("T1","T2","T3","T4","T5","T6"))), , drop = FALSE]
+if (anyDuplicated(.gt$gene[!is.na(.gt$top_confidence)]))
+  warning("some genes have more than one top_confidence; counting each gene once at its best tier")
+.gt      <- .gt[!duplicated(.gt$gene), , drop = FALSE]
 tier_n   <- table(factor(as.character(.gt$top_confidence),
                          levels = c("T1","T2","T3","T4","T5","T6")))
 TIERN    <- function(k) format(as.integer(tier_n[[k]]), big.mark = ",")
@@ -79,6 +84,7 @@ n_loci_total <- length(loci)
 N_VAR_RELEASE <- local({
   f <- "downloads/AD_locus_variants_release.csv.gz"
   n <- if (file.exists(f)) tryCatch(nrow(readr::read_csv(f, col_select = 1, show_col_types = FALSE, progress = FALSE)), error = function(e) NA_integer_) else NA_integer_
+  if (is.na(n)) warning("could not count rows in ", f, "; the Download tab will show no row count")
   if (is.na(n)) "" else format(n, big.mark = ",")
 })
 n_loci_qtl   <- length(unique(dat$ADlocus[!is.na(dat$gene) & dat$gene != ""]))

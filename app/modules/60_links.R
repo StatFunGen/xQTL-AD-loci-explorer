@@ -123,7 +123,7 @@ TIER_DEFS <- c(
   T1 = "MR or cTWAS support, plus both an AD-xQTL 95% credible set overlap and a 95% colocalization",
   T2 = "MR or cTWAS support, plus an AD-xQTL 95% credible set overlap or a 95% colocalization",
   T3 = "TWAS support, plus an AD-xQTL 95% credible set overlap or a 95% colocalization",
-  T4 = "A 95% colocalization that shares a variant with an xQTL 95% credible set for the same gene and context, without TWAS, MR or cTWAS support",
+  T4 = "A 95% colocalization that shares a variant with an xQTL 95% credible set for the same gene and context, without the TWAS, MR or cTWAS evidence that T1 to T3 need",
   T5 = "Other localized evidence: a 95% colocalization alone, or an AD 95% credible set overlapping an xQTL credible set at 95% or 70% coverage",
   T6 = "Gene-level evidence only: TWAS, MR or cTWAS, or cis quantile or interaction QTL at variants in an AD 95% credible set")
 
