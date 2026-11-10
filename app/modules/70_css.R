@@ -22,7 +22,7 @@ app_css <- tags$head(deeplink_js, tags$style(HTML("
    No double quotes in this block: it lives inside an R string. */
 :root{
   --bg:#f4f5f6; --surface:#ffffff; --text:#233947; --muted:#5c6b75;
-  --faint:#5c6b75; --line:#dde2e6; --rule:#edf0f2; --accent:#2a78d6; --cta:#da532c;
+  --faint:#5c6b75; --line:#dde2e6; --rule:#edf0f2; --accent:#1f66b8; --cta:#c2461f;
   --bs-body-bg:#fcfcfb; --bs-body-color:#0b0b0b;
   --bs-card-bg:#ffffff; --bs-border-color:#e1e0d9;
   --bs-tertiary-bg:#f5f5f3; --bs-secondary-bg:#f0efec;
