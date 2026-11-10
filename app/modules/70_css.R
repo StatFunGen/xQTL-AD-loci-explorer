@@ -193,7 +193,7 @@ options(DT.options = list(language = list(
 # and labels, sentence-case labels at a readable size, and one style for table
 # length controls. Plot colors, tier colors and the orange locus mark are unchanged.
 polish_css <- tags$style(HTML(paste0(
-  ":root{--navy:#19354a;--teal:#237c78;--accent:#237c78;--cta:#237c78}",
+  ":root{--navy:#19354a;--teal:#1f716d;--accent:#1f716d;--cta:#1f716d}",  # shared teal, one step darker so small text passes WCAG AA on the grey panels
   # titles and brand in the body font, navy
   ".brand-b,.dc-h1{font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif!important;letter-spacing:-.015em}",
   ".brand-b{font-weight:650}",
@@ -237,5 +237,9 @@ polish_css <- tags$style(HTML(paste0(
   ".lt-sb .dc-searchbtn{padding:8px 18px!important;flex:0 0 auto}",
   "@media (max-width:640px){#gp_head{flex:0 0 auto!important;height:auto!important;align-content:flex-start}}",
   # headings that receive focus when a tab opens show no focus box (as before)
-  "[tabindex='-1']:focus,[tabindex='-1']:focus-visible{outline:none!important;box-shadow:none!important}"
-)))
+  "[tabindex='-1']:focus,[tabindex='-1']:focus-visible{outline:none!important;box-shadow:none!important}",
+  # phones and touch: readable hero, larger help and clear targets, release notes as a disclosure
+  ".dc-lede{text-align:left;max-width:68ch;margin-left:auto;margin-right:auto}",
+  "details.dc-new{margin-top:14px}details.dc-new>summary{cursor:pointer;padding:6px 0;list-style-position:inside}",
+  ".ibub{position:relative}.ibub::after{content:'';position:absolute;inset:-8px}",
+  ".fl-clear,.vs-clear{display:inline-flex;align-items:center;min-height:32px;padding:0 8px}")))

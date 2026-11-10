@@ -816,12 +816,6 @@ ui <- page_navbar(
             "contexts, molecular modalities and evidence tier behind each link. Some loci do not ",
             "reach genome-wide significance on their own; the Loci tab marks them. ",
             "Start with a gene symbol, Ensembl ID, rsID or genomic region."),
-          div(class = "note", style = "text-align:left",
-            tags$b("New in this release"),
-            tags$ul(style = "margin:6px 0 0;padding-left:18px",
-              tags$li("AD GWAS fine-mapping from the final R4 run, with LD computed from the ADSP R4 reference panel and no p-value filter."),
-              tags$li("Methylation, histone and chromatin accessibility (fSuSiE) evidence and TransMap colocalization now support loci, not genes."),
-              tags$li("Updated tier rules: T1 to T5 need an AD GWAS 95% credible set or a 95% colocalization. Trans evidence is shown for reference and sets no tier."))),
           div(class = "dc-searchwrap",
             selectizeInput("hero_search", NULL, choices = NULL, width = "100%",
               options = list(placeholder = "Search gene, Ensembl ID, rsID or genomic region",
@@ -833,6 +827,12 @@ ui <- page_navbar(
             actionLink("ex_rs", "rs429358", class = "dc-chip dc-mono"),
             actionLink("ex_region", "chr2:127088929-127118906", class = "dc-chip dc-mono"),
             actionLink("ex_ensg", "ENSG00000130203", class = "dc-chip dc-mono")),
+          tags$details(class = "note dc-new", style = "text-align:left",
+            tags$summary(tags$b("New in this release")),
+            tags$ul(style = "margin:6px 0 0;padding-left:18px",
+              tags$li("AD GWAS fine-mapping from the final R4 run, with LD computed from the ADSP R4 reference panel and no p-value filter."),
+              tags$li("Methylation, histone and chromatin accessibility (fSuSiE) evidence and TransMap colocalization now support loci, not genes."),
+              tags$li("Updated tier rules: T1 to T5 need an AD GWAS 95% credible set or a 95% colocalization. Trans evidence is shown for reference and sets no tier."))),
           div(class = "dc-counts",
             div(div(class = "dc-count-n dc-mono", format(n_loci_total, big.mark = ",")),
                 div(class = "dc-count-l", "AD loci")),
@@ -1641,8 +1641,17 @@ ui <- page_navbar(
           uiOutput("doc_assays"),
           div(class = "dc-exp", style = "margin-top:8px",
               downloadLink("dl_doc_assays", "CSV", class = "dc-btn"))),
-      )))
+      ))),
 
+  # Same four sites, in the same order, as the Resources and Protocol top bars
+  nav_spacer(),
+  nav_menu(
+    "FunGen-xQTL sites", icon = icon("compass"), align = "right",
+    nav_item(tags$a(class = "dropdown-item", href = "https://adsp-fgc.niagads.org/xqtl-resources/", "Resources")),
+    nav_item(tags$a(class = "dropdown-item", href = "https://statfungen.github.io/xqtl-protocol/", "Protocol")),
+    nav_item(tags$a(class = "dropdown-item active", href = "#", `aria-current` = "page", "Explorer (this site)")),
+    nav_item(tags$a(class = "dropdown-item", href = "https://xqtl.niagads.org/", title = "NIAGADS site", "xQTL Atlas \u2197"))
+  )
 )
 
 # ---- server ----------------------------------------------------------------
