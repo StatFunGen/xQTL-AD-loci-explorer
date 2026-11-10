@@ -592,6 +592,7 @@ a.brand:hover .brand-b{color:var(--cta)}
 .brand-b{font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-size:18px;font-weight:600;letter-spacing:-.005em;line-height:1}
 .cb-grid{grid-template-columns:168px minmax(160px,1fr) 64px !important;min-width:420px !important}
 @media (max-width:1100px){.dc-grid3{grid-template-columns:repeat(2,1fr)}}
+.dc-cell-c,.tour-launch,.foot-col a,.dl-foot a{display:inline-block;padding:6px 0}
 @media (max-width:820px){
 .dc-hero{padding:44px 18px 34px}
 .dc-h1{font-size:30px}
