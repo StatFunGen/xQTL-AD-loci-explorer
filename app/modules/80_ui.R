@@ -794,7 +794,7 @@ app_footer <- tags$footer(class = "site-footer",
           "© 2026 StatFunGen Lab, Columbia University. All rights reserved.")))
 
 ui <- page_navbar(
-  id = "nav",
+  id = "nav", lang = "en",
   title = tags$a(id = "brand_home", href = "#", class = "brand action-button",
               img(src = "logo_fungen.png", class = "brand-logo", alt = "FunGen-AD"),
               span(class = "brand-sep"), span(class = "brand-b", "AD Loci Explorer")),
@@ -1018,7 +1018,7 @@ ui <- page_navbar(
         div(class = "dc-sechead",
           div(
             div(style = "display:flex;align-items:baseline;gap:12px;flex-wrap:wrap",
-              h3(class = "dc-h2", style = "font-size:17px", "Regional evidence"),
+              h2(class = "dc-h2", style = "font-size:17px", "Regional evidence"),
               span(class = "dc-mono", style = "font-size:12px;color:var(--muted)",
                    textOutput("rv_win", inline = TRUE))),
             div(class = "dc-figc",
