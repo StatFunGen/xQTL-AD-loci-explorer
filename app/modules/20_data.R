@@ -75,4 +75,10 @@ n_t1_t6  <- sum(as.integer(tier_n[c("T1","T2","T3","T4","T5","T6")]))
 n_t6    <- sum(as.integer(tier_n[c("T6")]))
 n_t1_t4  <- sum(as.integer(tier_n[c("T1","T2","T3","T4")]))
 n_loci_total <- length(loci)
+# rows in the released variant-level table, counted from the file the Download tab serves
+N_VAR_RELEASE <- local({
+  f <- "downloads/AD_locus_variants_release.csv.gz"
+  n <- if (file.exists(f)) tryCatch(nrow(readr::read_csv(f, col_select = 1, show_col_types = FALSE, progress = FALSE)), error = function(e) NA_integer_) else NA_integer_
+  if (is.na(n)) "" else format(n, big.mark = ",")
+})
 n_loci_qtl   <- length(unique(dat$ADlocus[!is.na(dat$gene) & dat$gene != ""]))
