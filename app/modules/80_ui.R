@@ -287,7 +287,7 @@ a:hover{color:var(--cta)}
 .dc-sechead{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:12px;gap:24px;flex-wrap:wrap}
 .dc-h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
 .dc-sub{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.55}
-.dc-grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-top:20px}
+.dc-grid3{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:20px}
 .dc-cell{background:#fff;padding:24px 24px 22px;display:flex;flex-direction:column;gap:9px;min-height:132px}
 .dc-cell-t{font-size:16px;font-weight:600;letter-spacing:-.01em}
 .dc-cell-b{font-size:13px;line-height:1.6;color:var(--muted)}
@@ -591,6 +591,7 @@ a.brand:hover .brand-b{color:var(--cta)}
 .rb-b .rb-o{background:none;color:var(--muted);padding:0;justify-content:flex-start}
 .brand-b{font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-size:18px;font-weight:600;letter-spacing:-.005em;line-height:1}
 .cb-grid{grid-template-columns:168px minmax(160px,1fr) 64px !important;min-width:420px !important}
+@media (max-width:1100px){.dc-grid3{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:820px){
 .dc-hero{padding:44px 18px 34px}
 .dc-h1{font-size:30px}
@@ -814,11 +815,12 @@ ui <- page_navbar(
             "contexts, molecular modalities and evidence tier behind each link. Some loci do not ",
             "reach genome-wide significance on their own; the Loci tab marks them. ",
             "Start with a gene symbol, Ensembl ID, rsID or genomic region."),
-          div(class = "note",
-            "New in this release: AD GWAS fine-mapping from the final R4 run, LD computed from the ADSP R4 reference panel with no p-value filter, ",
-        "methylation, histone and chromatin accessibility (fSuSiE) evidence and TransMap colocalization as support for loci, not genes. ",
-            "Evidence tiers follow updated rules: T1 to T5 need an AD GWAS 95% credible set or a 95% colocalization, ",
-            "and trans evidence is shown for reference but does not set a tier."),
+          div(class = "note", style = "text-align:left",
+            tags$b("New in this release"),
+            tags$ul(style = "margin:6px 0 0;padding-left:18px",
+              tags$li("AD GWAS fine-mapping from the final R4 run, with LD computed from the ADSP R4 reference panel and no p-value filter."),
+              tags$li("Methylation, histone and chromatin accessibility (fSuSiE) evidence and TransMap colocalization now support loci, not genes."),
+              tags$li("Updated tier rules: T1 to T5 need an AD GWAS 95% credible set or a 95% colocalization. Trans evidence is shown for reference and sets no tier."))),
           div(class = "dc-searchwrap",
             selectizeInput("hero_search", NULL, choices = NULL, width = "100%",
               options = list(placeholder = "Search gene, Ensembl ID, rsID or genomic region",
@@ -834,7 +836,7 @@ ui <- page_navbar(
             div(div(class = "dc-count-n dc-mono", format(n_loci_total, big.mark = ",")),
                 div(class = "dc-count-l", "AD loci")),
             div(div(class = "dc-count-n dc-mono", format(n_t1_t6, big.mark = ",")),
-                div(class = "dc-count-l", info("genes assigned T1-T6", "Genes with an evidence tier from T1 to T6 at one or more AD loci, as in the gene tier file in the Download tab. T6 genes have gene-level evidence only."))),
+                div(class = "dc-count-l", info("genes with a tier (T1 to T6)", "Genes with an evidence tier from T1 to T6 at one or more AD loci, as in the gene tier file in the Download tab. T6 genes have gene-level evidence only."))),
             div(div(class = "dc-count-n dc-mono", textOutput("kpi_pct", inline = TRUE)),
                 div(class = "dc-count-l", info("loci with evidence", "Share of AD loci with at least one target gene supported by cis or trans xQTL evidence, including quantile QTL."))),
             div(div(class = "dc-count-n dc-mono", textOutput("kpi_trans", inline = TRUE)),
@@ -1554,7 +1556,7 @@ ui <- page_navbar(
           "and contexts, shown with the method that produced it."),
         accordion_panel("Significance",
           "From the minimum GWAS p-value. Genome wide below 5e-8, suggestive below 1e-6, otherwise NS."),
-        accordion_panel("Evidence tier (T1-T6)",
+        accordion_panel("Evidence tier (T1 to T6)",
           "Best evidence tier of the gene. T1 to T5 have localized AD-xQTL support, strongest first. ",
           "T6 means gene-level evidence only, without localized AD-xQTL support. No gene mapped marks ",
           "a variant without an xQTL target gene."),
