@@ -799,7 +799,7 @@ ui <- page_navbar(
               img(src = "logo_fungen.png", class = "brand-logo", alt = "FunGen-AD"),
               span(class = "brand-sep"), span(class = "brand-b", "AD Loci Explorer")),
   theme = app_theme, fillable = FALSE,
-  header = tagList(app_css, extra_css, nav_js, a11y_js, vs_css, mob_css, conn_js, cue_js, tour_js, ax_css, ax_js, tbl_js, igv_a11y_js, fig_js, layout_css, polish_css, uiOutput("view_strip"), igv_head,
+  header = tagList(app_css, extra_css, nav_js, a11y_js, vs_css, mob_css, conn_js, cue_js, tour_js, ax_css, ax_js, tbl_js, rowkey_js, igv_a11y_js, fig_js, layout_css, polish_css, uiOutput("view_strip"), igv_head,
                    NULL),
   footer = app_footer,
 
