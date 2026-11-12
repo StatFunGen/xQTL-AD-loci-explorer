@@ -237,5 +237,8 @@ polish_css <- tags$style(HTML(paste0(
   ".lt-sb .dc-searchbtn{padding:8px 18px!important;flex:0 0 auto}",
   "@media (max-width:640px){#gp_head{flex:0 0 auto!important;height:auto!important;align-content:flex-start}}",
   # headings that receive focus when a tab opens show no focus box (as before)
-  "[tabindex='-1']:focus,[tabindex='-1']:focus-visible{outline:none!important;box-shadow:none!important}"
+  "[tabindex='-1']:focus,[tabindex='-1']:focus-visible{outline:none!important;box-shadow:none!important}",
+  # touch: help icons and Clear links get a larger tap area without changing their look
+  ".ibub{position:relative}.ibub::after{content:'';position:absolute;inset:-8px}",
+  ".fl-clear,.vs-clear{display:inline-flex;align-items:center;min-height:32px;padding:0 8px}"
 )))
