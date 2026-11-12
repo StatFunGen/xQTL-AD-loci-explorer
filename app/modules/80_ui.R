@@ -432,7 +432,7 @@ a:hover{color:var(--cta)}
 .lt-ct{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;line-height:1.35;color:var(--text);white-space:nowrap}
 .lt-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
 .lt-ebar-w{display:inline-flex;flex-direction:column;gap:4px}
-.lt-etxt{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;line-height:1.3;color:var(--muted);white-space:nowrap}
+.lt-etxt{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;line-height:1.3;color:var(--muted);max-width:150px}
 .lt-na{color:var(--faint)}
 .lt-bar-w{display:flex;width:150px}
 .lt-ebar{display:flex;width:150px;height:8px;background:#f0f2f4}
