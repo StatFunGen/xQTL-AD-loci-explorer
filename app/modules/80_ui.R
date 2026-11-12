@@ -125,7 +125,7 @@ extra_css <- tags$style(HTML('
 .hero-stats{display:flex;justify-content:center;gap:30px;flex-wrap:wrap;color:#52514e;font-size:14px;margin-bottom:26px}
 .hero-stats strong{color:#0b0b0b;font-weight:600;font-variant-numeric:tabular-nums}
 .hero-links{display:flex;justify-content:center;gap:28px;font-size:14px}
-.hero-links a{color:#2a78d6;text-decoration:none}
+.hero-links a{color:var(--accent);text-decoration:none}
 .hero-links a:hover{text-decoration:underline}
 .sheet{max-width:1080px;margin:54px auto 0 auto;padding:0 16px 40px 16px}
 .sheet-head{display:flex;align-items:baseline;justify-content:space-between;gap:24px;flex-wrap:wrap;border-top:1px solid #e1e0d9;padding-top:22px;margin-bottom:28px}
@@ -137,20 +137,20 @@ extra_css <- tags$style(HTML('
 .locus-pick{min-width:240px}
 .locus-bar .locus-record{flex:1 1 380px}
 .tierkey,.evkey{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:12px;color:#52514e;margin:0 0 12px 0}
-.keylab{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#898781;margin-right:4px}
+.keylab{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:4px}
 .tierkey .tk{display:inline-flex;align-items:center}
 .tchip{display:inline-block;min-width:24px;text-align:center;border-radius:3px;padding:2px 6px;font-size:11px;font-weight:600}
 .ev{font-size:12px;font-weight:600}
 .ev-yes{color:#0ca30c}
-.ev-ns{color:#898781;font-weight:500}
+.ev-ns{color:var(--muted);font-weight:500}
 .ev-na{color:#b9b7b0}
-.keynote{color:#898781}
+.keynote{color:var(--muted)}
 .viewbar{margin-bottom:12px}
 .viewbar .radio-inline{font-size:13px;margin-right:18px}
 .doc{max-width:1160px;margin:34px auto 64px auto;padding:0 16px;display:flex;gap:56px;align-items:flex-start}
 .doc-toc{position:sticky;top:70px;flex:0 0 190px;font-size:13px;line-height:1.95}
 .doc-toc a{color:#52514e;text-decoration:none;display:block}
-.doc-toc a:hover{color:#2a78d6;text-decoration:underline}
+.doc-toc a:hover{color:var(--accent);text-decoration:underline}
 .doc-toc .keylab{margin-bottom:8px}
 .doc-body{flex:1 1 auto;min-width:0;max-width:760px}
 .doc-sec{border-top:1px solid #e1e0d9;padding:30px 0 6px 0;background:transparent;border-radius:0;box-shadow:none}
@@ -170,47 +170,47 @@ extra_css <- tags$style(HTML('
 .start-step b{font-size:14px;color:#0b0b0b}
 .start-step p{font-size:13px;line-height:1.6;color:#52514e;margin:4px 0 0 0}
 .start-ex{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
-.start-ex a{font-size:13px;color:#2a78d6;text-decoration:none;border:1px solid #e1e0d9;border-radius:3px;padding:3px 10px}
+.start-ex a{font-size:13px;color:var(--accent);text-decoration:none;border:1px solid #e1e0d9;border-radius:3px;padding:3px 10px}
 .start-ex a:hover{border-color:#2a78d6}
-.start-note{font-size:12px;color:#898781;line-height:1.6;max-width:70ch}
+.start-note{font-size:12px;color:var(--muted);line-height:1.6;max-width:70ch}
 .tn-row{border-top:1px solid #f0efec;padding:12px 0}
 .tn-row:first-child{border-top:none}
 .tn-src{font-size:15px;font-weight:600;color:#0b0b0b;margin-bottom:5px}
-.tn-count{font-weight:400;font-size:12px;color:#898781;margin-left:10px}
+.tn-count{font-weight:400;font-size:12px;color:var(--muted);margin-left:10px}
 .tn-mods{margin-bottom:7px}
 .tn-mod{display:inline-block;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#52514e;background:#f0efec;border-radius:3px;padding:2px 7px;margin-right:6px}
 .tn-tg{display:flex;flex-wrap:wrap;gap:6px}
-.tn-chip{font-size:12px;color:#2a78d6;border:1px solid #e1e0d9;border-radius:3px;padding:2px 7px}
+.tn-chip{font-size:12px;color:var(--accent);border:1px solid #e1e0d9;border-radius:3px;padding:2px 7px}
 .brand-logo{height:34px;width:auto;margin-right:12px;vertical-align:middle}
 .orgs{max-width:900px;margin:0 auto 64px auto;padding:24px 16px 0 16px;border-top:1px solid #e1e0d9;display:flex;gap:44px;align-items:center;flex-wrap:wrap}
 .orgs img{height:34px;width:auto}
 .orgs .keylab{flex:1 1 100%;margin-bottom:4px}
-.panel-note{font-size:12.5px;line-height:1.6;color:#898781;max-width:70ch;margin:-4px 0 12px 0}
+.panel-note{font-size:12.5px;line-height:1.6;color:var(--muted);max-width:70ch;margin:-4px 0 12px 0}
 .brand-b,.hero-title,.locus-title,.doc-h{color:#0d1b2a}
 .navbar{border-bottom:2px solid #0d1b2a}
 .site-footer{margin-top:56px;padding:34px 16px 44px 16px;background:#fbfbf9}
 .foot-in{max-width:1080px;margin:0 auto;display:flex;gap:48px;flex-wrap:wrap}
 .foot-col{flex:1 1 210px;min-width:190px}
-.foot-h{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#898781;margin-bottom:9px}
+.foot-h{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
 .foot-t{font-size:12.5px;line-height:1.65;color:#52514e;margin-bottom:3px}
-.foot-col a{display:block;font-size:12.5px;color:#2a78d6;text-decoration:none;margin-bottom:3px}
+.foot-col a{display:block;font-size:12.5px;color:var(--accent);text-decoration:none;margin-bottom:3px}
 .foot-col a:hover{text-decoration:underline}
 .foot-logos{max-width:1080px;margin:28px auto 0 auto;display:flex;gap:34px;align-items:center;flex-wrap:wrap}
 .foot-logos img{height:30px;width:auto}
 .hero-ex{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;margin:-6px 0 24px 0;font-size:13px}
-.hero-ex-lab{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#898781;margin-right:2px}
-.hero-ex a{color:#2a78d6;text-decoration:none;border-bottom:1px solid #cfe0f5}
+.hero-ex-lab{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.hero-ex a{color:var(--accent);text-decoration:none;border-bottom:1px solid #cfe0f5}
 .hero-ex a:hover{border-bottom-color:#2a78d6}
-.hero-ex-k{color:#898781;font-size:11.5px;margin-right:12px}
+.hero-ex-k{color:var(--muted);font-size:11.5px;margin-right:12px}
 .tl-head{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap;margin-bottom:12px}
 .tl-h-src{font-size:15px;font-weight:600;color:#233947}
-.tl-h-n{font-size:12px;color:#898781}
+.tl-h-n{font-size:12px;color:var(--muted)}
 .tl-list{border-top:1px solid #f0efec}
 .tl-row{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;border-bottom:1px solid #f0efec;padding:8px 0}
 .tl-coord{flex:0 0 150px;font-size:13px;color:#233947;font-variant-numeric:tabular-nums}
-.tl-gene{flex:0 0 130px;font-size:13px;font-weight:600;color:#2a78d6}
+.tl-gene{flex:0 0 130px;font-size:13px;font-weight:600;color:var(--accent)}
 .tl-mod{flex:0 0 110px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#52514e}
-.tl-src{font-size:12px;color:#898781}
+.tl-src{font-size:12px;color:var(--muted)}
 .hero{position:relative}
 .hero > *{position:relative;z-index:1}
 .hero-banner{position:absolute;left:0;right:0;top:-18px;height:170px;overflow:hidden;pointer-events:none;z-index:0}
@@ -249,7 +249,7 @@ extra_css <- tags$style(HTML('
 .rv-b .btn{margin-bottom:1px}
 .rv-stat{font-size:12.5px;color:#4a5b66;margin:10px 2px 2px}
 .rv-dl{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;margin:6px 2px 0}
-.rv-dl a{color:#2a78d6;text-decoration:none}
+.rv-dl a{color:var(--accent);text-decoration:none}
 .rv-dl a:hover{text-decoration:underline}
 /* ---- design canvas language ---- */
 body,.navbar,.nav-link,h1,h2,h3{font-family:Inter,system-ui,-apple-system,sans-serif}
@@ -287,7 +287,7 @@ a:hover{color:var(--cta)}
 .dc-sechead{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:12px;gap:24px;flex-wrap:wrap}
 .dc-h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
 .dc-sub{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.55}
-.dc-grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-top:20px}
+.dc-grid3{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:20px}
 .dc-cell{background:#fff;padding:24px 24px 22px;display:flex;flex-direction:column;gap:9px;min-height:132px}
 .dc-cell-t{font-size:16px;font-weight:600;letter-spacing:-.01em}
 .dc-cell-b{font-size:13px;line-height:1.6;color:var(--muted)}
@@ -428,8 +428,11 @@ a:hover{color:var(--cta)}
 .lt-wrap{background:#f4f5f6;border:1px solid var(--line);border-top:0;padding:24px 40px 32px}
 .lt-k{font-weight:600;font-size:13.5px}
 .lt-co{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;color:var(--muted);margin-top:2px}
-.lt-dots{display:inline-flex;gap:4px;align-items:center}
-.lt-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.lt-dots{display:inline-flex;flex-wrap:wrap;gap:4px 10px;align-items:center;max-width:230px}
+.lt-ct{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;line-height:1.35;color:var(--text);white-space:nowrap}
+.lt-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.lt-ebar-w{display:inline-flex;flex-direction:column;gap:4px}
+.lt-etxt{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;line-height:1.3;color:var(--muted);max-width:150px}
 .lt-na{color:var(--faint)}
 .lt-bar-w{display:flex;width:150px}
 .lt-ebar{display:flex;width:150px;height:8px;background:#f0f2f4}
@@ -591,6 +594,8 @@ a.brand:hover .brand-b{color:var(--cta)}
 .rb-b .rb-o{background:none;color:var(--muted);padding:0;justify-content:flex-start}
 .brand-b{font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-size:18px;font-weight:600;letter-spacing:-.005em;line-height:1}
 .cb-grid{grid-template-columns:168px minmax(160px,1fr) 64px !important;min-width:420px !important}
+@media (max-width:1100px){.dc-grid3{grid-template-columns:repeat(2,1fr)}}
+.dc-cell-c,.tour-launch,.foot-col a,.dl-foot a{display:inline-block;padding:6px 0}
 @media (max-width:820px){
 .dc-hero{padding:44px 18px 34px}
 .dc-h1{font-size:30px}
@@ -690,7 +695,7 @@ a.brand{align-items:center}
 .bt-wrap{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:34px;align-items:start;margin-top:20px}
 .bt-in textarea{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:13px;line-height:1.6}
 .bt-btns{display:flex;align-items:center;gap:18px;margin-top:12px}
-.dc-btn-go{background:#2a78d6;color:#ffffff;border-color:#2a78d6}
+.dc-btn-go{background:var(--accent);color:#ffffff;border-color:var(--accent)}
 .dc-btn-go:hover{background:#1c5c96;color:#ffffff}
 .bt-side .kv{display:flex;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px solid var(--rule);font-size:13.5px}
 .bt-side .kv b{font-variant-numeric:tabular-nums}
@@ -704,7 +709,7 @@ a.brand{align-items:center}
 
 .fl-act{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0 2px;font-size:13px;color:var(--muted)}
 .fl-chip{display:inline-flex;align-items:center;gap:6px;background:#eef3f8;border:1px solid #d7e3ef;color:#1c5c96;border-radius:20px;padding:3px 11px;font-size:12.5px;font-weight:500}
-.fl-clear{font-size:12.5px;font-weight:600;color:#2a78d6;cursor:pointer;text-decoration:none}
+.fl-clear{font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer;text-decoration:none}
 .fl-clear:hover{text-decoration:underline}
 
 a.brand{gap:18px}
@@ -792,12 +797,12 @@ app_footer <- tags$footer(class = "site-footer",
           "© 2026 StatFunGen Lab, Columbia University. All rights reserved.")))
 
 ui <- page_navbar(
-  id = "nav",
+  id = "nav", lang = "en",
   title = tags$a(id = "brand_home", href = "#", class = "brand action-button",
               img(src = "logo_fungen.png", class = "brand-logo", alt = "FunGen-AD"),
               span(class = "brand-sep"), span(class = "brand-b", "AD Loci Explorer")),
   theme = app_theme, fillable = FALSE,
-  header = tagList(app_css, extra_css, nav_js, a11y_js, vs_css, mob_css, conn_js, cue_js, tour_js, ax_css, ax_js, tbl_js, igv_a11y_js, fig_js, layout_css, polish_css, uiOutput("view_strip"), igv_head,
+  header = tagList(app_css, extra_css, nav_js, a11y_js, vs_css, mob_css, conn_js, cue_js, tour_js, ax_css, ax_js, tbl_js, rowkey_js, igv_a11y_js, fig_js, layout_css, polish_css, uiOutput("view_strip"), igv_head,
                    NULL),
   footer = app_footer,
 
@@ -814,11 +819,12 @@ ui <- page_navbar(
             "contexts, molecular modalities and evidence tier behind each link. Some loci do not ",
             "reach genome-wide significance on their own; the Loci tab marks them. ",
             "Start with a gene symbol, Ensembl ID, rsID or genomic region."),
-          div(class = "note",
-            "New in this release: AD GWAS fine-mapping from the final R4 run, LD computed from the ADSP R4 reference panel with no p-value filter, ",
-        "methylation, histone and chromatin accessibility (fSuSiE) evidence and TransMap colocalization as support for loci, not genes. ",
-            "Evidence tiers follow updated rules: T1 to T5 need an AD GWAS 95% credible set or a 95% colocalization, ",
-            "and trans evidence is shown for reference but does not set a tier."),
+          div(class = "note", style = "text-align:left",
+            tags$b("New in this release"),
+            tags$ul(style = "margin:6px 0 0;padding-left:18px",
+              tags$li("AD GWAS fine-mapping from the final R4 run, with LD computed from the ADSP R4 reference panel and no p-value filter."),
+              tags$li("Methylation, histone and chromatin accessibility (fSuSiE) evidence and TransMap colocalization now support loci, not genes."),
+              tags$li("Updated tier rules: T1 to T5 need an AD GWAS 95% credible set or a 95% colocalization. Trans evidence is shown for reference and sets no tier."))),
           div(class = "dc-searchwrap",
             selectizeInput("hero_search", NULL, choices = NULL, width = "100%",
               options = list(placeholder = "Search gene, Ensembl ID, rsID or genomic region",
@@ -834,7 +840,7 @@ ui <- page_navbar(
             div(div(class = "dc-count-n dc-mono", format(n_loci_total, big.mark = ",")),
                 div(class = "dc-count-l", "AD loci")),
             div(div(class = "dc-count-n dc-mono", format(n_t1_t6, big.mark = ",")),
-                div(class = "dc-count-l", info("genes assigned T1-T6", "Genes with an evidence tier from T1 to T6 at one or more AD loci, as in the gene tier file in the Download tab. T6 genes have gene-level evidence only."))),
+                div(class = "dc-count-l", info("genes with a tier (T1 to T6)", "Genes with an evidence tier from T1 to T6 at one or more AD loci, as in the gene tier file in the Download tab. T6 genes have gene-level evidence only."))),
             div(div(class = "dc-count-n dc-mono", textOutput("kpi_pct", inline = TRUE)),
                 div(class = "dc-count-l", info("loci with evidence", "Share of AD loci with at least one target gene supported by cis or trans xQTL evidence, including quantile QTL."))),
             div(div(class = "dc-count-n dc-mono", textOutput("kpi_trans", inline = TRUE)),
@@ -1015,7 +1021,7 @@ ui <- page_navbar(
         div(class = "dc-sechead",
           div(
             div(style = "display:flex;align-items:baseline;gap:12px;flex-wrap:wrap",
-              h3(class = "dc-h2", style = "font-size:17px", "Regional evidence"),
+              h2(class = "dc-h2", style = "font-size:17px", "Regional evidence"),
               span(class = "dc-mono", style = "font-size:12px;color:var(--muted)",
                    textOutput("rv_win", inline = TRUE))),
             div(class = "dc-figc",
@@ -1261,22 +1267,22 @@ ui <- page_navbar(
             list(
               dl_row("dlf_locsum", "AD locus summary",
                 "One row per AD locus: region, lead variant and gene count.",
-                "196", "CSV", "19 KB",
+                format(nrow(locus_table), big.mark = ","), "CSV", "19 KB",
                 "AD_locus, region, chr, lead_variant, best_tier, top_gene, cell_types, modalities, n_genes, n_records"),
               dl_row("dlf_tier", "Gene tier assignment",
-              "The evidence tier assigned to each gene in this release: the 452 tiered genes shown in this app.",
-              "452", "CSV", "11 KB",
+              paste0("The evidence tier assigned to each gene in this release: the ", format(n_t1_t6, big.mark = ","), " tiered genes shown in this app."),
+              format(n_t1_t6, big.mark = ","), "CSV", "11 KB",
               "gene_ID, gene_name, tier"),
             dl_row("dlf_varlvl", "AD locus variants",
                 "Variant-level unified AD loci table behind the locus definitions.",
-                "20,572", "CSV.GZ", "934 KB",
+                N_VAR_RELEASE, "CSV.GZ", "934 KB",
                 "chr, pos, ADlocus, variant_ID, GWAS_methods, max_variant_inclusion_probability, gwas_sources, is.cs95, max_zscore"))),
           dl_group("Reference files for linking",
             "for resources that link to this explorer, such as NIAGADS",
             list(
               dl_row("dlf_ref_loci", "AD loci list",
                 "One row per AD locus with GRCh38 start and end and a direct explorer link.",
-                "195", "CSV", "< 50 KB",
+                format(nrow(locus_registry), big.mark = ","), "CSV", "< 50 KB",
                 "ad_locus_id, chr, start, end, genome_build, release, explorer_url"),
               dl_row("dlf_ref_genes", "Genes by AD locus",
                 "One row per gene and locus; a gene linked to several loci appears in several rows.",
@@ -1285,7 +1291,7 @@ ui <- page_navbar(
                 "gene_symbol, ensembl_gene_id, ad_locus_id, explorer_gene_url, explorer_locus_url"),
               dl_row("dlf_ref_variants", "Variants by AD locus",
                 "Every variant assigned to each locus, not only the lead variant.",
-                "20,572", "CSV", "about 1 MB",
+                N_VAR_RELEASE, "CSV", "about 1 MB",
                 "rsid, chr, pos, ref_allele, alt_allele, ad_locus_id, explorer_locus_url"))),
           dl_group("xQTL summary",
             "AD locus by xQTL evidence, as a workbook",
@@ -1554,7 +1560,7 @@ ui <- page_navbar(
           "and contexts, shown with the method that produced it."),
         accordion_panel("Significance",
           "From the minimum GWAS p-value. Genome wide below 5e-8, suggestive below 1e-6, otherwise NS."),
-        accordion_panel("Evidence tier (T1-T6)",
+        accordion_panel("Evidence tier (T1 to T6)",
           "Best evidence tier of the gene. T1 to T5 have localized AD-xQTL support, strongest first. ",
           "T6 means gene-level evidence only, without localized AD-xQTL support. No gene mapped marks ",
           "a variant without an xQTL target gene."),

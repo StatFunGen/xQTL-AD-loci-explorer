@@ -1,7 +1,7 @@
 # xQTL AD Loci Explorer
 
 Code and released tables behind the **AD Loci Explorer**, a browsable view of the
-ADSP FunGen-xQTL release across 196 candidate Alzheimer's disease loci.
+ADSP FunGen-xQTL release across 226 candidate Alzheimer's disease loci (release 2026-11-02).
 
 Live app: https://xqtl.niagads.org/AD-loci-explorer/ (direct link: https://jenny-empawi.shinyapps.io/xQTL-AD-loci-explorer/)
 

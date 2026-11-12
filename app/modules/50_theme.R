@@ -57,6 +57,8 @@ dk_theme <- function(on) {
   e <- parse_ctx_tokens(dat)
   if (is.null(e) || !nrow(e)) return(NULL)
   e <- e[!is.na(e$ctx) & !is.na(e$mod) & !is.na(e$tier), , drop = FALSE]
+  # T6 is gene-level evidence only; the strip under the figure counts it instead
+  e <- e[as.character(e$tier) != "6", , drop = FALSE]
   e$ctxf <- unname(CTX_FULL[e$ctx])
   keep <- c("eQTL", "sQTL", "pQTL", "mQTL")
   e$modg <- ifelse(e$mod %in% keep, e$mod, "other modalities")
