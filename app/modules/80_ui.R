@@ -428,8 +428,11 @@ a:hover{color:var(--cta)}
 .lt-wrap{background:#f4f5f6;border:1px solid var(--line);border-top:0;padding:24px 40px 32px}
 .lt-k{font-weight:600;font-size:13.5px}
 .lt-co{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;color:var(--muted);margin-top:2px}
-.lt-dots{display:inline-flex;gap:4px;align-items:center}
-.lt-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.lt-dots{display:inline-flex;flex-wrap:wrap;gap:4px 10px;align-items:center;max-width:230px}
+.lt-ct{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;line-height:1.35;color:var(--text);white-space:nowrap}
+.lt-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.lt-ebar-w{display:inline-flex;flex-direction:column;gap:4px}
+.lt-etxt{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;line-height:1.3;color:var(--muted);white-space:nowrap}
 .lt-na{color:var(--faint)}
 .lt-bar-w{display:flex;width:150px}
 .lt-ebar{display:flex;width:150px;height:8px;background:#f0f2f4}

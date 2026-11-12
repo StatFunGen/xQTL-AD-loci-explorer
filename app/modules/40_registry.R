@@ -477,11 +477,11 @@ lt_cells <- function(s) {
   v <- strsplit(s, ",")[[1]]
   nms <- vapply(v, function(k) if (k %in% names(CTX_FULL)) CTX_FULL[[k]] else k, character(1))
   lab <- paste("Contexts:", paste(nms, collapse = ", "))
-  # one text label for the whole group, so the contexts are readable without hovering
+  # each dot shows its short context name as visible text; the full names form the group label
   paste0(sprintf('<span class="lt-dots" role="img" aria-label="%s" title="%s">', lab, lab),
     paste0(vapply(seq_along(v), function(i) {
       col <- unname(CTX_COL[v[i]]); if (is.na(col)) col <- "#6b7b85"
-      sprintf('<span class="lt-dot" style="background:%s" aria-hidden="true"></span>', col)
+      sprintf('<span class="lt-ct" aria-hidden="true"><span class="lt-dot" style="background:%s"></span>%s</span>', col, v[i])
     }, character(1)), collapse = ""), '</span>')
 }
 
@@ -494,8 +494,12 @@ lt_bar <- function(r) {
     sprintf('<span style="width:%.2f%%;background:%s" title="%s: %d genes"></span>',
             100 * v[i] / tot, unname(conf_pal[[TIER_SEQ[i]]]), TIER_SEQ[i], as.integer(v[i]))
   }, character(1))
-  lab <- paste0("Genes by tier: ", paste(sprintf("%s %d", TIER_SEQ[1:6][v > 0], as.integer(v[v > 0])), collapse = ", "))
-  paste0(sprintf('<span class="lt-ebar" role="img" aria-label="%s" title="%s">', lab, lab), paste0(seg, collapse = ""), '</span>')
+  cnt <- sprintf("%s %d", TIER_SEQ[1:6][v > 0], as.integer(v[v > 0]))
+  lab <- paste0("Genes by tier: ", paste(cnt, collapse = ", "))
+  # the counts are also printed under the bar, so they are readable without hovering
+  paste0('<span class="lt-ebar-w">',
+    sprintf('<span class="lt-ebar" role="img" aria-label="%s" title="%s">', lab, lab), paste0(seg, collapse = ""), '</span>',
+    sprintf('<span class="lt-etxt" aria-hidden="true">%s</span>', paste(cnt, collapse = " &middot; ")), '</span>')
 }
 
 ctx_tier_counts <- local({
