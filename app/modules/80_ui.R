@@ -1649,7 +1649,7 @@ ui <- page_navbar(
   # Same four sites, in the same order, as the Resources and Protocol top bars
   nav_spacer(),
   nav_menu(
-    "FunGen-xQTL sites", icon = icon("compass"), align = "right",
+    tagList(span(class = "sites-long", "FunGen-xQTL sites"), span(class = "sites-short", "Sites")), icon = icon("compass"), align = "right",
     nav_item(tags$a(class = "dropdown-item", href = "https://adsp-fgc.niagads.org/xqtl-resources/", "Resources")),
     nav_item(tags$a(class = "dropdown-item", href = "https://statfungen.github.io/xqtl-protocol/", "Protocol")),
     nav_item(tags$span(class = "dropdown-item-text", `aria-current` = "page", "Explorer (this site)")),

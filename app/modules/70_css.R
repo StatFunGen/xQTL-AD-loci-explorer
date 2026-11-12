@@ -244,4 +244,8 @@ polish_css <- tags$style(HTML(paste0(
   ".dc-lede{text-align:left;max-width:68ch;margin-left:auto;margin-right:auto}",
   "details.dc-new{margin-top:14px}details.dc-new>summary{cursor:pointer;padding:6px 0;list-style-position:inside}",
   ".ibub{position:relative}.ibub::after{content:'';position:absolute;inset:-8px}",
-  ".fl-clear,.vs-clear{display:inline-flex;align-items:center;min-height:32px;padding:0 8px}")))
+  ".fl-clear,.vs-clear{display:inline-flex;align-items:center;min-height:32px;padding:0 8px}",
+  # mid-width screens: text-only tabs, and the tab row wraps instead of running off the edge,
+  # so every tab and the FunGen-xQTL sites menu stay on screen
+  "@media (min-width:768px) and (max-width:1599.98px){.navbar .navbar-nav .nav-link>i,.navbar .navbar-nav .nav-link>svg{display:none!important}.navbar .navbar-nav{flex-wrap:wrap!important;row-gap:2px}.sites-long{display:none}}",
+  ".sites-short{display:none}@media (min-width:768px) and (max-width:1599.98px){.sites-short{display:inline}}@media (max-width:767.98px),(min-width:1600px){.sites-long{display:inline}}")))
