@@ -136,10 +136,10 @@ locus_to_query <- function(locus, gene = NULL) {
 # Ordinal blue ramp, light surface. Steps 250-650 of the sequential hue:
 # the light end clears 2:1 against the page, and every chip carries its
 # label, which is the secondary encoding the adjacent steps require.
-conf_pal <- c(T1 = "#78170f", T2 = "#c9452a", T3 = "#f2a184", T4 = "#93c3ef", T5 = "#2a72c4")
-conf_txt <- c(T1 = "#ffffff", T2 = "#ffffff", T3 = "#233947", T4 = "#233947", T5 = "#ffffff")
-conf_pal["T6"] <- "#10375e"   # dark blue end of the T1-T6 ramp
-conf_txt["T6"] <- "#ffffff"
+conf_pal <- c(T1 = "#0b2545", T2 = "#163f6b", T3 = "#22598f", T4 = "#2f72b0", T5 = "#7fb0dc")  # one hue, dark = strongest
+conf_txt <- c(T1 = "#ffffff", T2 = "#ffffff", T3 = "#ffffff", T4 = "#ffffff", T5 = "#19354a")
+conf_pal["T6"] <- "#b5d2ec"   # lightest end of the T1-T6 ramp
+conf_txt["T6"] <- "#19354a"
 conf_pal[NO_TIER] <- "#f0efec"
 conf_txt[NO_TIER] <- "#52514e"
 conf_pal[NO_GENE] <- "#f7f7f5"

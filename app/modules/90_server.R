@@ -774,14 +774,17 @@ observeEvent(input$locus_prev, {
                    if (length(t6) == 1L) " is T6, with gene-level evidence only and no localized AD-xQTL support."
                    else " are T6, with gene-level evidence only and no localized AD-xQTL support.")
     s4 <- if (is.na(best)) "" else paste0(" The best tier at this locus is therefore ", best, ".")
-    led <- lapply(g[ok], function(x) {
+    go <- g[ok]
+    go <- go[order(match(gt[ok], c(TIER_SEQ, NO_TIER)), go)]   # strongest tier first
+    led <- lapply(go, function(x) {
       r <- d[!is.na(d$gene) & d$gene == x, , drop = FALSE][1, , drop = FALSE]
       tt <- .gene_tier(d, x)
       loc_sup <- if (identical(tt, "T6")) "no" else if (identical(tt, NO_TIER)) {
         if (!is.null(r$cis_trans) && identical(as.character(r$cis_trans), "trans")) "no (trans only)" else "not scored"
       } else "yes"
       tags$details(class = "led",
-        tags$summary(if (identical(tt, NO_TIER)) paste0("Why does ", x, " have no tier?") else paste0("Why is ", x, " ", tt, "?")),
+        tags$summary(if (tt %in% names(conf_pal)) span(class = "tchip led-chip", style = sprintf("background:%s;color:%s", conf_pal[[tt]], conf_txt[[tt]]), tt) else span(class = "led-chip led-chip--none", "none"),
+                     if (identical(tt, NO_TIER)) paste0("Why does ", x, " have no tier?") else paste0("Why is ", x, " ", tt, "?")),
         tags$ul(
           tags$li(paste0("Localized AD-xQTL support: ", loc_sup)),
           tags$li(paste0("TWAS: ", .ev_state(r$twas_sig))),
@@ -816,8 +819,8 @@ observeEvent(input$locus_prev, {
               paste(bg, collapse = ", ") else
               paste0(paste(bg[1:2], collapse = ", "), " and ", length(bg) - 2L, " more")
     sg   <- as.character(sort(d$significance)[1])
-    kv <- function(k, v) tagList(span(class = "lk", k), span(v))
-    kvt <- function(k, v, tip) tagList(span(class = "lk", info(k, tip)), span(v))
+    kv <- function(k, v) span(class = "kvp", span(class = "lk", k), span(class = "kvv", v))
+    kvt <- function(k, v, tip) span(class = "kvp", span(class = "lk", info(k, tip)), span(class = "kvv", v))
     div(class = "locus-record",
       div(class = "locus-title", if (is.na(reg)) loc else pretty_region(reg)),
       if (!is.na(i) && !is.na(locus_registry$start[i]) &&
@@ -1035,10 +1038,10 @@ observeEvent(input$locus_prev, {
         if (n > 40) div(class = "dc-note", style = "margin-bottom:10px", paste0("Showing the 40 trans target genes with the most supporting modalities, of ", format(n, big.mark = ","), ". The table below lists all of them.")),
         if (identical(input$tn_view, "Bars"))
           withSpinner(plotOutput("trans_bars", height = "680px"),
-                      type = 8, color = "#237C78", size = 0.6)
+                      type = 8, color = "#1f716d", size = 0.6)
         else
           withSpinner(plotOutput("trans_circos", height = "680px"),
-                      type = 8, color = "#237C78", size = 0.6)))
+                      type = 8, color = "#1f716d", size = 0.6)))
     tagList(
       div(class = "dc-note", style = "margin-bottom:14px",
           sprintf("%s trans target gene%s at this locus, too few for a circle, so they are drawn on the chromosome strands.",
@@ -1883,17 +1886,23 @@ output$gp_matrix <- renderUI({
                         stringsAsFactors = FALSE)
     names(tb) <- c("tier", "n")
     tb$tier <- factor(tb$tier, levels = .lv)
+    other <- tb[!tb$tier %in% TIER_SEQ & tb$n > 0, , drop = FALSE]
+    cap <- if (nrow(other)) paste0("Not in the tiers: ", paste(sprintf("%s %s", format(other$n, big.mark = ","), tolower(as.character(other$tier))), collapse = " · ")) else NULL
+    tb <- tb[tb$tier %in% TIER_SEQ, , drop = FALSE]
+    tb$tier <- factor(as.character(tb$tier), levels = TIER_SEQ)
     ggplot(tb, aes(x = tier, y = n, fill = tier)) +
       geom_col(width = 0.68) +
       geom_text(aes(label = ifelse(n > 0, format(n, big.mark = ","), "")),
                 vjust = -0.55, size = 3.6, colour = "#233947") +
       scale_fill_manual(values = conf_pal, guide = "none") +
       scale_y_continuous(expand = expansion(mult = c(0, 0.18))) +
-      labs(x = NULL, y = NULL) +
+      labs(x = NULL, y = NULL, caption = cap) +
       theme_minimal(base_size = 12) +
       theme(panel.grid.major.x = element_blank(),
             panel.grid.minor = element_blank(),
             axis.text.y = element_blank(),
+            plot.caption = element_text(colour = "#5a666e", size = 10.5, hjust = 0),
+            plot.caption.position = "plot",
             plot.background  = element_rect(fill = "#ffffff", colour = NA),
             panel.background = element_rect(fill = "#ffffff", colour = NA))
   }

@@ -124,7 +124,7 @@ home_river <- function(dark = FALSE) {
     link = list(source = unname(idx[L$s]), target = unname(idx[L$t]),
                 value = L$Freq, color = unname(rgba), label = llab,
                 hovertemplate = "%{label}<extra></extra>")) %>%
-    plotly::layout(font = list(family = "Inter, sans-serif", size = 12.5, color = ink),
+    plotly::layout(font = list(family = "Figtree, sans-serif", size = 12.5, color = ink),
       margin = list(l = 8, r = 8, t = 8, b = 30),
       paper_bgcolor = bg, plot_bgcolor = bg,
       annotations = list(ann(0, "Context", "left"), ann(0.5, "Modality", "center"),

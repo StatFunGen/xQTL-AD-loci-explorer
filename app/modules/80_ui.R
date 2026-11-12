@@ -252,7 +252,7 @@ extra_css <- tags$style(HTML('
 .rv-dl a{color:var(--accent);text-decoration:none}
 .rv-dl a:hover{text-decoration:underline}
 /* ---- design canvas language ---- */
-body,.navbar,.nav-link,h1,h2,h3{font-family:Inter,system-ui,-apple-system,sans-serif}
+body,.navbar,.nav-link,h1,h2,h3{font-family:Figtree,system-ui,-apple-system,sans-serif}
 .dc-mono,.dc-chip,.dc-count-n,.dc-num,code,kbd{font-family:"IBM Plex Mono",ui-monospace,monospace}
 .card,.btn,.form-control,.form-select,.selectize-input,.selectize-dropdown,.panel,.sheet,.badge,.nav-link,.dataTables_wrapper .dataTable,.shiny-input-container input{border-radius:0 !important}
 a{color:var(--text);text-decoration:none}
@@ -335,7 +335,7 @@ a:hover{color:var(--cta)}
 .doc-tbl th{text-align:center;padding:10px 8px;font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
 .doc-tbl th:first-child{text-align:left;padding-left:0}
 .doc-tbl td{padding:7px 8px;border-bottom:1px solid var(--rule);text-align:center;font-family:"IBM Plex Mono",ui-monospace,monospace}
-.doc-tbl td:first-child{text-align:left;padding-left:0;font-family:Inter,system-ui,sans-serif}
+.doc-tbl td:first-child{text-align:left;padding-left:0;font-family:Figtree,system-ui,sans-serif}
 .doc-tbl td.z{color:var(--faint)}
 .dc-sechead{flex-wrap:nowrap}
 .dc-sechead > *{min-width:0}
@@ -485,7 +485,7 @@ a:hover{color:var(--cta)}
 .gp-tbl td:first-child{text-align:left;padding-left:0}
 .gp-yes{color:#1f7a5c;font-weight:600}
 .gp-no{color:var(--faint)}
-:root[data-theme="dark"]{--bg:#0e161c;--surface:#15202a;--text:#e8eef2;--muted:#95a5af;--faint:#95a5af;--line:#2b3a45;--rule:#1e2b34;--accent:#5ea0ee;--cta:#ef6f43}
+:root[data-theme="dark"]{--bg:#1c2630;--surface:#24313c;--text:#e8eef2;--muted:#a9b6bf;--faint:#a9b6bf;--line:#3a4a57;--rule:#2c3a46;--accent:#5ea0ee;--cta:#ef6f43}
 :root[data-theme="dark"] body{background:var(--bg);color:var(--text)}
 :root[data-theme="dark"] .navbar,
 :root[data-theme="dark"] .dc-hero,
@@ -515,7 +515,7 @@ a:hover{color:var(--cta)}
 :root[data-theme="dark"] .dc-hero-wash{background:radial-gradient(ellipse 58% 70% at 44% 48%,rgba(21,32,42,.96) 0%,rgba(21,32,42,.88) 50%,rgba(21,32,42,.4) 100%)}
 :root[data-theme="dark"] .dc-searchwrap{border-color:var(--muted);background:var(--surface)}
 :root[data-theme="dark"] .dc-searchwrap .selectize-input{background:var(--surface)!important;color:var(--text)}
-:root[data-theme="dark"] .dc-searchbtn{background:var(--accent);color:#0e161c}
+:root[data-theme="dark"] .dc-searchbtn{background:var(--accent);color:#1c2630}
 :root[data-theme="dark"] .selectize-input,
 :root[data-theme="dark"] .selectize-dropdown,
 :root[data-theme="dark"] .form-control,
@@ -524,12 +524,12 @@ a:hover{color:var(--cta)}
 :root[data-theme="dark"] table.dataTable td,
 :root[data-theme="dark"] table.dataTable th{color:var(--text);border-color:var(--rule)!important}
 :root[data-theme="dark"] table.dataTable tbody tr{background:var(--surface)}
-:root[data-theme="dark"] table.dataTable tbody tr.odd{background:#182531}
+:root[data-theme="dark"] table.dataTable tbody tr.odd{background:#24313c}
 :root[data-theme="dark"] .dataTables_wrapper .dataTables_paginate .paginate_button{color:var(--muted)!important}
 :root[data-theme="dark"] .cb-bar{border-left-color:var(--line)}
-:root[data-theme="dark"] .lt-ebar{background:#1e2b34}
-:root[data-theme="dark"] .tc-svg .tc-bar{fill:#233140;stroke:#2b3a45}
-:root[data-theme="dark"] .tc-svg .tc-cen{fill:#0e161c}
+:root[data-theme="dark"] .lt-ebar{background:#2c3a46}
+:root[data-theme="dark"] .tc-svg .tc-bar{fill:#2c3a46;stroke:#3a4a57}
+:root[data-theme="dark"] .tc-svg .tc-cen{fill:#1c2630}
 :root[data-theme="dark"] .tc-svg .tc-chr{fill:#e8eef2}
 :root[data-theme="dark"] .kary rect{fill:#5ea0ee;opacity:.07}
 :root[data-theme="dark"] .site-footer{background:var(--surface);color:var(--muted)}
@@ -558,7 +558,7 @@ a:hover{color:var(--cta)}
 :root[data-theme="dark"] .radio label,
 :root[data-theme="dark"] .control-label,
 :root[data-theme="dark"] label{color:var(--muted)}
-:root[data-theme="dark"] .selectize-dropdown .active{background:#22313e}
+:root[data-theme="dark"] .selectize-dropdown .active{background:#2c3a46}
 :root[data-theme="dark"] .dataTables_wrapper .dataTables_info,
 :root[data-theme="dark"] .dataTables_wrapper .dataTables_length,
 :root[data-theme="dark"] .dataTables_wrapper .dataTables_filter{color:var(--muted)}
@@ -567,7 +567,7 @@ a:hover{color:var(--cta)}
 :root[data-theme="dark"] .doc-tbl td,
 :root[data-theme="dark"] .dl-tbl td{border-bottom-color:var(--rule)}
 :root[data-theme="dark"] .ev-yes{color:#5fd0a0}
-:root[data-theme="dark"] .dc-searchbtn{color:#0e161c}
+:root[data-theme="dark"] .dc-searchbtn{color:#1c2630}
 
 @media (max-width:520px){body{overflow-x:hidden}.dataTables_wrapper{overflow-x:auto}.dc-counts{flex-wrap:wrap}.navbar .navbar-nav{flex-wrap:wrap}}
 a.brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none}
@@ -684,9 +684,9 @@ a.brand{align-items:center}
 .gloss dt:first-child{margin-top:0}
 .gloss dd{margin:3px 0 0;color:var(--muted);font-size:13.5px;line-height:1.55;max-width:70ch}
 
-.dc-kick{display:block;font-family:Inter,system-ui,sans-serif;font-size:16px;font-weight:600;letter-spacing:.04em;color:var(--muted);margin-bottom:8px}
+.dc-kick{display:block;font-family:Figtree,system-ui,sans-serif;font-size:16px;font-weight:600;letter-spacing:.04em;color:var(--muted);margin-bottom:8px}
 
-.ibub{position:relative;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:6px;border-radius:50%;background:#dbe7f3;color:#1c5c96;font-size:10px;font-weight:700;font-style:normal;cursor:help;vertical-align:middle;line-height:1;font-family:Inter,system-ui,sans-serif;text-transform:none;letter-spacing:0}
+.ibub{position:relative;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:6px;border-radius:50%;background:#dbe7f3;color:#1c5c96;font-size:10px;font-weight:700;font-style:normal;cursor:help;vertical-align:middle;line-height:1;font-family:Figtree,system-ui,sans-serif;text-transform:none;letter-spacing:0}
 .ibub:hover,.ibub:focus{background:#2a78d6;color:#ffffff;outline:none}
 .ibub-t{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);width:262px;background:#233947;color:#ffffff;font-size:12.5px;font-weight:400;line-height:1.5;letter-spacing:0;text-transform:none;text-align:left;white-space:normal;padding:9px 11px;border-radius:6px;opacity:0;visibility:hidden;transition:opacity .12s;z-index:2000;pointer-events:none}
 .ibub-t::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#233947}
@@ -788,21 +788,23 @@ app_footer <- tags$footer(class = "site-footer",
                     rel = "noopener", "Analysis protocol")),
     div(class = "foot-col",
       div(class = "foot-h", "Cite"),
+      img(src = "logo_fungen.png", class = "foot-fungen", alt = "FunGen-AD: ADSP Functional Genomics Consortium"),
       div(class = "foot-t",
           "The Alzheimer’s Disease Functional Genomics (FunGen-AD) Consortium. ",
           tags$em("Broad and deep dissection of Alzheimer’s disease genetics ",
                   "with FunGen-xQTL.")))),
       div(class = "foot-bottom",
         div(class = "foot-legal",
-          "© 2026 StatFunGen Lab, Columbia University. All rights reserved.")))
+          "© 2026 StatFunGen Lab, Columbia University. All rights reserved."),
+        tags$button(id = "theme_btn", type = "button", class = "theme-btn", `aria-label` = "Color theme: automatic", "Theme: automatic")))
 
 ui <- page_navbar(
   id = "nav", lang = "en",
   title = tags$a(id = "brand_home", href = "#", class = "brand action-button",
-              img(src = "logo_fungen.png", class = "brand-logo", alt = "FunGen-AD"),
-              span(class = "brand-sep"), span(class = "brand-b", "AD Loci Explorer")),
+              HTML('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 44" width="30" height="22" aria-hidden="true" focusable="false" class="logo-mark"><rect x="0" y="9.5" width="60" height="1" class="lm-line"/><circle cx="1.80" cy="38" r="1.8" class="lm-ink"/><circle cx="4.85" cy="36" r="1.8" class="lm-ink"/><circle cx="7.90" cy="39" r="1.8" class="lm-ink"/><circle cx="10.95" cy="35" r="1.8" class="lm-ink"/><circle cx="14.00" cy="37" r="1.8" class="lm-ink"/><circle cx="17.05" cy="38" r="1.8" class="lm-mute"/><circle cx="20.10" cy="34" r="1.8" class="lm-mute"/><circle cx="23.15" cy="36" r="1.8" class="lm-mute"/><circle cx="26.20" cy="37" r="1.8" class="lm-mute"/><circle cx="29.25" cy="33" r="1.8" class="lm-mute"/><circle cx="32.30" cy="35" r="1.8" class="lm-ink"/><circle cx="35.35" cy="29" r="1.8" class="lm-ink"/><circle cx="38.40" cy="21" r="1.8" class="lm-ink"/><circle cx="41.45" cy="10" r="1.8" class="lm-lead"/><circle cx="44.50" cy="23" r="1.8" class="lm-ink"/><circle cx="47.55" cy="32" r="1.8" class="lm-mute"/><circle cx="50.60" cy="36" r="1.8" class="lm-mute"/><circle cx="53.65" cy="37" r="1.8" class="lm-mute"/><circle cx="56.70" cy="35" r="1.8" class="lm-mute"/><circle cx="59.75" cy="38" r="1.8" class="lm-mute"/></svg>'),
+              span(class = "brand-b", "FunGen-xQTL", span(class = "brand-sub", " AD Loci Explorer"))),
   theme = app_theme, fillable = FALSE,
-  header = tagList(app_css, extra_css, nav_js, a11y_js, vs_css, mob_css, conn_js, cue_js, tour_js, ax_css, ax_js, tbl_js, rowkey_js, sites_js, igv_a11y_js, fig_js, layout_css, polish_css, uiOutput("view_strip"), igv_head,
+  header = tagList(app_css, extra_css, nav_js, a11y_js, vs_css, mob_css, conn_js, cue_js, tour_js, ax_css, ax_js, tbl_js, rowkey_js, sites_js, igv_a11y_js, fig_js, layout_css, polish_css, ds_css, dark_css, theme_js, uiOutput("view_strip"), igv_head,
                    NULL),
   footer = app_footer,
 
@@ -881,7 +883,7 @@ ui <- page_navbar(
           "for follow-up and do not establish biological causality or clinical relevance.")),
       div(class = "dc-sec",
         div(class = "dc-sechead",
-          div(h2(class = "dc-h2", "Release overview"),
+          div(h2(class = "dc-h2", "Explore the release"),
               div(class = "dc-sub",
                 "Where the AD loci lie in the genome, and how their evidence spreads across contexts."))),
         div(style = "margin-top:26px",
@@ -899,7 +901,7 @@ ui <- page_navbar(
               withSpinner(plotOutput("p_landscape", height = 340,
                   hover = hoverOpts("land_hover", delay = 60, delayType = "debounce"),
                   click = "land_click"),
-                type = 8, color = "#237C78", size = 0.6),
+                type = 8, color = "#1f716d", size = 0.6),
               uiOutput("land_tip"))),
           uiOutput("land_kbd"),
           div(class = "dc-note", style = "margin-top:10px;max-width:760px",
@@ -988,7 +990,7 @@ ui <- page_navbar(
       div(class = "lt-wrap",
         uiOutput("ct_key"),
         div(class = "panel",
-          withSpinner(DTOutput("loci_tbl"), type = 8, color = "#237C78", size = 0.6),
+          withSpinner(DTOutput("loci_tbl"), type = 8, color = "#1f716d", size = 0.6),
           div(class = "dc-note", style = "margin-top:12px",
             "Genes counts the distinct target genes at the locus; records counts the gene-variant ",
             "rows behind them. Click a row to open the locus."))),
@@ -1048,7 +1050,7 @@ ui <- page_navbar(
             actionLink("rv_reset", "Reset filters", class = "dc-btn"))),
         uiOutput("rv_stat"),
         withSpinner(plotOutput("p_region", height = 620),
-                    type = 8, color = "#237C78", size = 0.6),
+                    type = 8, color = "#1f716d", size = 0.6),
         div(class = "dc-howto",
           div(class = "dc-kicker", "How to read this figure"),
           div(class = "dc-howto-g",
@@ -1191,7 +1193,7 @@ ui <- page_navbar(
                          choices = c(`This locus` = "locus", `All loci` = "all"),
                          selected = "locus")),
           uiOutput("tn_active"),
-        withSpinner(DTOutput("trans_tbl"), type = 8, color = "#237C78", size = 0.6)))),
+        withSpinner(DTOutput("trans_tbl"), type = 8, color = "#1f716d", size = 0.6)))),
 
   # ---- Documentation --------------------------------------------------
   # ---- Download -------------------------------------------------------------
