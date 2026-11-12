@@ -262,7 +262,7 @@ a:hover{color:var(--cta)}
 .navbar .nav-link.active{box-shadow:inset 0 -2px 0 var(--text);color:var(--text)}
 .dc-eyebrow{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .dc-kicker{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-.dc-hero{position:relative;background-color:#fff;background-image:url(hero-bg.jpg);background-repeat:no-repeat;background-position:right center;background-size:cover;overflow:hidden;padding:74px 40px 60px;border-bottom:1px solid var(--line)}@media (prefers-contrast:more),(forced-colors:active){.dc-hero{background-image:none}}
+.dc-hero{position:relative;background-color:#fff;background-image:none;background-repeat:no-repeat;background-position:right center;background-size:cover;overflow:hidden;padding:74px 40px 60px;border-bottom:1px solid var(--line)}@media (prefers-contrast:more),(forced-colors:active){.dc-hero{background-image:none}}
 .dc-hero-bg,.dc-hero-wash{position:absolute;left:0;right:0;top:0;bottom:0}
 .dc-hero-bg svg{width:100%;height:100%;display:block}
 .dc-hero-wash{background:radial-gradient(ellipse 58% 70% at 44% 48%,rgba(255,255,255,.90) 0%,rgba(255,255,255,.58) 50%,rgba(255,255,255,.06) 100%)}
@@ -801,8 +801,8 @@ app_footer <- tags$footer(class = "site-footer",
 ui <- page_navbar(
   id = "nav", lang = "en",
   title = tags$a(id = "brand_home", href = "#", class = "brand action-button",
-              HTML('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 44" width="30" height="22" aria-hidden="true" focusable="false" class="logo-mark"><rect x="0" y="9.5" width="60" height="1" class="lm-line"/><circle cx="1.80" cy="38" r="1.8" class="lm-ink"/><circle cx="4.85" cy="36" r="1.8" class="lm-ink"/><circle cx="7.90" cy="39" r="1.8" class="lm-ink"/><circle cx="10.95" cy="35" r="1.8" class="lm-ink"/><circle cx="14.00" cy="37" r="1.8" class="lm-ink"/><circle cx="17.05" cy="38" r="1.8" class="lm-mute"/><circle cx="20.10" cy="34" r="1.8" class="lm-mute"/><circle cx="23.15" cy="36" r="1.8" class="lm-mute"/><circle cx="26.20" cy="37" r="1.8" class="lm-mute"/><circle cx="29.25" cy="33" r="1.8" class="lm-mute"/><circle cx="32.30" cy="35" r="1.8" class="lm-ink"/><circle cx="35.35" cy="29" r="1.8" class="lm-ink"/><circle cx="38.40" cy="21" r="1.8" class="lm-ink"/><circle cx="41.45" cy="10" r="1.8" class="lm-lead"/><circle cx="44.50" cy="23" r="1.8" class="lm-ink"/><circle cx="47.55" cy="32" r="1.8" class="lm-mute"/><circle cx="50.60" cy="36" r="1.8" class="lm-mute"/><circle cx="53.65" cy="37" r="1.8" class="lm-mute"/><circle cx="56.70" cy="35" r="1.8" class="lm-mute"/><circle cx="59.75" cy="38" r="1.8" class="lm-mute"/></svg>'),
-              span(class = "brand-b", "FunGen-xQTL", span(class = "brand-sub", " AD Loci Explorer"))),
+              HTML('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="28" height="28" aria-hidden="true" focusable="false" class="fx-mark"><defs><mask id="fxm" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="1000"><rect width="1000" height="1000" fill="#fff"/><path fill="#000" fill-rule="nonzero" transform="translate(125.39756030 125.39756030) scale(0.7)" d="M -2429.70731515,3346.68639335 L 2570.29268485,-1653.31360665 L 2570.29268485,-1346.68639335 L -2429.70731515,3653.31360665 Z M -2346.68639335,-2500.00000000 L 576.65680332,423.34319668 L 423.34319668,576.65680332 L -2500.00000000,-2346.68639335 Z M 750.96452424,471.64176726 L 2500.00000000,471.64176726 L 2500.00000000,688.45994907 L 534.14634243,688.45994907 Z M 359.07901596,863.52727554 L 2500.00000000,863.52727554 L 2500.00000000,1080.34545736 L 142.26083414,1080.34545736 Z" /></mask></defs><circle cx="500" cy="500" r="500" class="fx-disc" mask="url(#fxm)"/></svg>'),
+              span(class = "brand-b", HTML("FunGen<span class=\"brand-x\">-xQTL</span><span class=\"brand-sub\"> AD Loci Explorer</span>"))),
   theme = app_theme, fillable = FALSE,
   header = tagList(app_css, extra_css, nav_js, a11y_js, vs_css, mob_css, conn_js, cue_js, tour_js, ax_css, ax_js, tbl_js, rowkey_js, sites_js, igv_a11y_js, fig_js, layout_css, polish_css, ds_css, dark_css, theme_js, uiOutput("view_strip"), igv_head,
                    NULL),
@@ -816,11 +816,9 @@ ui <- page_navbar(
         div(class = "dc-hero-in",
           h1(class = "dc-h1", span(class = "dc-kick", "ADSP FunGen-xQTL"), "AD Loci Explorer"),
           p(class = "dc-lede",
-            "The FunGen-xQTL release links each of ", format(n_loci_total, big.mark = ","), " candidate ",
-            "Alzheimer’s disease (AD) loci to its target genes, and shows the brain and immune ",
-            "contexts, molecular modalities and evidence tier behind each link. Some loci do not ",
-            "reach genome-wide significance on their own; the Loci tab marks them. ",
-            "Start with a gene symbol, Ensembl ID, rsID or genomic region."),
+            "The Explorer links each of the ", format(n_loci_total, big.mark = ","), " Alzheimer’s disease (AD) loci ",
+            "to its target genes, with the brain and immune contexts, xQTL modalities and evidence tier ",
+            "behind each link."),
           div(class = "dc-searchwrap",
             selectizeInput("hero_search", NULL, choices = NULL, width = "100%",
               options = list(placeholder = "Search gene, Ensembl ID, rsID or genomic region",
@@ -901,7 +899,7 @@ ui <- page_navbar(
               withSpinner(plotOutput("p_landscape", height = 340,
                   hover = hoverOpts("land_hover", delay = 60, delayType = "debounce"),
                   click = "land_click"),
-                type = 8, color = "#1f716d", size = 0.6),
+                type = 8, color = "#3d6289", size = 0.6),
               uiOutput("land_tip"))),
           uiOutput("land_kbd"),
           div(class = "dc-note", style = "margin-top:10px;max-width:760px",
@@ -990,7 +988,7 @@ ui <- page_navbar(
       div(class = "lt-wrap",
         uiOutput("ct_key"),
         div(class = "panel",
-          withSpinner(DTOutput("loci_tbl"), type = 8, color = "#1f716d", size = 0.6),
+          withSpinner(DTOutput("loci_tbl"), type = 8, color = "#3d6289", size = 0.6),
           div(class = "dc-note", style = "margin-top:12px",
             "Genes counts the distinct target genes at the locus; records counts the gene-variant ",
             "rows behind them. Click a row to open the locus."))),
@@ -1050,7 +1048,7 @@ ui <- page_navbar(
             actionLink("rv_reset", "Reset filters", class = "dc-btn"))),
         uiOutput("rv_stat"),
         withSpinner(plotOutput("p_region", height = 620),
-                    type = 8, color = "#1f716d", size = 0.6),
+                    type = 8, color = "#3d6289", size = 0.6),
         div(class = "dc-howto",
           div(class = "dc-kicker", "How to read this figure"),
           div(class = "dc-howto-g",
@@ -1193,7 +1191,7 @@ ui <- page_navbar(
                          choices = c(`This locus` = "locus", `All loci` = "all"),
                          selected = "locus")),
           uiOutput("tn_active"),
-        withSpinner(DTOutput("trans_tbl"), type = 8, color = "#1f716d", size = 0.6)))),
+        withSpinner(DTOutput("trans_tbl"), type = 8, color = "#3d6289", size = 0.6)))),
 
   # ---- Documentation --------------------------------------------------
   # ---- Download -------------------------------------------------------------

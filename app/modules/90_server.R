@@ -1038,10 +1038,10 @@ observeEvent(input$locus_prev, {
         if (n > 40) div(class = "dc-note", style = "margin-bottom:10px", paste0("Showing the 40 trans target genes with the most supporting modalities, of ", format(n, big.mark = ","), ". The table below lists all of them.")),
         if (identical(input$tn_view, "Bars"))
           withSpinner(plotOutput("trans_bars", height = "680px"),
-                      type = 8, color = "#1f716d", size = 0.6)
+                      type = 8, color = "#3d6289", size = 0.6)
         else
           withSpinner(plotOutput("trans_circos", height = "680px"),
-                      type = 8, color = "#1f716d", size = 0.6)))
+                      type = 8, color = "#3d6289", size = 0.6)))
     tagList(
       div(class = "dc-note", style = "margin-bottom:14px",
           sprintf("%s trans target gene%s at this locus, too few for a circle, so they are drawn on the chromosome strands.",
