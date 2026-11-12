@@ -802,7 +802,7 @@ ui <- page_navbar(
               img(src = "logo_fungen.png", class = "brand-logo", alt = "FunGen-AD"),
               span(class = "brand-sep"), span(class = "brand-b", "AD Loci Explorer")),
   theme = app_theme, fillable = FALSE,
-  header = tagList(app_css, extra_css, nav_js, a11y_js, vs_css, mob_css, conn_js, cue_js, tour_js, ax_css, ax_js, tbl_js, rowkey_js, igv_a11y_js, fig_js, layout_css, polish_css, uiOutput("view_strip"), igv_head,
+  header = tagList(app_css, extra_css, nav_js, a11y_js, vs_css, mob_css, conn_js, cue_js, tour_js, ax_css, ax_js, tbl_js, rowkey_js, sites_js, igv_a11y_js, fig_js, layout_css, polish_css, uiOutput("view_strip"), igv_head,
                    NULL),
   footer = app_footer,
 
@@ -1652,7 +1652,7 @@ ui <- page_navbar(
     "FunGen-xQTL sites", icon = icon("compass"), align = "right",
     nav_item(tags$a(class = "dropdown-item", href = "https://adsp-fgc.niagads.org/xqtl-resources/", "Resources")),
     nav_item(tags$a(class = "dropdown-item", href = "https://statfungen.github.io/xqtl-protocol/", "Protocol")),
-    nav_item(tags$a(class = "dropdown-item active", href = "#", `aria-current` = "page", "Explorer (this site)")),
+    nav_item(tags$span(class = "dropdown-item-text", `aria-current` = "page", "Explorer (this site)")),
     nav_item(tags$a(class = "dropdown-item", href = "https://xqtl.niagads.org/", title = "NIAGADS site", "xQTL Atlas \u2197"))
   )
 )
