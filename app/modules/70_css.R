@@ -223,9 +223,10 @@ polish_css <- tags$style(HTML(paste0(
   ".tc-f label,.tc-f .control-label,.lt-f label,.lt-f .control-label,.rv-f label,.gp-pick label,.gp-tbl th,.doc-tbl th,.doc-body th,.bslib-value-box .value-box-title",
   "{text-transform:none!important;letter-spacing:0!important;font-size:13px!important;font-weight:600!important;font-family:inherit!important}",
   ".shiny-input-container label>span{text-transform:none!important;letter-spacing:0!important}",
-  # small helper text up to 12.5px
-  ".ax-status,.scope-note,.ev-legend,.gp-chip,.locus-id,.dc-count-s,.interp-f,.cite,.figdata,.dc-figc,.dc-sub,.tchip,.vs-wrap{font-size:12.5px}",
-  ".lt-co,.cl.dc-mono,.cite-bib,.dl-code{font-size:12px!important}",
+  # helper and caption text at the shared small size (14px); dense labels (chips, IDs, view strip) at 13px
+  ".ax-status,.scope-note,.ev-legend,.interp-f,.cite,.figdata,.dc-figc,.dc-sub{font-size:14px!important}",
+  ".gp-chip,.locus-id,.dc-count-s,.tchip,.vs-wrap{font-size:13px}",
+  ".lt-co,.cl.dc-mono,.cite-bib,.dl-code{font-size:13px!important}",
   ".ctpill{font-size:11px}.sb-seg{font-size:11.5px}.irs-grid-text{font-size:10.5px}.irs-min,.irs-max,.irs-single,.irs-from,.irs-to{font-size:11.5px}",
   # names, counts and tier keys in the body font; IDs, coordinates and code stay mono
   ".dc-count-n,.gp-sym,.tk,.t6-k,.lt-mods,.lt-gene,.sb-n,.dc-chip{font-family:inherit!important;font-variant-numeric:tabular-nums}",
