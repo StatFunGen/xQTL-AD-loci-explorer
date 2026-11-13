@@ -1103,9 +1103,6 @@ observeEvent(input$locus_prev, {
     }
   })
 
-  output$dl_all <- downloadHandler(
-    filename = function() paste0("AD_xQTL_loci_", Sys.Date(), ".csv"),
-    content  = function(f) .prov_csv(dat, f, "complete evidence table"))
 
   output$dl_trans <- downloadHandler(
     filename = function() paste0("AD_xQTL_trans_", Sys.Date(), ".csv"),
@@ -1171,7 +1168,6 @@ observeEvent(input$locus_prev, {
       if (!file.exists(path)) stop(sprintf("%s is not in this copy of the app", basename(path)))
       if (!isTRUE(file.copy(path, f, overwrite = TRUE))) stop(sprintf("could not copy %s", basename(path)))
     })
-  output$dlf_browser <- .dl_file("data.csv", "AD_locus_evidence_20261102.csv")
   output$dlf_genepos <- .dl_file("gene_positions.csv", "gene_coordinates_GRCh38_20261102.csv")
   output$dlf_dict    <- .dl_file("data_dictionary.csv", "AD_loci_data_dictionary_20261102.csv")
   ## locus summary is written from the loaded locus table so it always matches this release
@@ -1219,36 +1215,6 @@ observeEvent(input$locus_prev, {
     content = function(f) utils::write.csv(.ref_genes(), f, row.names = FALSE))
   output$dlf_ref_variants <- downloadHandler(filename = function() "AD_locus_variants_reference_20261102.csv",
     content = function(f) utils::write.csv(.ref_variants(), f, row.names = FALSE))
-  output$dlf_varlvl  <- .dl_file(
-    "downloads/AD_locus_variants_release.csv.gz",
-    "AD_locus_variants_20261102.csv.gz")
-  output$dlf_tier   <- .dl_file("downloads/gene_tier_assignment_release.csv",
-    "AD_gene_tier_assignment_20261102.csv")
-  output$dlf_xlsx    <- .dl_file(
-    "downloads/AD_loci_xQTL_summary_release.xlsx",
-    "AD_locus_xQTL_summary_20261102.xlsx")
-  output$dl_zip <- downloadHandler(
-    filename = function() "AD_loci_explorer_20261102.zip",
-    content  = function(f) {
-      want <- c("data.csv", "data_dictionary.csv", "gene_positions.csv",
-                "downloads/gene_tier_assignment_release.csv",
-                "downloads/AD_loci_xQTL_summary_release.xlsx")
-      fs <- unique(c(want, list.files("downloads", full.names = TRUE)))
-      .ls <- file.path(tempdir(), "AD_locus_summary_release.csv"); utils::write.csv(.locsum_df(), .ls, row.names = FALSE)
-      have <- fs[file.exists(fs)]; miss <- setdiff(want, have)
-      ## A short manifest: release, what is in the archive, what this copy of the app lacks, and the terms
-      .mf <- file.path(tempdir(), "README_release.txt")
-      writeLines(c(paste0("AD Loci Explorer data release ", DATA_RELEASE, ", genome build ", GENOME_BUILD, "."),
-                   "Column definitions: data_dictionary.csv.",
-                   "", "Files in this archive:", paste0("  ", basename(c(have, .ls))),
-                   if (length(miss)) c("", "Not in this copy of the app (download them from the release on Synapse, syn68872650):", paste0("  ", basename(miss))),
-                   "", "Cite: Broad and deep dissection of Alzheimer's disease loci through integrative xQTL modeling (FunGen-AD Consortium).",
-                   "Use of the underlying data follows the AD Knowledge Portal and NIAGADS data use terms for each dataset."), .mf)
-      fs <- c(have, .ls, .mf)
-      if (requireNamespace("zip", quietly = TRUE)) zip::zipr(f, fs)
-      else utils::zip(f, fs, flags = "-j9X")
-    })
-
   lt_term <- reactiveVal("")
   observeEvent(input$lt_qgo,   lt_term(trimws(input$lt_q %||% "")))
   observeEvent(input$lt_qclear, { lt_term(""); updateTextInput(session, "lt_q", value = "") })
@@ -2227,7 +2193,16 @@ output$gp_matrix <- renderUI({
     v <- tryCatch(session$clientData$url_search, error = function(e) "")
     if (is.null(v) || !nzchar(v)) "none (default view)" else sub("^[?]", "", v)
   }
+  ## GWAS summary statistics (p-values, z-scores, -log10 p) are shown in the app but never exported:
+  ## redistributing the original AD GWAS results is not cleared. The significance class stays.
+  .GWAS_STAT_RE <- "^(min_pval|max_zscore|log10pval|-log10p|gwas_p|gwas_z|min_p|lead_p|p|z)$|(^|[_ .])(gwas|ad)[_ .-]?(p|pval|p-value|z|zscore)$"
+  .no_gwas_stats <- function(d) {
+    if (is.null(d)) return(d)
+    d <- as.data.frame(d, check.names = FALSE)
+    d[, !grepl(.GWAS_STAT_RE, names(d), ignore.case = TRUE), drop = FALSE]
+  }
   .prov_csv <- function(d, f, what) {
+    d <- .no_gwas_stats(d)
     ln <- c(paste0("# AD Loci Explorer export: ", what),
             paste0("# Release: ", .rel_lab),
             paste0("# Genome build: ", .bld_lab),
@@ -2238,6 +2213,7 @@ output$gp_matrix <- renderUI({
             "# a zero or a tested null. TWAS, MR and cTWAS columns do record tested nulls.",
             "# Tiers T1 to T6 rank strength of evidence and do not establish causality.",
             "# Column definitions are in the Documentation tab of the application.",
+            "# AD GWAS p-values and z-scores are not included; see the original GWAS studies.",
             paste0("# Cite: ", .cite_txt),
             "#")
     writeLines(ln, f)
