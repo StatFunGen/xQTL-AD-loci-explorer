@@ -68,7 +68,10 @@ parse_ctx_tokens <- function(d) {
     as.data.frame()
 }
 
-dl_row <- function(id, file, desc, rows, fmt, size, cols) {
+# `src`: for files shipped beside the app (app/downloads, not in git), the path that must exist;
+# when it is missing the row says so instead of offering a link that would fail.
+dl_row <- function(id, file, desc, rows, fmt, size, cols, src = NULL) {
+  ok <- is.null(src) || file.exists(src)
   tags$tr(
     tags$td(class = "f",
       div(class = "fn", file),
@@ -77,7 +80,8 @@ dl_row <- function(id, file, desc, rows, fmt, size, cols) {
     tags$td(class = "n dc-mono", rows),
     tags$td(class = "fm", fmt),
     tags$td(class = "n dc-mono", size),
-    tags$td(class = "a", downloadLink(id, "Download", class = "dc-btn", `aria-label` = paste("Download", file))))
+    tags$td(class = "a", if (ok) downloadLink(id, "Download", class = "dc-btn", `aria-label` = paste("Download", file))
+                         else span(class = "dl-missing", "Not in this copy of the app")))
 }
 
 dl_ext <- function(file, desc, fmt, size, href) {
