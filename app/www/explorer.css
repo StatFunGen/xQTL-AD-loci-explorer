@@ -967,8 +967,10 @@ details.dc-new>summary{cursor:pointer;padding:6px 0;list-style-position:inside}
 @media (max-width:767.98px),(min-width:1600px){.sites-long{display:inline}}
 /* Wide screens: the four FunGen-xQTL sites sit inline, in the same order and style as the
    Resources and Protocol top bars (current site in the accent colour, underlined). Narrower
-   screens keep the Sites menu so the tabs have room. */
-.sites-inline,.navbar .nav-item:has(> .sites-inline){display:none}
+   screens keep the Sites menu so the tabs have room. Browsers without :has() keep the menu at every width. */
+.sites-inline{display:none}
+@supports selector(:has(*)){
+.navbar .nav-item:has(> .sites-inline){display:none}
 @media (min-width:1600px){
 .navbar .nav-item:has(> .sites-inline){display:flex;align-items:center}
 .navbar .nav-item.dropdown:has(.sites-long){display:none}
@@ -976,6 +978,7 @@ details.dc-new>summary{cursor:pointer;padding:6px 0;list-style-position:inside}
 .sites-inline a{color:var(--text);text-decoration:none;padding-block:4px}
 .sites-inline a:hover{color:var(--accent)}
 .sites-inline .is-current{color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent);padding-block:4px}
+}
 }
 
 /* ==== Shared FunGen-xQTL design system: header mark, type, locus grid, tier chips, theme switch. Type scale across the three sites: display 48, page title 32, section 22, subsection 17, lead 18, body 15 to 16, small 14 ==== */
