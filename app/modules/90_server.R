@@ -1167,7 +1167,10 @@ observeEvent(input$locus_prev, {
 
   .dl_file <- function(path, name) downloadHandler(
     filename = function() name,
-    content  = function(f) file.copy(path, f, overwrite = TRUE))
+    content  = function(f) {
+      if (!file.exists(path)) stop(sprintf("%s is not in this copy of the app", basename(path)))
+      if (!isTRUE(file.copy(path, f, overwrite = TRUE))) stop(sprintf("could not copy %s", basename(path)))
+    })
   output$dlf_browser <- .dl_file("data.csv", "AD_locus_evidence_20261102.csv")
   output$dlf_genepos <- .dl_file("gene_positions.csv", "gene_coordinates_GRCh38_20261102.csv")
   output$dlf_dict    <- .dl_file("data_dictionary.csv", "AD_loci_data_dictionary_20261102.csv")

@@ -150,6 +150,7 @@ app_footer <- tags$footer(class = "site-footer",
         tags$button(id = "theme_btn", type = "button", class = "theme-btn", `aria-label` = "Color theme: automatic", "Theme: automatic")))
 
 ui <- page_navbar(
+  window_title = "AD Loci Explorer | FunGen-xQTL",
   id = "nav", lang = "en",
   title = tags$a(id = "brand_home", href = "#", class = "brand action-button",
               HTML('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="28" height="28" aria-hidden="true" focusable="false" class="fx-mark"><defs><mask id="fxm" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="1000"><rect width="1000" height="1000" fill="#fff"/><path fill="#000" fill-rule="nonzero" transform="translate(125.39756030 125.39756030) scale(0.7)" d="M -2429.70731515,3346.68639335 L 2570.29268485,-1653.31360665 L 2570.29268485,-1346.68639335 L -2429.70731515,3653.31360665 Z M -2346.68639335,-2500.00000000 L 576.65680332,423.34319668 L 423.34319668,576.65680332 L -2500.00000000,-2346.68639335 Z M 750.96452424,471.64176726 L 2500.00000000,471.64176726 L 2500.00000000,688.45994907 L 534.14634243,688.45994907 Z M 359.07901596,863.52727554 L 2500.00000000,863.52727554 L 2500.00000000,1080.34545736 L 142.26083414,1080.34545736 Z" /></mask></defs><circle cx="500" cy="500" r="500" class="fx-disc" mask="url(#fxm)"/></svg>'),
@@ -623,11 +624,11 @@ ui <- page_navbar(
               dl_row("dlf_tier", "Gene tier assignment",
               paste0("The evidence tier assigned to each gene in this release: the ", format(n_t1_t6, big.mark = ","), " tiered genes shown in this app."),
               format(n_t1_t6, big.mark = ","), "CSV", "11 KB",
-              "gene_ID, gene_name, tier"),
+              "gene_ID, gene_name, tier", src = "downloads/gene_tier_assignment_release.csv"),
             dl_row("dlf_varlvl", "AD locus variants",
                 "Variant-level unified AD loci table behind the locus definitions.",
                 N_VAR_RELEASE, "CSV.GZ", "934 KB",
-                "chr, pos, ADlocus, variant_ID, GWAS_methods, max_variant_inclusion_probability, gwas_sources, is.cs95, max_zscore"))),
+                "chr, pos, ADlocus, variant_ID, GWAS_methods, max_variant_inclusion_probability, gwas_sources, is.cs95, max_zscore", src = "downloads/AD_locus_variants_release.csv.gz"))),
           dl_group("Reference files for linking",
             "for resources that link to this explorer, such as NIAGADS",
             list(
@@ -650,7 +651,7 @@ ui <- page_navbar(
               dl_row("dlf_xlsx", "AD locus and xQTL summary workbook",
                 "Unified AD locus and xQTL summary, one sheet per evidence type.",
                 "—", "XLSX", "8.8 MB",
-                "see the workbook header row"))),
+                "see the workbook header row", src = "downloads/AD_loci_xQTL_summary_release.xlsx"))),
           dl_group("In the catalog",
             "too large to serve from this browser",
             list(

@@ -1064,3 +1064,14 @@ body{font-size:15px}
 :root[data-theme='dark'] #tn_active{color:#e8eef2!important}
 :root[data-theme='dark'] .tchip,:root[data-theme='dark'] .led-chip{box-shadow:0 0 0 1px #8fa3b3}
 :root[data-theme='dark'] .lt-ebar{box-shadow:0 0 0 1px #8fa3b3}
+
+/* Download rows whose file is not shipped with this copy of the app */
+.dl-missing{display:inline-block;font-size:13px;color:var(--muted);line-height:1.3}
+/* Genome browser on phones: the IGV toolbar wraps instead of overflowing its card, so the
+   location field and every button stay reachable */
+@media (max-width:640px){
+.igv-navbar{height:auto!important;flex-wrap:wrap!important;row-gap:6px;padding:6px 4px!important}
+.igv-navbar-left-container,.igv-navbar-right-container{height:auto!important;flex-wrap:wrap!important;row-gap:6px;max-width:100%}
+.igv-navbar-left-container input,.igv-search-container input,.igv-navbar input[type=text]{min-width:0!important;width:100%!important;max-width:100%}
+.igv-search-container,.igv-navbar-genomic-location{flex:1 1 100%!important;min-width:0!important;max-width:100%}
+}
