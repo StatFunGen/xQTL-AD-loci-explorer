@@ -1448,7 +1448,7 @@ ui <- page_navbar(
         "probability, the posterior probability that this variant is the one shared by the GWAS and ",
         "the molecular trait. This is stronger evidence than positional overlap, which two distinct ",
         "causal variants close together can also produce. The integration yields 37,673 ",
-        "colocalization events covering 12,623 genes in 20 ROSMAP contexts (Figure 3a)."),
+        "colocalization events covering 12,623 genes across ROSMAP molecular modalities and contexts (Figure 3a)."),
       p("Variants are also scored with cV2F, an AD consensus variant-to-function model. It extends the ",
         "original cV2F model with FunGen-xQTL features, namely cross-modality PIP, multi-trait ",
         "colocalization and conditional posterior effect estimates. The AUROC is 0.855 with the ",
