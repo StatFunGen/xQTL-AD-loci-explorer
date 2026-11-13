@@ -2169,7 +2169,7 @@ output$gp_matrix <- renderUI({
   # ---- P2.14 / P2.15 provenance ------------------------------------------
   .rel_lab  <- if (exists("RELEASE_LABEL")) as.character(RELEASE_LABEL) else "2026-11-02"
   .bld_lab  <- if (exists("BUILD_LABEL")) as.character(BUILD_LABEL) else "GRCh38"
-  .cite_txt <- "The Alzheimer Disease Functional Genomics (FunGen-AD) Consortium. Broad and deep dissection of Alzheimer disease genetics with FunGen-xQTL."
+  .cite_txt <- "The Alzheimer Disease Functional Genomics (FunGen-AD) Consortium. Broad and deep dissection of Alzheimer's disease loci through integrative xQTL modeling."
   .cur_q <- function() {
     v <- tryCatch(session$clientData$url_search, error = function(e) "")
     if (is.null(v) || !nzchar(v)) "none (default view)" else sub("^[?]", "", v)
@@ -2201,7 +2201,7 @@ output$gp_matrix <- renderUI({
 
   .man_txt <- paste0(
     "The Alzheimer Disease Functional Genomics (FunGen-AD) Consortium. ",
-    "Broad and deep dissection of Alzheimer disease genetics with FunGen-xQTL. ",
+    "Broad and deep dissection of Alzheimer's disease loci through integrative xQTL modeling. ",
     "Manuscript in preparation, ", substr(.rel_lab, 1, 4), ".")
 
   .rel_id <- function() {
@@ -2225,7 +2225,7 @@ output$gp_matrix <- renderUI({
     z <- REL_CITE$zenodo_doi; s <- REL_CITE$synapse_id
     paste0(
       "@unpublished{fungen_xqtl_manuscript,\n",
-      "  title  = {Broad and deep dissection of Alzheimer disease genetics with FunGen-xQTL},\n",
+      "  title  = {Broad and deep dissection of Alzheimer's disease loci through integrative xQTL modeling},\n",
       "  author = {{The Alzheimer Disease Functional Genomics (FunGen-AD) Consortium}},\n",
       "  year   = {", substr(.rel_lab, 1, 4), "},\n",
       "  note   = {Manuscript in preparation}\n}\n\n",
@@ -2248,7 +2248,7 @@ output$gp_matrix <- renderUI({
     yr <- substr(.rel_lab, 1, 4)
     z <- REL_CITE$zenodo_doi; s <- REL_CITE$synapse_id
     man <- c("TY  - UNPB",
-             "T1  - Broad and deep dissection of Alzheimer disease genetics with FunGen-xQTL",
+             "T1  - Broad and deep dissection of Alzheimer's disease loci through integrative xQTL modeling",
              "AU  - The Alzheimer Disease Functional Genomics (FunGen-AD) Consortium",
              paste0("PY  - ", yr),
              "N1  - Manuscript in preparation",
