@@ -98,6 +98,23 @@ dl_ext <- function(file, desc, fmt, size, href) {
              "Catalog →")))
 }
 
+## A release file kept on Synapse (versioned, with its data-use terms) rather than served from the app.
+SYN_RELEASE <- "syn69865823"
+dl_syn <- function(file, desc, rows, fmt, size, cols, syn = SYN_RELEASE) {
+  tags$tr(class = "ext",
+    tags$td(class = "f",
+      div(class = "fn", file),
+      div(class = "de", desc),
+      div(class = "cl dc-mono", paste0("Columns: ", cols))),
+    tags$td(class = "n dc-mono", rows),
+    tags$td(class = "fm", fmt),
+    tags$td(class = "n dc-mono", size),
+    tags$td(class = "a",
+      tags$a(href = paste0("https://www.synapse.org/Synapse:", syn), target = "_blank", rel = "noopener",
+             class = "dc-btn", `aria-label` = paste(file, "on Synapse (opens in a new tab)"),
+             "Synapse →")))
+}
+
 dl_group <- function(title, note, rows) {
   div(class = "dl-grp",
     div(class = "dl-grp-h", span(class = "t", title), span(class = "n", note)),
