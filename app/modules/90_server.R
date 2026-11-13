@@ -1230,10 +1230,21 @@ observeEvent(input$locus_prev, {
   output$dl_zip <- downloadHandler(
     filename = function() "AD_loci_explorer_20261102.zip",
     content  = function(f) {
-      fs <- c("data.csv", "gene_positions.csv",
-              list.files("downloads", full.names = TRUE))
-      .ls <- file.path(tempdir(), "AD_locus_summary_release.csv"); utils::write.csv(.locsum_df(), .ls, row.names = FALSE); fs <- c(fs, .ls)
-      fs <- fs[file.exists(fs)]
+      want <- c("data.csv", "data_dictionary.csv", "gene_positions.csv",
+                "downloads/gene_tier_assignment_release.csv",
+                "downloads/AD_loci_xQTL_summary_release.xlsx")
+      fs <- unique(c(want, list.files("downloads", full.names = TRUE)))
+      .ls <- file.path(tempdir(), "AD_locus_summary_release.csv"); utils::write.csv(.locsum_df(), .ls, row.names = FALSE)
+      have <- fs[file.exists(fs)]; miss <- setdiff(want, have)
+      ## A short manifest: release, what is in the archive, what this copy of the app lacks, and the terms
+      .mf <- file.path(tempdir(), "README_release.txt")
+      writeLines(c(paste0("AD Loci Explorer data release ", DATA_RELEASE, ", genome build ", GENOME_BUILD, "."),
+                   "Column definitions: data_dictionary.csv.",
+                   "", "Files in this archive:", paste0("  ", basename(c(have, .ls))),
+                   if (length(miss)) c("", "Not in this copy of the app (download them from the release on Synapse, syn68872650):", paste0("  ", basename(miss))),
+                   "", "Cite: Broad and deep dissection of Alzheimer's disease loci through integrative xQTL modeling (FunGen-AD Consortium).",
+                   "Use of the underlying data follows the AD Knowledge Portal and NIAGADS data use terms for each dataset."), .mf)
+      fs <- c(have, .ls, .mf)
       if (requireNamespace("zip", quietly = TRUE)) zip::zipr(f, fs)
       else utils::zip(f, fs, flags = "-j9X")
     })
@@ -2018,26 +2029,51 @@ output$gp_matrix <- renderUI({
 
   output$ql_stats <- renderUI({
     n   <- nrow(dat)
-    pip <- dat$max_inclusion
-    sharp <- sum(!is.na(pip) & pip >= 0.5)
+    ## PIP 0.5 is counted among GWAS fine-mapping rows only, where the value is a PIP
+    fm  <- !is.na(dat$max_inclusion_method) & dat$max_inclusion_method == "single_gwas_finemapping"
+    sharp <- sum(fm & !is.na(dat$max_inclusion) & dat$max_inclusion >= 0.5)
     gw  <- sum(!is.na(dat$significance) & dat$significance == "genome wide")
     cv  <- sum(!is.na(dat$cv2f_score))
     div(class = "dc-counts", style = "margin-top:20px",
         .cnt(n, "variant-gene rows"),
-        .cnt(round(100 * sharp / n), "% reach PIP 0.5 or more"),
+        .cnt(round(100 * sharp / max(1, sum(fm))), "% of GWAS fine-mapping rows reach PIP 0.5"),
         .cnt(round(100 * gw / n), "% genome-wide significant"),
         .cnt(round(100 * cv / n), "% carry a cV2F score"))
   })
 
-  .fig_ql_pip <- function() {
-    v <- dat$max_inclusion[!is.na(dat$max_inclusion)]
-    ggplot(data.frame(v = v), aes(x = v)) +
-      geom_histogram(bins = 26, fill = "#2a78d6", colour = "#ffffff", linewidth = 0.4) +
-      scale_x_continuous(limits = c(0, 1), breaks = c(0, 0.25, 0.5, 0.75, 1)) +
-      labs(x = "Highest inclusion probability", y = NULL) +
-      .ql_theme()
+  ## max_inclusion mixes three posterior quantities (data dictionary), so each method gets its own panel
+  .QL_METHOD <- c(ADxQTL_coloc = "ColocBoost VCP, AD with xQTL",
+                  ADxAD_coloc = "ColocBoost VCP, across AD GWAS",
+                  single_gwas_finemapping = "GWAS fine-mapping PIP",
+                  ADFsusie_coloc = "fSuSiE coloc SNP PP.H4")
+  .ql_pip_df <- function() {
+    d <- dat[!is.na(dat$max_inclusion) & !is.na(dat$max_inclusion_method), c("max_inclusion", "max_inclusion_method")]
+    m <- as.character(d$max_inclusion_method)
+    lab <- ifelse(m %in% names(.QL_METHOD), unname(.QL_METHOD[m]), m)
+    lev <- c(unname(.QL_METHOD), setdiff(unique(lab), unname(.QL_METHOD)))
+    lev <- lev[lev %in% lab]
+    cnt <- table(factor(lab, levels = lev))
+    facet <- paste0(lev, " (n = ", trimws(format(as.integer(cnt), big.mark = ",")), ")")
+    data.frame(v = d$max_inclusion, method = factor(lab, levels = lev, labels = facet))
   }
-  output$ql_pip <- renderPlot(.fig_ql_pip(), res = 96)
+  .fig_ql_pip <- function() {
+    ggplot(.ql_pip_df(), aes(x = v)) +
+      geom_histogram(bins = 20, boundary = 0, fill = "#2a78d6", colour = "#ffffff", linewidth = 0.3) +
+      facet_wrap(~ method, ncol = 2, scales = "free_y", labeller = label_wrap_gen(width = 24)) +
+      scale_x_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1)) +
+      labs(x = "Highest AD-side probability for the variant", y = "Rows") +
+      .ql_theme() +
+      theme(strip.text = element_text(size = 8.5, hjust = 0, colour = "#202b35"),
+            axis.title.y = element_text(size = 9, colour = "#5c6b75"))
+  }
+  .ql_pip_alt <- function() {
+    d <- .ql_pip_df(); parts <- vapply(levels(d$method), function(l) {
+      x <- d$v[d$method == l]; sprintf("%s, %d%% at 0.5 or more", l, round(100 * mean(x >= 0.5)))
+    }, character(1))
+    paste0("Histograms of each variant-gene row's highest AD-side probability, one panel per method: ",
+           paste(parts, collapse = "; "), ". The values are listed in the CSV export below the figure.")
+  }
+  output$ql_pip <- renderPlot(.fig_ql_pip(), res = 96, alt = .ql_pip_alt)
 
   .fig_ql_cv2f <- function() {
     v <- dat$cv2f_score[!is.na(dat$cv2f_score)]
@@ -2046,7 +2082,11 @@ output$gp_matrix <- renderUI({
       labs(x = "cV2F score", y = NULL) +
       .ql_theme()
   }
-  output$ql_cv2f <- renderPlot(.fig_ql_cv2f(), res = 96)
+  output$ql_cv2f <- renderPlot(.fig_ql_cv2f(), res = 96, alt = function() {
+    v <- dat$cv2f_score[!is.na(dat$cv2f_score)]
+    sprintf("Histogram of cV2F variant-to-function scores for %s variant-gene rows with a score, median %.2f. The values are listed in the CSV export below the figure.",
+            format(length(v), big.mark = ","), stats::median(v))
+  })
 
   .fig_ql_sig <- function() {
     nice <- c(`genome wide` = "Genome-wide", suggestive = "Suggestive",
@@ -2070,7 +2110,13 @@ output$gp_matrix <- renderUI({
       theme(axis.text.y = element_blank(),
             axis.text.x = element_text(size = 8.5, lineheight = 0.95))
   }
-  output$ql_sig <- renderPlot(.fig_ql_sig(), res = 96)
+  output$ql_sig <- renderPlot(.fig_ql_sig(), res = 96, alt = function() {
+    v <- as.character(dat$significance); v[is.na(v) | !nzchar(v)] <- "no p-value"
+    tb <- table(v)
+    paste0("Bar chart of variant-gene rows by GWAS significance: ",
+           paste(sprintf("%s %s", names(tb), format(as.integer(tb), big.mark = ",")), collapse = ", "),
+           ". The values are listed in the CSV export below the figure.")
+  })
 
 
 
@@ -2088,9 +2134,13 @@ output$gp_matrix <- renderUI({
     tb <- as.data.frame(table(factor(as.character(d$top_confidence), levels = .lv)), stringsAsFactors = FALSE)
     names(tb) <- c("tier", "count"); tb
   }
-  output$dl_ql_pip_png  <- .png_only("fine_mapping_confidence", .fig_ql_pip, 6, 3.2)
-  output$dl_ql_pip_csv  <- downloadHandler(filename = function() "fine_mapping_confidence.csv",
-    content = function(f) .prov_csv(.rec_cols("max_inclusion"), f, "highest PIP per gene record"))
+  output$dl_ql_pip_png  <- .png_only("AD_side_probability_by_method", .fig_ql_pip, 7, 4.6)
+  output$dl_ql_pip_csv  <- downloadHandler(filename = function() "AD_side_probability_by_method.csv",
+    content = function(f) {
+      d <- dat[!is.na(dat$max_inclusion), c("ADlocus", "gene", "rsid", "max_inclusion", "max_inclusion_method"), drop = FALSE]
+      names(d)[1] <- "AD_locus"
+      .prov_csv(d, f, "highest AD-side probability per variant-gene row and the method that gave it (ColocBoost VCP, fine-mapping PIP or fSuSiE coloc SNP PP.H4)")
+    })
   output$dl_ql_cv2f_png <- .png_only("variant_to_function_score", .fig_ql_cv2f, 6, 3.2)
   output$dl_ql_cv2f_csv <- downloadHandler(filename = function() "variant_to_function_score.csv",
     content = function(f) .prov_csv(.rec_cols("cv2f_score"), f, "cV2F score per variant-gene row"))
