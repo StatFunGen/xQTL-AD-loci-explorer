@@ -1428,7 +1428,7 @@ ui <- page_navbar(
         "robust to LD mismatch. Spurious credible sets arise when the reference panel and the study ",
         "sample differ in correlation structure, which is why the regional view uses this reference ",
         "and not a generic public LD panel."),
-          p("The reference is a stochastic LD sketch built from 16,905 European-ancestry ADSP whole ",
+          p("The reference is a stochastic LD sketch built from 16,571 European-ancestry ADSP whole ",
             "genomes; multi-ancestry GWAS fine-mapping uses ancestry-specific sketches built the same ",
             "way. For xQTL, SuSiE uses individual-level genotype and phenotype data, SuSiE-RSS uses ",
             "summary statistics, mvSuSiE uses empirical priors for cell-type-specific expression and ",
