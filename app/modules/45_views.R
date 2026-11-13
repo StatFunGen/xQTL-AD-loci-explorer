@@ -24,7 +24,7 @@ CT_CHOICES <- stats::setNames(names(CT_COLS), unname(CT_COLS))
 # the same thing: the key is a join, the label is display. Renaming a key to
 # match a preferred label silently orphans every row it should have matched.
 CTX_MAP <- list(
-  "AC_DeJager_eQTL" = c("Anterior cingulate", "CUIMC1", "eQTL", "ct_Brain_xQTL"),
+  "AC_DeJager_eQTL" = c("Anterior caudate", "CUIMC1", "eQTL", "ct_Brain_xQTL"),
   "Ast_DeJager_eQTL" = c("Astrocyte", "CUIMC1", "eQTL", "ct_Ast_xQTL"),
   "Ast_Kellis_eQTL" = c("Astrocyte", "MIT", "eQTL", "ct_Ast_xQTL"),
   "Ast_mega_eQTL" = c("Astrocyte", "mega", "eQTL", "ct_Ast_xQTL"),
@@ -68,9 +68,9 @@ CTX_MAP <- list(
   "Oli_Kellis_eQTL" = c("Oligodendrocyte", "MIT", "eQTL", "ct_Oli_xQTL"),
   "Oli_mega_eQTL" = c("Oligodendrocyte", "mega", "eQTL", "ct_Oli_xQTL"),
   "PCC_DeJager_eQTL" = c("PCC", "CUIMC1", "eQTL", "ct_Brain_xQTL"),
-  "ROSMAP_AC_p_sQTL" = c("Anterior cingulate", "ROSMAP", "sQTL", "ct_Brain_xQTL"),
-  "ROSMAP_AC_sQTL" = c("Anterior cingulate", "ROSMAP", "sQTL", "ct_Brain_xQTL"),
-  "ROSMAP_AC_u_sQTL" = c("Anterior cingulate", "ROSMAP", "sQTL", "ct_Brain_xQTL"),
+  "ROSMAP_AC_p_sQTL" = c("Anterior caudate", "ROSMAP", "sQTL", "ct_Brain_xQTL"),
+  "ROSMAP_AC_sQTL" = c("Anterior caudate", "ROSMAP", "sQTL", "ct_Brain_xQTL"),
+  "ROSMAP_AC_u_sQTL" = c("Anterior caudate", "ROSMAP", "sQTL", "ct_Brain_xQTL"),
   "ROSMAP_DLPFC_haQTL" = c("DLPFC", "ROSMAP", "haQTL", "ct_Brain_xQTL"),
   "ROSMAP_DLPFC_mQTL" = c("DLPFC", "ROSMAP", "mQTL", "ct_Brain_xQTL"),
   "ROSMAP_DLPFC_p_sQTL" = c("DLPFC", "ROSMAP", "sQTL", "ct_Brain_xQTL"),
