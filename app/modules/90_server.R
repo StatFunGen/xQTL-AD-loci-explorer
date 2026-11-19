@@ -2265,7 +2265,7 @@ output$gp_matrix <- renderUI({
       "  version   = {", .rel_lab, "},\n",
       "  publisher = {", REL_CITE$publisher, "},\n",
       if (nzchar(z)) paste0("  doi       = {", z, "},\n") else "",
-      if (nzchar(s)) paste0("  howpublished = {Synapse ", s, "},\n") else "",
+      if (nzchar(s)) paste0("  howpublished = {AD Knowledge Portal, ", s, "},\n") else "",
       "  url       = {", .cite_url(), "},\n",
       "  note      = {Genome build ", .bld_lab, ". Locus ", loc,
       ". Query: ", .cur_q(), ". Accessed ", format(Sys.Date()),

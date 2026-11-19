@@ -111,8 +111,8 @@ dl_syn <- function(file, desc, rows, fmt, size, cols, syn = SYN_RELEASE) {
     tags$td(class = "n dc-mono", size),
     tags$td(class = "a",
       tags$a(href = paste0("https://www.synapse.org/Synapse:", syn), target = "_blank", rel = "noopener",
-             class = "dc-btn", `aria-label` = paste(file, "on Synapse (opens in a new tab)"),
-             "Synapse →")))
+             class = "dc-btn", `aria-label` = paste(file, "on the AD Knowledge Portal (opens in a new tab)"),
+             "AD Knowledge Portal →")))
 }
 
 dl_group <- function(title, note, rows) {
