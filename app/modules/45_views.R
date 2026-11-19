@@ -310,7 +310,7 @@ panel_batch <- function() {
             textAreaInput("bt_in", info("Your list",
               "Up to 300 entries. Write regions as chr2:127088929-127118906. Entries with no match are listed, not dropped."),
               value = "", rows = 7, width = "100%",
-              placeholder = "BIN1\nAPOE\nrs429358\nchr2:127088929-127118906\nENSG00000130203"),
+              placeholder = "BIN1\nAPOE\nrs429358\nchr2:127088929-127118906\nENSG00000073921"),
             div(class = "bt-btns",
                 actionButton("bt_go", "Match list", class = "dc-btn dc-btn-go"),
                 actionLink("bt_demo", "Load an example", class = "gp-clear"),

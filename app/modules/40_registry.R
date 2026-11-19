@@ -26,7 +26,7 @@ locus_registry <- dat %>%
   dplyr::mutate(region = sprintf("%s:%.0f-%.0f", chr, start, end))
 
 gname_map <- local({
-  f <- "data/gene_ensembl_map.csv"
+  f <- "data_aux/gene_ensembl_map.csv"
   if (!file.exists(f)) return(character(0))
   m <- utils::read.csv(f, stringsAsFactors = FALSE)
   if (is.null(m$GENENAME)) return(character(0))
@@ -35,7 +35,7 @@ gname_map <- local({
 })
 
 gid_map <- local({
-  f <- "data/gene_ensembl_map.csv"
+  f <- "data_aux/gene_ensembl_map.csv"
   if (!file.exists(f)) return(character(0))
   m <- utils::read.csv(f, stringsAsFactors = FALSE)
   m <- m[!is.na(m$ENSEMBL) & nzchar(m$ENSEMBL) & !duplicated(m$SYMBOL), ]
