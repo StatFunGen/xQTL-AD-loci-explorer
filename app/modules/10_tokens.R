@@ -35,7 +35,7 @@ trans_types <- c(
 # panel, the BibTeX export and the RIS export read these directly, so nothing
 # else needs editing. Set publisher to the repository that issues the record.
 REL_CITE <- list(
-  publisher  = "Synapse, AD Knowledge Portal",
+  publisher  = "AD Knowledge Portal",
   synapse_id = "syn68872650",
   zenodo_doi = "",
   grant      = "U01AG072572"

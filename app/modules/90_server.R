@@ -1068,7 +1068,7 @@ observeEvent(input$locus_prev, {
   observeEvent(input$ex_apoe,  .go_example("APOE"))
   observeEvent(input$ex_trem2, .go_example("TREM2"))
   observeEvent(input$ex_rs,    .go_example("rs429358"))
-  observeEvent(input$ex_ensg,   .go_example("ENSG00000130203"))
+  observeEvent(input$ex_ensg,   .go_example("ENSG00000073921"))
 
 
   output$p_transnet <- renderPlot({
@@ -1928,7 +1928,7 @@ output$gp_matrix <- renderUI({
   }, ignoreInit = TRUE)
   observeEvent(input$bt_demo, {
     updateTextAreaInput(session, "bt_in",
-      value = "BIN1\nAPOE\nTREM2\nCLU\nPICALM\nrs429358\nchr2:127088929-127118906\nENSG00000130203")
+      value = "BIN1\nAPOE\nTREM2\nCLU\nPICALM\nrs429358\nchr2:127088929-127118906\nENSG00000137845")
   })
 
   bt_m <- reactive({ tk <- bt_tok(); if (!length(tk)) NULL else batch_match(tk) })
@@ -2265,7 +2265,7 @@ output$gp_matrix <- renderUI({
       "  version   = {", .rel_lab, "},\n",
       "  publisher = {", REL_CITE$publisher, "},\n",
       if (nzchar(z)) paste0("  doi       = {", z, "},\n") else "",
-      if (nzchar(s)) paste0("  howpublished = {Synapse ", s, "},\n") else "",
+      if (nzchar(s)) paste0("  howpublished = {AD Knowledge Portal, ", s, "},\n") else "",
       "  url       = {", .cite_url(), "},\n",
       "  note      = {Genome build ", .bld_lab, ". Locus ", loc,
       ". Query: ", .cur_q(), ". Accessed ", format(Sys.Date()),
