@@ -1090,5 +1090,8 @@ body{font-size:15px}
 .dc-hero .dc-searchwrap{margin:22px 0 0;max-width:660px;border-radius:999px;overflow:hidden;border:1.5px solid var(--navy)}
 .dc-hero .dc-searchbtn{border-radius:0 999px 999px 0}
 .dc-hero .dc-try{justify-content:flex-start}
-@media (max-width:720px){.dc-hero-top{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center;gap:16px}.dc-hero-mark{width:100px;height:100px}.dc-hero .dc-try{justify-content:center}.dc-hero .dc-searchwrap{margin-left:auto;margin-right:auto}}
+@media (max-width:720px){.dc-hero-top{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center;gap:16px}.dc-hero-mark{width:72px;height:72px}.dc-hero .dc-try{justify-content:center}.dc-hero .dc-searchwrap{margin-left:auto;margin-right:auto}}
 @media (max-width:720px){.dc-hero-text{width:100%;align-items:center}.dc-hero .dc-lede{max-width:none}.dc-hero .dc-searchwrap{width:100%;border-radius:14px}.dc-hero .dc-searchbtn{border-radius:0}}
+
+/* phones: keep the search placeholder clear of the dropdown arrow */
+@media (max-width:640px){.dc-searchwrap .selectize-input{padding-right:36px!important}.dc-hero{padding-top:28px!important}}
