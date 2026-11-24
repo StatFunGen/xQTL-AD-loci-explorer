@@ -208,7 +208,7 @@ ui <- page_navbar(
             "behind each link."),
           div(class = "dc-searchwrap",
             selectizeInput("hero_search", NULL, choices = NULL, width = "100%",
-              options = list(placeholder = "Search gene, Ensembl ID, rsID or genomic region",
+              options = list(placeholder = "Gene, Ensembl ID, rsID or region",
                 maxOptions = 25, create = TRUE, searchField = c("label", "gid"),
                 onInitialize = I('function() { this.setValue(""); }'))),
             actionLink("hero_go", "Search", class = "dc-searchbtn")),
@@ -231,7 +231,7 @@ ui <- page_navbar(
             div(div(class = "dc-count-n dc-mono", sprintf("%.1f%%", 100 * length(unique(dat$ADlocus[!is.na(dat$gene) & nzchar(as.character(dat$gene))])) / nrow(locus_registry))),
                 div(class = "dc-count-l", info("loci with evidence", "Share of AD loci with at least one target gene supported by cis or trans xQTL evidence, including quantile QTL."))),
             div(div(class = "dc-count-n dc-mono", format(if (is.null(trans_pairs)) 0L else nrow(unique(trans_pairs[, c("ADlocus", "tgt")])), big.mark = ",")),
-                div(class = "dc-count-l", info("distinct trans pairs", "An AD locus and a target gene on another chromosome, linked by trans-xQTL evidence. Each pair counts once here; the Trans tab lists one row per supporting modality, so it shows more rows."))),
+                div(class = "dc-count-l", info("distinct trans pairs", "An AD locus and a target gene on another chromosome, linked by trans-xQTL evidence. Each pair counts once here; the Trans links tab lists one row per supporting modality, so it shows more rows."))),
             div(div(class = "dc-count-n dc-mono", "266,084"),
                 div(class = "dc-count-l", info("cis-xQTL credible sets", "A 95% credible set is the smallest set of variants with at least a 95% probability of containing the causal variant. cis means the variant lies near the gene it affects.")))))),
       div(class = "dc-band",
@@ -463,7 +463,7 @@ ui <- page_navbar(
           "Hover over a column name for more.")),
       div(class = "panel-note", style = "margin-top:-4px",
         "Trans target genes for this locus are drawn on the ",
-        actionLink("go_trans", "Trans"), " tab."))
+        actionLink("go_trans", "Trans links"), " tab."))
   ),
 
   # ---- Trans ---------------------------------------------------------------
@@ -528,7 +528,7 @@ ui <- page_navbar(
   # ---- Locus detail ---------------------------------------------------------
     panel_cell_types(),
     nav_panel(
-      "Trans", icon = icon("share-nodes"),
+      "Trans links", value = "Trans", icon = icon("share-nodes"),
       div(class = "tc-top",
         h1(class = "doc-h", style = "font-size:22px;margin:0", "Trans associations"),
         div(class = "dc-sub", style = "max-width:820px",
@@ -756,6 +756,9 @@ ui <- page_navbar(
       div(class = "doc-body",
 
     div(class = "doc-sec", id = "doc-overview", h2(class = "doc-h", "Overview"),
+      p(tags$b("In short: "), "search a gene, variant or region to see which AD loci it belongs to, which genes ",
+        "each locus most likely acts through, and the evidence tier behind each gene. The sections below explain ",
+        "how the evidence is built."),
       p("For each Alzheimer's disease (AD) GWAS locus, which gene does the risk variant most ",
         "plausibly act through, and what molecular evidence supports that link? FunGen-xQTL ",
         "answers this by combining AD GWAS with multi-omic molecular quantitative trait loci (xQTL). ",
@@ -782,11 +785,13 @@ ui <- page_navbar(
         " to inspect molecular associations, fine-mapping results and genomic context for genes, variants and regions. ",
         "The explorer provides AD risk-region and gene-prioritization results; the Atlas provides detailed molecular-association and fine-mapping results. ",
         "The two resources are complementary and may use different data releases, so check the release date shown on each site."),
-      p("Genes and variants link out to the Atlas and to NIAGADS GenomicsDB. Any gene or locus here can be opened directly: ",
-        tags$code("?gene=BIN1"), " opens the gene on the Genes page (an Ensembl ID such as ", tags$code("?gene=ENSG00000136717"), " also works), ", tags$code("?region=chr2:127088929-127118906"),
-        " opens the locus at those GRCh38 coordinates, and ", tags$code("?variant=rs4663096"),
-        " opens the locus containing that variant, each appended to ", tags$code(EXPLORER_URL), ". ",
-        "The reference files on the Download page list every locus, gene and variant with its link.")),
+      p("Genes and variants link out to the Atlas and to NIAGADS GenomicsDB. Any gene or locus here can be opened ",
+        "directly by adding one of these to ", tags$code(EXPLORER_URL), ":"),
+      tags$ul(
+        tags$li(tags$code("?gene=BIN1"), ": the gene on the Genes page (an Ensembl ID such as ", tags$code("?gene=ENSG00000136717"), " also works)"),
+        tags$li(tags$code("?region=chr2:127088929-127118906"), ": the locus at those GRCh38 coordinates"),
+        tags$li(tags$code("?variant=rs4663096"), ": the locus containing that variant")),
+      p("The reference files on the Download page list every locus, gene and variant with its link.")),
     div(class = "doc-sec", id = "doc-study-design-and-data-sources", h2(class = "doc-h", "Study design and data sources"),
       p("The Alzheimer's Disease Functional Genomics (FunGen-AD) Consortium produced the molecular ",
         "data, 77 datasets from 2,328 participants with brain and immune-cell profiles. Of these ",
@@ -920,7 +925,7 @@ ui <- page_navbar(
 
     div(class = "doc-sec", id = "doc-reading-the-table", h2(class = "doc-h", "Reading the table"),
       p("Counts here use three units. A row is one variant and target gene pair at one AD locus; the Locus detail, ",
-        "Cell types and Batch tables list rows; their tier bars count genes by default, with a switch to count rows. A gene record is one target gene in one ",
+        "Cell types and Batch lookup tables list rows; their tier bars count genes by default, with a switch to count rows. A gene record is one target gene in one ",
         "context and one modality, counted once across loci at its best tier; the Home figure and the context by modality ",
         "counts use gene records. A gene is counted once however many rows or records it has; the tier table counts genes."),
       p("On the Loci tab, the lead variant is the locus variant with the smallest AD GWAS p-value, and the highest-priority ",

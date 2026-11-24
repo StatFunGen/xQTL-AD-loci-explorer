@@ -297,7 +297,7 @@ panel_cell_types <- function() {
 # ---- Batch panel: paste a list of genes, rsIDs or regions ----
 panel_batch <- function() {
   nav_panel(
-    "Batch", icon = icon("clipboard-list"),
+    "Batch lookup", value = "Batch", icon = icon("clipboard-list"),
     div(class = "tc-top",
         h1(class = "doc-h", style = "font-size:22px;margin:0", "Check a list against this release"),
         div(class = "dc-sub", style = "max-width:820px",
