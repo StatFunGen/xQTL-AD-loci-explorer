@@ -156,16 +156,9 @@ server <- function(input, output, session) {
   fmt <- function(x) format(x, big.mark = ",")
 
   # ----- dashboard KPIs & plots (full data) -----
-  output$kpi_pct <- renderText({
-    n <- nrow(locus_registry)
-    k <- length(unique(dat$ADlocus[!is.na(dat$gene) & nzchar(as.character(dat$gene))]))
-    sprintf("%.1f%%", 100 * k / n)
-  })
   output$kpi_rows  <- renderText(fmt(nrow(dat)))
   output$kpi_loci  <- renderText(fmt(length(loci)))
   output$kpi_genes <- renderText(fmt(length(genes)))
-  ## distinct AD locus - target gene pairs on the Trans tab (TransMap and any trans fine-mapping)
-  output$kpi_trans <- renderText(fmt(if (is.null(trans_pairs)) 0L else nrow(unique(trans_pairs[, c("ADlocus", "tgt")]))))
   output$kpi_tier  <- renderText({ m <- median(as.integer(dat$top_confidence[!dat$top_confidence %in% c(NO_GENE, NO_TIER)]), na.rm = TRUE)
                                     if (is.na(m)) "—" else paste0("T", round(m)) })
 
