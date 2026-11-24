@@ -23,6 +23,23 @@ dat <- dat %>% mutate(
   across(c(twas_sig, mr_sig, ctwas_sig, has_trans, all_of(ct_cols)), as.logical)
 )
 
+# Gene-level TWAS / MR / cTWAS significance per AD locus, from the released summary
+# workbook (scripts/gene_evidence_from_release.py). data.csv carries these flags per
+# variant row, and a gene's significant contexts often sit on rows the app does not
+# show, so genes such as BIN1 read "not recorded" although the release marks them
+# significant. A TRUE in the release wins; otherwise the row keeps its own value, so
+# "tested, not significant" and "not recorded" stay distinct.
+local({
+  f <- file.path("data_aux", "gene_evidence.csv")
+  if (!file.exists(f)) return(invisible())
+  ge <- read_csv(f, show_col_types = FALSE)
+  k  <- match(paste(dat$ADlocus, dat$gene), paste(ge$ADlocus, ge$gene))
+  up <- function(cur, rel) { rel <- as.logical(rel[k]); ifelse(!is.na(rel) & rel, TRUE, cur) }
+  dat$twas_sig  <<- up(dat$twas_sig,  ge$twas)
+  dat$mr_sig    <<- up(dat$mr_sig,    ge$mr)
+  dat$ctwas_sig <<- up(dat$ctwas_sig, ge$ctwas)
+})
+
 # precompute the cell-type dot column once (static per row)
 # top_confidence is defined as the gene's MAXIMUM confidence level, but the source
 # table populates it only on the row where the tier was determined, leaving the
